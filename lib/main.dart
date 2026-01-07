@@ -5,10 +5,25 @@ import 'package:freebox_photos/pages/albums.dart';
 import 'package:freebox_photos/pages/first.dart';
 import 'package:freebox_photos/pages/library.dart';
 import 'package:freebox/freebox.dart';
+import 'package:freebox_photos/src/utils/requests.dart';
 import 'package:get_storage/get_storage.dart';
+
+FreeboxClient? client;
 
   void main() async {
     await GetStorage.init();
+
+    if (GetStorage().read("appToken") != null) {
+      client = FreeboxClient(
+        appToken: GetStorage().read("appToken"),
+        appId: 'fbx.freebox_photos',
+        apiDomain: GetStorage().read("apiDomain"),
+        httpsPort: GetStorage().read("httpsPort"),
+      );
+
+      await client?.authentificate();
+    }
+    fetchPhotosDir();
     runApp(Phoenix(child:const MainApp()));
   }
 
