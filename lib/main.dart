@@ -42,6 +42,7 @@ class _MainAppState extends State<MainApp> {
     super.initState();
     if (GetStorage().read("appToken") != null) { 
       CNTabBarNative.enable(
+        isDark: true,
         selectedIndex: _currentIndex,
         tabs: [
           CNTab(title: 'Photothèque', sfSymbol: CNSymbol('photo.fill.on.rectangle.fill')),

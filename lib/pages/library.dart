@@ -1,5 +1,6 @@
 
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:flutter/cupertino.dart';
@@ -19,12 +20,30 @@ class _LibraryPageState extends State<LibraryPage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        flexibleSpace: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 2, sigmaY: 0),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.6),
+                    Colors.black.withValues(alpha: 0.6),
+                    Colors.black.withValues(alpha: 0.1),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
         elevation: 0,
         title: Text(
           "Photothèque",
           style: TextStyle(
             color: Colors.white,
-            fontSize: 38,
+            fontSize: 36,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -47,8 +66,7 @@ class _LibraryPageState extends State<LibraryPage> {
             data: const CupertinoThemeData(
               brightness: Brightness.dark,
             ),
-            child:
-              CNButton(
+            child: CNButton(
                 label: "Sélect.",
                 tint: Colors.white.withAlpha(10),
                 config: const CNButtonConfig(
@@ -63,41 +81,41 @@ class _LibraryPageState extends State<LibraryPage> {
         backgroundColor: Colors.transparent,
       ),
       backgroundColor: Colors.black,
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: FutureBuilder<int>(
-          future: fetchPhotosDir(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              // TODO remplacer par une animation de chargement
-              return const Center(child: CircularProgressIndicator());
-            }
-            return GridView.builder(
+      body: FutureBuilder<int>(
+        future: fetchPhotosDir(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            // TODO remplacer par une animation de chargement
+            return const Center(child: CircularProgressIndicator());
+          }
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: GridView.builder(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
                 crossAxisSpacing: 2,
-                mainAxisSpacing: 2,
-              ),
-              itemCount: 21,
-              itemBuilder: (context, index) {
-                return FutureBuilder<Uint8List>(
-                  future: fetchImageBytes().then((value) => value!),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return Container(
-                        color: Colors.grey[800],
+                  mainAxisSpacing: 2,
+                ),
+                itemCount: 39,
+                itemBuilder: (context, index) {
+                  return FutureBuilder<Uint8List>(
+                    future: fetchImageBytes().then((value) => value!),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return Container(
+                          color: Colors.grey[800],
+                        );
+                      }
+                      return Image.memory(
+                        snapshot.data!,
+                        fit: BoxFit.cover,
                       );
-                    }
-                    return Image.memory(
-                      snapshot.data!,
-                      fit: BoxFit.cover,
-                    );
-                  },
-                );
-              },
-            );
-          },
-        ),
+                    },
+                  );
+                },
+              ),
+          );
+        },
       ),
     );
   }
