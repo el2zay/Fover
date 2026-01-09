@@ -1,11 +1,12 @@
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:freebox/freebox.dart';
 import 'package:freebox_photos/main.dart';
 import 'package:get_storage/get_storage.dart';
 import 'dart:developer';
-
 
 final box = GetStorage();
 
@@ -39,11 +40,42 @@ Future fetchDir() async {
 }
 
 // Permet d'afficher le dossier sélectionné
-Future fetchPhotosDir() async {
+Future<int> fetchPhotosDir() async {
   var directories = await client?.fetch(url: "v15/fs/ls/L0ZyZWVib3gvVGVzdA==");
   List<dynamic> entries = directories?['result']['entries'] ?? [];
 
   var filesOnly = entries.where((e) => e['name'] != '.' && e['name'] != '..' && (e['mimetype'].contains('image/') || e['mimetype'].contains('video/')));
-  
   log(filesOnly.toString());
+  fetchImageBytes();
+  return filesOnly.length;
+}
+
+Future<Uint8List?> fetchImageBytes() async {
+  var response = await client?.fetch(url: "v15/dl/L0ZyZWVib3gvVGVzdC9pc3RvY2twaG90by0xMDY5NTM5MjEwLTYxMng2MTIuanBn", parseJson: false);
+
+  if (response is List<dynamic>) {
+    return Uint8List.fromList(response.cast<int>());
+  }
+
+  return null;
+}
+
+// Future fetchThumbnails() async {
+//   CachedNetworkImage(
+//     imageUrl: await client?.fetch(url: "v15/dl/L0ZyZWVib3gvVGVzdC9pc3RvY2twaG90by0xMDY5NTM5MjEwLTYxMng2MTIuanBn", parseJson: false),
+//     placeholder: (context, url) => CircularProgressIndicator(color: Colors.red,),
+//     errorWidget: (context, url, error) => Icon(Icons.error, color: Colors.red),
+//   // Optionnel : redimensionne en mémoire pour économiser la RAM
+//   // memCacheWidth: 200, 
+//   );
+// }
+
+Future<Image> fetchThumbnails() async {
+  var response = await client?.fetch(url: "v15/dl/L0ZyZWVib3gvVGVzdC9pc3RvY2twaG90by0xMDY5NTM5MjEwLTYxMng2MTIuanBn", parseJson: false);
+  if (response is List<dynamic>) {
+    Uint8List bytes = Uint8List.fromList(response.cast<int>());
+    return Image.memory(bytes);
+  }
+  throw Exception('Failed to load image');
+
 }

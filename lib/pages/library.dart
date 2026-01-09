@@ -1,5 +1,10 @@
+
+import 'dart:typed_data';
+
 import 'package:cupertino_native_better/cupertino_native.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:freebox_photos/src/utils/requests.dart';
 
 class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});
@@ -11,34 +16,89 @@ class LibraryPage extends StatefulWidget {
 class _LibraryPageState extends State<LibraryPage> {
   @override
   Widget build(BuildContext context) {
-    return  Scaffold(
+    return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-          title: Text("Photothèque", style: TextStyle(color: Colors.white, fontSize: 38, fontWeight: FontWeight.bold)),
-          actions: [
-            CNButton.icon(
-              icon: CNSymbol('settings'), 
+        elevation: 0,
+        title: Text(
+          "Photothèque",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 38,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          CupertinoTheme(
+            data: const CupertinoThemeData(
+              brightness: Brightness.dark,
+            ),
+            child: CNButton.icon(
+              icon: CNSymbol('settings'),
               tint: Colors.white.withAlpha(10),
+              config: const CNButtonConfig(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              ),
+              onPressed: () {},
+            ),
+          ),
+          SizedBox(width: 5),
+          CupertinoTheme(
+            data: const CupertinoThemeData(
+              brightness: Brightness.dark,
+            ),
+            child:
+              CNButton(
+                label: "Sélect.",
+                tint: Colors.white.withAlpha(10),
                 config: const CNButtonConfig(
                   style: CNButtonStyle.prominentGlass,
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                 ),
-              onPressed: () {},
-            ),
-            SizedBox(width: 5),
-            CNButton(
-              label: "Sélect.",
-              tint: Colors.white.withAlpha(10),
-                config: const CNButtonConfig(
-                  style: CNButtonStyle.prominentGlass,
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                ),
-              onPressed: () {},
-            ),
-          ],
-          centerTitle: false,
-          backgroundColor: Colors.transparent,
+                onPressed: () {},
+              ),
+          ),
+        ],
+        centerTitle: false,
+        backgroundColor: Colors.transparent,
       ),
       backgroundColor: Colors.black,
-      body: Center(child: Text('Library Page')));
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: FutureBuilder<int>(
+          future: fetchPhotosDir(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              // TODO remplacer par une animation de chargement
+              return const Center(child: CircularProgressIndicator());
+            }
+            return GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 2,
+                mainAxisSpacing: 2,
+              ),
+              itemCount: 21,
+              itemBuilder: (context, index) {
+                return FutureBuilder<Uint8List>(
+                  future: fetchImageBytes().then((value) => value!),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return Container(
+                        color: Colors.grey[800],
+                      );
+                    }
+                    return Image.memory(
+                      snapshot.data!,
+                      fit: BoxFit.cover,
+                    );
+                  },
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
   }
 }
