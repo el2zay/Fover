@@ -56,7 +56,7 @@ class _MainAppState extends State<MainApp> {
         },
       );
     } else {
-      print("here");
+      CNTabBarNative.disable();
     }
   }
 
