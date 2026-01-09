@@ -5,17 +5,30 @@ PODS:
   - cupertino_native_better (0.0.1):
     - Flutter
     - SVGKit (~> 3.0)
+  - device_info_plus (0.0.1):
+    - Flutter
   - Flutter (1.0.0)
+  - irondash_engine_context (0.0.1):
+    - Flutter
   - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
+  - sqflite_darwin (0.0.4):
+    - Flutter
+    - FlutterMacOS
+  - super_native_extensions (0.0.1):
+    - Flutter
   - SVGKit (3.0.0):
     - CocoaLumberjack (~> 3.0)
 
 DEPENDENCIES:
   - cupertino_native_better (from `.symlinks/plugins/cupertino_native_better/ios`)
+  - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - Flutter (from `Flutter`)
+  - irondash_engine_context (from `.symlinks/plugins/irondash_engine_context/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
+  - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
+  - super_native_extensions (from `.symlinks/plugins/super_native_extensions/ios`)
 
 SPEC REPOS:
   trunk:
@@ -25,16 +38,28 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   cupertino_native_better:
     :path: ".symlinks/plugins/cupertino_native_better/ios"
+  device_info_plus:
+    :path: ".symlinks/plugins/device_info_plus/ios"
   Flutter:
     :path: Flutter
+  irondash_engine_context:
+    :path: ".symlinks/plugins/irondash_engine_context/ios"
   path_provider_foundation:
     :path: ".symlinks/plugins/path_provider_foundation/darwin"
+  sqflite_darwin:
+    :path: ".symlinks/plugins/sqflite_darwin/darwin"
+  super_native_extensions:
+    :path: ".symlinks/plugins/super_native_extensions/ios"
 
 SPEC CHECKSUMS:
   CocoaLumberjack: 5644158777912b7de7469fa881f8a3f259c2512a
   cupertino_native_better: 1548ee565186534a34a406bf56b7c49510485844
+  device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  irondash_engine_context: 8e58ca8e0212ee9d1c7dc6a42121849986c88486
   path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880
+  sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
+  super_native_extensions: b763c02dc3a8fd078389f410bf15149179020cb4
   SVGKit: 1ad7513f8c74d9652f94ed64ddecda1a23864dea
 
 PODFILE CHECKSUM: 3c63482e143d1b91d2d2560aee9fb04ecc74ac7e
