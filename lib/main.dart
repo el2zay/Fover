@@ -77,6 +77,15 @@ class _MainAppState extends State<MainApp> {
           ],
         ),
       ),
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: Colors.black,
+        appBarTheme: const AppBarTheme(
+        elevation: 0,
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        ),
+      ),
     );
   }
 
