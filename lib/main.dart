@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
-import 'package:freebox_photos/pages/albums.dart';
-import 'package:freebox_photos/pages/first.dart';
-import 'package:freebox_photos/pages/library.dart';
+import 'package:fover/pages/albums.dart';
+import 'package:fover/pages/first.dart';
+import 'package:fover/pages/library.dart';
 import 'package:freebox/freebox.dart';
-import 'package:freebox_photos/src/utils/requests.dart';
+import 'package:fover/src/utils/requests.dart';
 import 'package:get_storage/get_storage.dart';
 
 FreeboxClient? client;
@@ -16,7 +16,7 @@ FreeboxClient? client;
     if (GetStorage().read("appToken") != null) {
       client = FreeboxClient(
         appToken: GetStorage().read("appToken"),
-        appId: 'fbx.freebox_photos',
+        appId: 'fbx.fover',
         apiDomain: GetStorage().read("apiDomain"),
         httpsPort: GetStorage().read("httpsPort"),
       );

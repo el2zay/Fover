@@ -6,8 +6,8 @@ import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:freebox_photos/pages/viewer.dart';
-import 'package:freebox_photos/src/utils/requests.dart';
+import 'package:fover/pages/viewer.dart';
+import 'package:fover/src/utils/requests.dart';
 
 class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});

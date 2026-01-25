@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:freebox_photos/pages/connection.dart';
+import 'package:fover/pages/connection.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});

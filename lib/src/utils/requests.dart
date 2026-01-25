@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:freebox/freebox.dart';
-import 'package:freebox_photos/main.dart';
+import 'package:fover/main.dart';
 import 'package:get_storage/get_storage.dart';
 import 'dart:developer';
 
@@ -12,8 +12,8 @@ final box = GetStorage();
 
 Future signUp(context) async {
   var register = await FreeboxClient.registerFreebox(
-    appId: 'fbx.freebox_photos',
-    appName: 'Freebox Photos',
+    appId: 'fbx.fover',
+    appName: 'Fover',
     appVersion: '1.0.0',
     deviceName: Platform.operatingSystem,
     verbose: false

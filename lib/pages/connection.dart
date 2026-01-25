@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:freebox_photos/src/utils/requests.dart';
+import 'package:fover/src/utils/requests.dart';
 import 'package:flutter/material.dart';
 
 class ConnectionPage extends StatefulWidget {

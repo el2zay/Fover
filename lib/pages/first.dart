@@ -14,7 +14,7 @@ Lorsque bouton 2 sélectionné : Popup pour demander adresse IP du NAS et identi
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
-import 'package:freebox_photos/pages/login.dart';
+import 'package:fover/pages/login.dart';
 
 class FirstPage extends StatefulWidget {
   const FirstPage({super.key});
