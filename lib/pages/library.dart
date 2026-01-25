@@ -3,8 +3,10 @@ import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:cupertino_native_better/cupertino_native.dart';
+import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:freebox_photos/pages/viewer.dart';
 import 'package:freebox_photos/src/utils/requests.dart';
 
 class LibraryPage extends StatefulWidget {
@@ -106,9 +108,21 @@ class _LibraryPageState extends State<LibraryPage> {
                           color: Colors.grey[800],
                         );
                       }
-                      return Image.memory(
-                        snapshot.data!,
-                        fit: BoxFit.cover,
+                        return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ViewerPage(
+                                image: Image.memory(snapshot.data!)
+                              )
+                            ),
+                          );
+                        },
+                        child: Image.memory(
+                          snapshot.data!,
+                          fit: BoxFit.cover,
+                        ),
                       );
                     },
                   );
