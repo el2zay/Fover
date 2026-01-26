@@ -7,12 +7,13 @@ import 'package:fover/pages/library.dart';
 import 'package:freebox/freebox.dart';
 import 'package:fover/src/utils/requests.dart';
 import 'package:get_storage/get_storage.dart';
+import 'dart:developer';
 
 FreeboxClient? client;
 
   void main() async {
     await GetStorage.init();
-
+    log(GetStorage().read("appToken").toString());
     if (GetStorage().read("appToken") != null) {
       client = FreeboxClient(
         appToken: GetStorage().read("appToken"),
@@ -45,10 +46,10 @@ class _MainAppState extends State<MainApp> {
         isDark: true,
         selectedIndex: _currentIndex,
         tabs: [
-          CNTab(title: 'Photothèque', sfSymbol: CNSymbol('photo.fill.on.rectangle.fill')),
+          CNTab(title: 'Library', sfSymbol: CNSymbol('photo.fill.on.rectangle.fill')),
           CNTab(title: 'Albums', sfSymbol: CNSymbol('rectangle.stack.fill')),
-          CNTab(title: 'Caméra', sfSymbol: CNSymbol('camera.fill')),
-          CNTab(title: 'Recherche', sfSymbol: CNSymbol('magnifyingglass'), isSearchTab: true),
+          CNTab(title: 'Camera', sfSymbol: CNSymbol('camera.fill')),
+          CNTab(title: 'Search', sfSymbol: CNSymbol('magnifyingglass'), isSearchTab: true),
         ],
         onTabSelected: (index) {
           setState(() {

@@ -42,7 +42,7 @@ class _LibraryPageState extends State<LibraryPage> {
         ),
         elevation: 0,
         title: Text(
-          "Photothèque",
+          "Library",
           style: TextStyle(
             color: Colors.white,
             fontSize: 36,
@@ -69,7 +69,7 @@ class _LibraryPageState extends State<LibraryPage> {
               brightness: Brightness.dark,
             ),
             child: CNButton(
-                label: "Sélect.",
+                label: "Select",
                 tint: Colors.white.withAlpha(10),
                 config: const CNButtonConfig(
                   style: CNButtonStyle.prominentGlass,

@@ -34,7 +34,7 @@ class _LoginPageState extends State<LoginPage> {
                 style: TextStyle(color: Colors.grey, fontSize: 12),
               ),
               const SizedBox(height: 50),
-              Image.asset("assets/images/validation.png", height: 250),
+              // Image.asset("assets/images/validation.png", height: 250),
               const Spacer(),
               ElevatedButton(
                 onPressed: () {
