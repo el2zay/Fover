@@ -186,47 +186,42 @@ class _ViewerPageState extends State<ViewerPage> {
                                   // await SharePlus.instance.share(params);
                                 },
                               ),
-                              CNFloatingIsland(
-                                collapsed: Row(
-                                  children: [
-                                    const SizedBox(width: 10),
-                                    CNButton.icon(
-                                      config: const CNButtonConfig(
-                                        style: CNButtonStyle.plain,
-                                      ),
-                                      icon: CNSymbol(
-                                        'heart',
-                                        size: 18,
-                                        color: Colors.white,
-                                      ),
-                                      onPressed: () {},
+                              CNGlassButtonGroup(
+                                axis: Axis.horizontal,
+                                spacing: 8.0,
+                                spacingForGlass: 40.0,
+                                buttons: [
+                                  CNButtonData.icon(
+                                    icon: const CNSymbol('heart', size: 22),
+                                    onPressed: () {},
+                                    config: const CNButtonDataConfig(
+                                      style: CNButtonStyle.prominentGlass,
+                                      glassEffectUnionId: 'media-controls',
+                                      glassEffectId: 'heart-button',
+                                      glassEffectInteractive: true,
                                     ),
-                                    const SizedBox(width: 10),
-                                    CNButton.icon(
-                                      config: const CNButtonConfig(
-                                        style: CNButtonStyle.plain,
-                                      ),
-                                      icon: CNSymbol(
-                                        'info.circle',
-                                        size: 18,
-                                        color: Colors.white,
-                                      ),
-                                      onPressed: () {},
+                                  ),
+                                  CNButtonData.icon(
+                                    icon: const CNSymbol('info.circle', size: 22),
+                                    onPressed: () {},
+                                    config: const CNButtonDataConfig(
+                                      style: CNButtonStyle.prominentGlass,
+                                      glassEffectUnionId: 'media-controls',
+                                      glassEffectId: '',
+                                      glassEffectInteractive: true,
                                     ),
-                                    const SizedBox(width: 10),
-                                    CNButton.icon(
-                                      config: const CNButtonConfig(
-                                        style: CNButtonStyle.plain,
-                                      ),
-                                      icon: CNSymbol(
-                                        'slider.horizontal.3',
-                                        size: 18,
-                                        color: Colors.white,
-                                      ),
-                                      onPressed: () {},
+                                  ),
+                                  CNButtonData.icon(
+                                    icon: const CNSymbol('slider.horizontal.3', size: 22),
+                                    onPressed: () {},
+                                    config: const CNButtonDataConfig(
+                                      style: CNButtonStyle.prominentGlass,
+                                      glassEffectUnionId: 'media-controls',
+                                      glassEffectId: 'stop-button',
+                                      glassEffectInteractive: true,
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                               CNButton.icon(
                                 icon: CNSymbol('trash', size: 18),
