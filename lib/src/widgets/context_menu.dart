@@ -12,76 +12,74 @@ class ContextMenu extends StatefulWidget {
 class _ContextMenuState extends State<ContextMenu> {
   @override
   Widget build(BuildContext context) {
-    return Padding(padding: const EdgeInsets.symmetric(horizontal: 85, vertical: 50),
-        child: ClipRRect(
-        borderRadius: BorderRadius.circular(25),
-        child: LiquidGlassContainer(config: LiquidGlassConfig(
-            shape: CNGlassEffectShape.rect,
-            effect: CNGlassEffect.regular,
-          ), 
-          child: Padding(padding: const EdgeInsets.only(top: 15, bottom: 15, left: 20, right: 20), 
-            child: Column(
-              spacing: 12,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Column(
-                      children: const [
-                        Icon(CupertinoIcons.share, size: 20),
-                        SizedBox(height: 5),
-                        Text('Share', style: TextStyle(fontSize: 14)),
-                      ],
-                    ),
-                    SizedBox(width: 20),
-                    Column(
-                      children: [
-                        const Icon(CupertinoIcons.heart, size: 20),
-                        const SizedBox(height: 5),
-                        Text('Favorites', style: TextStyle(fontSize: 14), textAlign: TextAlign.center),
-                      ],
-                    ),
-                    SizedBox(width: 20),
-                    Column(
-                      children: [
-                        const Icon(CupertinoIcons.delete, size: 20, color: CupertinoColors.destructiveRed,),
-                        const SizedBox(height: 5),
-                        Text('Delete', style: TextStyle(fontSize: 14, color: CupertinoColors.destructiveRed), textAlign: TextAlign.center),
-                      ],
-                    ),
-                  ],
-                ),
-                Divider(thickness: 0.5),
-                Row(
-                  children: const [
-                    Icon(CupertinoIcons.doc_on_doc, size: 18),
-                    SizedBox(width: 15),
-                    Text('Copy', style: TextStyle(fontSize: 18)),
-                  ],
-                ),
-                Row(
-                  children: const [
-                    Icon(CupertinoIcons.plus_square_on_square, size: 18),
-                    SizedBox(width: 15),
-                    Text('Duplicate', style: TextStyle(fontSize: 18)),
-                  ],
-                ),
-                Row(
-                  children: const [
-                    Icon(CupertinoIcons.eye_slash, size: 18),
-                    SizedBox(width: 15),
-                    Text('Hide', style: TextStyle(fontSize: 18)),
-                  ],
-                ),
-                Row(
-                  children: const [
-                    Icon(CupertinoIcons.plus_rectangle_on_rectangle, size: 18),
-                    SizedBox(width: 15),
-                    Text('Add to album', style: TextStyle(fontSize: 18)),
-                  ],
-                ),
-              ],
-            ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(25),
+      child: LiquidGlassContainer(config: LiquidGlassConfig(
+          shape: CNGlassEffectShape.rect,
+          effect: CNGlassEffect.regular,
+        ), 
+        child: Padding(padding: const EdgeInsets.only(top: 15, bottom: 15, left: 20, right: 20), 
+          child: Column(
+            spacing: 12,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Column(
+                    children: const [
+                      Icon(CupertinoIcons.share, size: 20),
+                      SizedBox(height: 5),
+                      Text('Share', style: TextStyle(fontSize: 14)),
+                    ],
+                  ),
+                  SizedBox(width: 20),
+                  Column(
+                    children: [
+                      const Icon(CupertinoIcons.heart, size: 20),
+                      const SizedBox(height: 5),
+                      Text('Favorites', style: TextStyle(fontSize: 14), textAlign: TextAlign.center),
+                    ],
+                  ),
+                  SizedBox(width: 20),
+                  Column(
+                    children: [
+                      const Icon(CupertinoIcons.delete, size: 20, color: CupertinoColors.destructiveRed,),
+                      const SizedBox(height: 5),
+                      Text('Delete', style: TextStyle(fontSize: 14, color: CupertinoColors.destructiveRed), textAlign: TextAlign.center),
+                    ],
+                  ),
+                ],
+              ),
+              Divider(thickness: 0.5),
+              Row(
+                children: const [
+                  Icon(CupertinoIcons.doc_on_doc, size: 18),
+                  SizedBox(width: 15),
+                  Text('Copy', style: TextStyle(fontSize: 18)),
+                ],
+              ),
+              Row(
+                children: const [
+                  Icon(CupertinoIcons.plus_square_on_square, size: 18),
+                  SizedBox(width: 15),
+                  Text('Duplicate', style: TextStyle(fontSize: 18)),
+                ],
+              ),
+              Row(
+                children: const [
+                  Icon(CupertinoIcons.eye_slash, size: 18),
+                  SizedBox(width: 15),
+                  Text('Hide', style: TextStyle(fontSize: 18)),
+                ],
+              ),
+              Row(
+                children: const [
+                  Icon(CupertinoIcons.plus_rectangle_on_rectangle, size: 18),
+                  SizedBox(width: 15),
+                  Text('Add to album', style: TextStyle(fontSize: 18)),
+                ],
+              ),
+            ],
           ),
         ),
       ),
