@@ -1,13 +1,15 @@
 
-import 'dart:typed_data';
+import 'dart:developer';
 import 'dart:ui';
 
 import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fover/pages/viewer.dart';
 import 'package:fover/src/utils/requests.dart';
+import 'package:fover/src/widgets/context_menu.dart';
 
 class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});
@@ -17,6 +19,22 @@ class LibraryPage extends StatefulWidget {
 }
 
 class _LibraryPageState extends State<LibraryPage> {
+  late final Future<List<Uint8List>> _imagesFuture;
+  @override
+  void initState() {
+    super.initState();
+    _imagesFuture = _loadImages();
+  }
+
+  Future<List<Uint8List>> _loadImages() async {
+    return await Future.wait(
+      List.generate(await fetchPhotosDir(), (_) async {
+        final bytes = await fetchImageBytes();
+        return bytes!;
+      })
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,71 +81,113 @@ class _LibraryPageState extends State<LibraryPage> {
               onPressed: () {},
             ),
           ),
-          SizedBox(width: 5),
+          const SizedBox(width: 5),
           CupertinoTheme(
             data: const CupertinoThemeData(
               brightness: Brightness.dark,
             ),
             child: CNButton(
-                label: "Select",
-                tint: Colors.white.withAlpha(10),
-                config: const CNButtonConfig(
-                  style: CNButtonStyle.prominentGlass,
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                ),
-                onPressed: () {},
+              label: "Select",
+              tint: Colors.white.withAlpha(10),
+              config: const CNButtonConfig(
+                style: CNButtonStyle.prominentGlass,
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               ),
+              onPressed: () {},
+            ),
           ),
         ],
         centerTitle: false,
         backgroundColor: Colors.transparent,
       ),
       backgroundColor: Colors.black,
-      body: FutureBuilder<int>(
-        future: fetchPhotosDir(),
+      body: FutureBuilder<List<Uint8List>>(
+        future: _imagesFuture,
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             // TODO remplacer par une animation de chargement
             return const Center(child: CircularProgressIndicator());
           }
+          final images = snapshot.data!;
+
           return Padding(
             padding: const EdgeInsets.only(bottom: 8.0),
             child: GridView.builder(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
                 crossAxisSpacing: 2,
-                  mainAxisSpacing: 2,
-                ),
-                itemCount: 39,
-                itemBuilder: (context, index) {
-                  return FutureBuilder<Uint8List>(
-                    future: fetchImageBytes().then((value) => value!),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return Container(
-                          color: Colors.grey[800],
-                        );
-                      }
-                        return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ViewerPage(
-                                image: Image.memory(snapshot.data!)
-                              )
-                            ),
-                          );
-                        },
-                        child: Image.memory(
-                          snapshot.data!,
-                          fit: BoxFit.cover,
-                        ),
-                      );
-                    },
-                  );
-                },
+                mainAxisSpacing: 2,
               ),
+              itemCount: images.length,
+              itemBuilder: (context, index) {
+                final bytes = images[index];
+                return Builder(
+                  builder: (itemContext) => SizedBox(
+                    width: MediaQuery.of(context).size.width / 3 - 2,
+                    height: MediaQuery.of(context).size.width / 3 - 2,
+                    child: GestureDetector(
+                      onLongPress: () {
+                        final double screenWidth = MediaQuery.of(context).size.width;
+                        final RenderBox box = itemContext.findRenderObject() as RenderBox;
+                        final Offset position = box.localToGlobal(Offset.zero);
+
+                        final double targetX = position.dx + (box.size.width / 2) - 115;
+                        final double clampedX = targetX.clamp(15, screenWidth - 230 - 10);
+
+                        HapticFeedback.mediumImpact();
+
+                        showGeneralDialog(
+                          context: context,
+                          barrierColor: Colors.transparent,
+                          barrierDismissible: true,
+                          barrierLabel: '',
+                          pageBuilder: (context, animation, secondaryAnimation) {
+                            return Stack(
+                              children: [
+                                Positioned(
+                                  left: clampedX,
+                                  top: position.dy + box.size.height + 10,
+                                  width: 230,
+                                  child: const Material(
+                                    color: Colors.transparent,
+                                    elevation: 0,
+                                    child: ContextMenu(),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                          // transitionBuilder: (context, animation, secondaryAnimation, child) {
+                          //   return FadeTransition(
+                          //     opacity: animation,
+                          //     child: ScaleTransition(
+                          //       scale: Tween<double>(begin: 0.9, end: 1.0).animate(CurvedAnimation(
+                          //         parent: animation,
+                          //         curve: Curves.easeOut,
+                          //         )
+                          //       ),
+                          //       child: child,
+                          //     ),
+                          //   );
+                          // }
+                        );
+                      },
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ViewerPage(
+                              image: Image.memory(bytes),
+                            ),
+                          ),
+                        );
+                      },
+                      child: Image.memory(bytes, fit: BoxFit.cover),
+                    ),
+                  ),
+                );
+              },
+            ),
           );
         },
       ),
