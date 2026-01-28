@@ -2,7 +2,10 @@ import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fover/main.dart';
+import 'package:fover/src/widgets/button.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:photo_view/photo_view.dart';
 
 
 class ViewerPage extends StatefulWidget {
@@ -40,12 +43,14 @@ class _ViewerPageState extends State<ViewerPage> {
                   backgroundColor: Colors.transparent,
                   leading: Row(
                     children: [
-                      const SizedBox(width: 10),
+                      // const SizedBox(width: 10),
                       Transform.scale(
                           scale: 1.2,
-                          child: CNButton.icon(
-                            config: const CNButtonConfig(),
-                            icon: CNSymbol('chevron.left', size: 18),
+                          child: Button.iconOnly(
+                            glassConfig: const CNButtonConfig(),
+                            padding: const EdgeInsets.all(8),
+                            icon: Icon(Icons.arrow_back_ios, size: 18),
+                            glassIcon: CNSymbol('chevron.left', size: 18),
                             onPressed: () {
                             Navigator.pop(context);
                           },
@@ -174,8 +179,9 @@ class _ViewerPageState extends State<ViewerPage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              CNButton.icon(
-                                icon: CNSymbol(
+                              Button.iconOnly(
+                                icon: Icon(CupertinoIcons.share),
+                                glassIcon: CNSymbol(
                                   'square.and.arrow.up',
                                   size: 18,
                                 ),
@@ -186,45 +192,76 @@ class _ViewerPageState extends State<ViewerPage> {
                                   // await SharePlus.instance.share(params);
                                 },
                               ),
-                              CNGlassButtonGroup(
-                                axis: Axis.horizontal,
-                                spacing: 8.0,
-                                spacingForGlass: 40.0,
-                                buttons: [
-                                  CNButtonData.icon(
-                                    icon: const CNSymbol('heart', size: 22),
-                                    onPressed: () {},
-                                    config: const CNButtonDataConfig(
-                                      style: CNButtonStyle.prominentGlass,
-                                      glassEffectUnionId: 'media-controls',
-                                      glassEffectId: 'heart-button',
-                                      glassEffectInteractive: true,
+                              is26OrNewer ?
+                                CNGlassButtonGroup(
+                                  axis: Axis.horizontal,
+                                  spacing: 8.0,
+                                  spacingForGlass: 40.0,
+                                  buttons: [
+                                    CNButtonData.icon(
+                                      icon: const CNSymbol('heart', size: 22),
+                                      onPressed: () {},
+                                      config: CNButtonDataConfig(
+
+                                        style: CNButtonStyle.prominentGlass,
+                                        glassEffectUnionId: 'media-controls',
+                                        glassEffectId: 'heart-button',
+                                        glassEffectInteractive: true,
+                                      ),
                                     ),
-                                  ),
-                                  CNButtonData.icon(
-                                    icon: const CNSymbol('info.circle', size: 22),
-                                    onPressed: () {},
-                                    config: const CNButtonDataConfig(
-                                      style: CNButtonStyle.prominentGlass,
-                                      glassEffectUnionId: 'media-controls',
-                                      glassEffectId: '',
-                                      glassEffectInteractive: true,
+                                    CNButtonData.icon(
+                                      icon: const CNSymbol('info.circle', size: 22),
+                                      onPressed: () {},
+                                      config: const CNButtonDataConfig(
+                                        style: CNButtonStyle.prominentGlass,
+                                        glassEffectUnionId: 'media-controls',
+                                        glassEffectId: '',
+                                        glassEffectInteractive: true,
+                                      ),
                                     ),
-                                  ),
-                                  CNButtonData.icon(
-                                    icon: const CNSymbol('slider.horizontal.3', size: 22),
-                                    onPressed: () {},
-                                    config: const CNButtonDataConfig(
-                                      style: CNButtonStyle.prominentGlass,
-                                      glassEffectUnionId: 'media-controls',
-                                      glassEffectId: 'stop-button',
-                                      glassEffectInteractive: true,
+                                    CNButtonData.icon(
+                                      icon: const CNSymbol('slider.horizontal.3', size: 22),
+                                      onPressed: () {},
+                                      config: const CNButtonDataConfig(
+                                        style: CNButtonStyle.prominentGlass,
+                                        glassEffectUnionId: 'media-controls',
+                                        glassEffectId: 'stop-button',
+                                        glassEffectInteractive: true,
+                                      ),
                                     ),
+                                  ],
+                                ) : Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white12,
+                                    borderRadius: BorderRadius.circular(30),
                                   ),
-                                ],
-                              ),
-                              CNButton.icon(
-                                icon: CNSymbol('trash', size: 18),
+                                  child: Row(
+                                    children: [
+                                      Button.iconOnly(
+                                        icon: Icon(CupertinoIcons.heart),
+                                        glassIcon: CNSymbol('heart', size: 18),
+                                        backgroundColor: Colors.transparent,
+                                        onPressed: () {},
+                                      ),
+                                      Button.iconOnly(
+                                        icon: Icon(CupertinoIcons.info_circle),
+                                        glassIcon: CNSymbol('info.circle', size: 18),
+                                        backgroundColor: Colors.transparent,
+                                        onPressed: () {},
+                                      ),
+                                      Button.iconOnly(
+                                        icon: Icon(CupertinoIcons.slider_horizontal_3),
+                                        glassIcon: CNSymbol('slider.horizontal.3', size: 18),
+                                        backgroundColor: Colors.transparent,
+                                        onPressed: () {},
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              Button.iconOnly(
+                                icon: Icon(CupertinoIcons.trash),
+                                glassIcon: CNSymbol('trash', size: 18),
                                 onPressed: () {},
                               ),
                             ],
@@ -235,7 +272,8 @@ class _ViewerPageState extends State<ViewerPage> {
                     )
                   : const SizedBox(
                       key: ValueKey('hidden'),
-                      height: 95,
+                      // TODO vérfier que c'est responsive
+                      height: 64,
                     ),
             ),
           ],
