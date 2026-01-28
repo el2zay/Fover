@@ -9,7 +9,9 @@ class Button extends StatelessWidget {
     this.icon,
     this.glassIcon,
     this.tint,
+    this.backgroundColor,
     this.glassConfig = const CNButtonConfig(),
+    this.padding,
     required this.onPressed,
   });
 
@@ -17,7 +19,9 @@ class Button extends StatelessWidget {
   final Icon? icon;
   final CNSymbol? glassIcon;
   final Color? tint;
+  final Color? backgroundColor;
   final CNButtonConfig? glassConfig;
+  final EdgeInsetsGeometry? padding;
   final VoidCallback onPressed;
 
   // TODO :
@@ -26,7 +30,9 @@ class Button extends StatelessWidget {
     Icon? icon,
     CNSymbol? glassIcon,
     Color? tint,
+    Color? backgroundColor,
     CNButtonConfig? glassConfig,
+    EdgeInsetsGeometry? padding,
   }) {
     return is26OrNewer
         ? CNButton.icon(
@@ -35,15 +41,16 @@ class Button extends StatelessWidget {
             config: glassConfig!,
             onPressed: onPressed,
           )
-        : ElevatedButton(
+        : IconButton(
+            icon: icon!,
             onPressed: onPressed,
             style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-              backgroundColor: Colors.white12,
+              alignment: Alignment.centerRight,
+              padding: padding ?? const EdgeInsets.all(12),
+              iconSize: 25,
+              shape: const CircleBorder(),
+              backgroundColor: backgroundColor ?? Colors.white12,
             ),
-            child: icon
           );
   }
 
