@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
@@ -10,6 +13,7 @@ import 'package:get_storage/get_storage.dart';
 import 'dart:developer';
 
 FreeboxClient? client;
+bool is26OrNewer = false;
 
   void main() async {
     await GetStorage.init();
@@ -42,6 +46,10 @@ class _MainAppState extends State<MainApp> {
   void initState() {
     super.initState();
     if (GetStorage().read("appToken") != null) { 
+      final versionString = Platform.operatingSystemVersion;
+      final match = RegExp(r'Version (\d+)\.').firstMatch(versionString);
+      is26OrNewer = (int.tryParse(match?.group(1) ?? '') ?? 0) >= 26;
+  
       CNTabBarNative.enable(
         isDark: true,
         selectedIndex: _currentIndex,
@@ -65,6 +73,7 @@ class _MainAppState extends State<MainApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         body: GetStorage().read("appToken") == null
           ? const FirstPage()
@@ -77,14 +86,47 @@ class _MainAppState extends State<MainApp> {
             Placeholder(),
           ],
         ),
+        bottomNavigationBar: BottomNavigationBar(
+          fixedColor: const Color.fromARGB(255, 52, 161, 250),
+          type: BottomNavigationBarType.fixed,
+          selectedFontSize: 13,
+          unselectedFontSize: 13,
+          currentIndex: _currentIndex,
+          onTap: (value) {
+            setState(() {
+              _currentIndex = value;
+            });
+          },
+          items: [
+            BottomNavigationBarItem(icon: Icon(CupertinoIcons.photo), label: "Library"),
+            BottomNavigationBarItem(icon: Icon(CupertinoIcons.collections), label: "Albums"),
+            BottomNavigationBarItem(icon: Icon(CupertinoIcons.camera), label: "Camera"),
+            BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: "Search"),
+          ]
+        ),
       ),
       theme: ThemeData(
         brightness: Brightness.dark,
+        colorScheme: ColorScheme.dark(primary: Colors.white),
         scaffoldBackgroundColor: Colors.black,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        splashFactory: NoSplash.splashFactory,
         appBarTheme: const AppBarTheme(
-        elevation: 0,
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            surfaceTintColor: Colors.black,
+            
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+          ),
         ),
       ),
     );
