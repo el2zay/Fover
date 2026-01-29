@@ -1,6 +1,8 @@
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fover/main.dart';
+import 'package:fover/src/widgets/adaptative_container.dart';
 
 class ContextMenu extends StatefulWidget {
   const ContextMenu({super.key});
@@ -14,10 +16,12 @@ class _ContextMenuState extends State<ContextMenu> {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(25),
-      child: LiquidGlassContainer(config: LiquidGlassConfig(
+      child: AdaptativeContainer(
+        config: LiquidGlassConfig(
           shape: CNGlassEffectShape.rect,
           effect: CNGlassEffect.regular,
-        ), 
+          ),
+          padding: const EdgeInsets.all(0),
         child: Padding(padding: const EdgeInsets.only(top: 15, bottom: 15, left: 20, right: 20), 
           child: Column(
             spacing: 12,
@@ -50,7 +54,7 @@ class _ContextMenuState extends State<ContextMenu> {
                   ),
                 ],
               ),
-              Divider(thickness: 0.5),
+              Divider(thickness: 0.5, color: CupertinoColors.white.withValues(alpha: 0.3),),
               Row(
                 children: const [
                   Icon(CupertinoIcons.doc_on_doc, size: 18),

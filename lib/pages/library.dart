@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fover/pages/viewer.dart';
 import 'package:fover/src/utils/requests.dart';
+import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/context_menu.dart';
 
 class LibraryPage extends StatefulWidget {
@@ -72,10 +73,11 @@ class _LibraryPageState extends State<LibraryPage> {
             data: const CupertinoThemeData(
               brightness: Brightness.dark,
             ),
-            child: CNButton.icon(
-              icon: CNSymbol('settings'),
+            child: Button.iconOnly(
+              icon: Icon(CupertinoIcons.settings, color: Colors.white),
+              glassIcon: CNSymbol('settings'),
               tint: Colors.white.withAlpha(10),
-              config: const CNButtonConfig(
+              glassConfig: const CNButtonConfig(
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               ),
               onPressed: () {},
@@ -86,10 +88,10 @@ class _LibraryPageState extends State<LibraryPage> {
             data: const CupertinoThemeData(
               brightness: Brightness.dark,
             ),
-            child: CNButton(
+            child: Button(
               label: "Select",
               tint: Colors.white.withAlpha(10),
-              config: const CNButtonConfig(
+              glassConfig: const CNButtonConfig(
                 style: CNButtonStyle.prominentGlass,
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               ),
@@ -138,7 +140,7 @@ class _LibraryPageState extends State<LibraryPage> {
 
                         showGeneralDialog(
                           context: context,
-                          barrierColor: Colors.transparent,
+                          // barrierColor: Colors.black26,
                           barrierDismissible: true,
                           barrierLabel: '',
                           pageBuilder: (context, animation, secondaryAnimation) {
@@ -157,19 +159,6 @@ class _LibraryPageState extends State<LibraryPage> {
                               ],
                             );
                           },
-                          // transitionBuilder: (context, animation, secondaryAnimation, child) {
-                          //   return FadeTransition(
-                          //     opacity: animation,
-                          //     child: ScaleTransition(
-                          //       scale: Tween<double>(begin: 0.9, end: 1.0).animate(CurvedAnimation(
-                          //         parent: animation,
-                          //         curve: Curves.easeOut,
-                          //         )
-                          //       ),
-                          //       child: child,
-                          //     ),
-                          //   );
-                          // }
                         );
                       },
                       onTap: () {
@@ -188,9 +177,16 @@ class _LibraryPageState extends State<LibraryPage> {
                 );
               },
             ),
+                );
+              },
+            ),
           );
-        },
-      ),
-    );
-  }
+          //}
+        }
+      // )
+    // );
+  // }
 }
+
+
+

@@ -162,7 +162,11 @@ class _ViewerPageState extends State<ViewerPage> {
             Expanded(
               flex: 1,
               child: Center(
-                child: widget.image,
+                child: PhotoView(imageProvider: widget.image.image, 
+                maxScale: PhotoViewComputedScale.covered * 5,
+                minScale: PhotoViewComputedScale.contained,
+                enableRotation: false
+                )
               ),
             ),
             AnimatedSwitcher(
