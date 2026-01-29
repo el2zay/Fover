@@ -48,7 +48,7 @@ class _FirstPageState extends State<FirstPage> {
                 CNButton.icon(onPressed: () {
                   Navigator.push(context, CupertinoPageRoute(builder: (context) => const LoginPage()));
                 },
-                imageAsset: CNImageAsset('assets/icons/freebox_icon.png'),
+                imageAsset: CNImageAsset('assets/icons/freebox_icon.png', color: Color.fromARGB(255, 188, 48, 42)),
 
                 ),
                 // ElevatedButton(
