@@ -14,6 +14,8 @@ import 'dart:developer';
 
 FreeboxClient? client;
 bool is26OrNewer = false;
+bool showTabBar = true;
+
 
   void main() async {
     await GetStorage.init();
@@ -45,11 +47,10 @@ class _MainAppState extends State<MainApp> {
   @override
   void initState() {
     super.initState();
-    if (GetStorage().read("appToken") != null) { 
+    if (GetStorage().read("appToken") != null && showTabBar) { 
       final versionString = Platform.operatingSystemVersion;
       final match = RegExp(r'Version (\d+)\.').firstMatch(versionString);
       is26OrNewer = (int.tryParse(match?.group(1) ?? '') ?? 0) >= 26;
-  
       CNTabBarNative.enable(
         isDark: true,
         selectedIndex: _currentIndex,
@@ -65,8 +66,6 @@ class _MainAppState extends State<MainApp> {
           });
         },
       );
-    } else {
-      CNTabBarNative.disable();
     }
   }
 
@@ -86,24 +85,26 @@ class _MainAppState extends State<MainApp> {
             Placeholder(),
           ],
         ),
-        bottomNavigationBar: BottomNavigationBar(
-          fixedColor: const Color.fromARGB(255, 52, 161, 250),
-          type: BottomNavigationBarType.fixed,
-          selectedFontSize: 13,
-          unselectedFontSize: 13,
-          currentIndex: _currentIndex,
-          onTap: (value) {
-            setState(() {
-              _currentIndex = value;
-            });
-          },
-          items: [
-            BottomNavigationBarItem(icon: Icon(CupertinoIcons.photo), label: "Library"),
-            BottomNavigationBarItem(icon: Icon(CupertinoIcons.collections), label: "Albums"),
-            BottomNavigationBarItem(icon: Icon(CupertinoIcons.camera), label: "Camera"),
-            BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: "Search"),
-          ]
-        ),
+        bottomNavigationBar: 
+        (!is26OrNewer) ?
+          BottomNavigationBar(
+            fixedColor: const Color.fromARGB(255, 52, 161, 250),
+            type: BottomNavigationBarType.fixed,
+            selectedFontSize: 13,
+            unselectedFontSize: 13,
+            currentIndex: _currentIndex,
+            onTap: (value) {
+              setState(() {
+                _currentIndex = value;
+              });
+            },
+            items: [
+              BottomNavigationBarItem(icon: Icon(CupertinoIcons.photo), label: "Library"),
+              BottomNavigationBarItem(icon: Icon(CupertinoIcons.collections), label: "Albums"),
+              BottomNavigationBarItem(icon: Icon(CupertinoIcons.camera), label: "Camera"),
+              BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: "Search"),
+            ]
+          ) : null,
       ),
       theme: ThemeData(
         brightness: Brightness.dark,
@@ -120,7 +121,6 @@ class _MainAppState extends State<MainApp> {
         filledButtonTheme: FilledButtonThemeData(
           style: ElevatedButton.styleFrom(
             surfaceTintColor: Colors.black,
-            
             backgroundColor: Colors.black,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(

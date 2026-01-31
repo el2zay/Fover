@@ -1,5 +1,4 @@
 
-import 'dart:developer';
 import 'dart:ui';
 
 import 'package:cupertino_native_better/cupertino_native.dart';
@@ -9,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fover/pages/viewer.dart';
 import 'package:fover/src/utils/requests.dart';
+import 'package:fover/src/widgets/blurred_app_bar.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/context_menu.dart';
 
@@ -40,34 +40,8 @@ class _LibraryPageState extends State<LibraryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        flexibleSpace: ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 2, sigmaY: 0),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.6),
-                    Colors.black.withValues(alpha: 0.6),
-                    Colors.black.withValues(alpha: 0.1),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-        elevation: 0,
-        title: Text(
-          "Library",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 36,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+      appBar: BlurredAppBar(
+        title: "Library",
         actions: [
           CupertinoTheme(
             data: const CupertinoThemeData(
@@ -99,8 +73,6 @@ class _LibraryPageState extends State<LibraryPage> {
             ),
           ),
         ],
-        centerTitle: false,
-        backgroundColor: Colors.transparent,
       ),
       backgroundColor: Colors.black,
       body: FutureBuilder<List<Uint8List>>(
