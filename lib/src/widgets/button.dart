@@ -38,7 +38,7 @@ class Button extends StatelessWidget {
         ? CNButton.icon(
             icon: glassIcon,
             tint: tint,
-            config: glassConfig!,
+            config: glassConfig ?? const CNButtonConfig(),
             onPressed: onPressed,
           )
         : IconButton(
