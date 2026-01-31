@@ -42,7 +42,7 @@ Future fetchDir() async {
 // Permet d'afficher le dossier sélectionné
 Future<int> fetchPhotosDir() async {
   var directories = await client?.fetch(url: "v15/fs/ls/L0ZyZWVib3gvVGVzdA==");
-  List<dynamic> entries = directories?['result']['entries'] ?? [];
+  List<dynamic> entries = directories?['result']?['entries'] ?? [];
 
   var filesOnly = entries.where((e) => e['name'] != '.' && e['name'] != '..' && (e['mimetype'].contains('image/') || e['mimetype'].contains('video/')));
   log(filesOnly.toString());
