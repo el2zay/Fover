@@ -119,6 +119,7 @@ class AlbumsPage extends StatefulWidget {
 
 class _AlbumsPageState extends State<AlbumsPage> {
   List<Map<String, dynamic>> albums = [];
+  bool isUnfolded = true;
 
   @override
   void initState() {
@@ -131,61 +132,131 @@ class _AlbumsPageState extends State<AlbumsPage> {
     return Scaffold(
       appBar: BlurredAppBar(
         title: ("Albums"),
-        actions: [],
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "Utilities",
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    )
-                  ),
-                  Button(
-                    label: "Reorder",
-                    onPressed: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => ReorganisePage()),
-                    );
-                    setState(() {
-                      albums = _loadAlbums();
-                    });
-                  }, 
-                  )
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: albums.length,
-                itemBuilder: (context, index) => ListTile(
-                  leading: Icon(albums[index]['icon'], size: 26, color: Colors.blue[600]),
-                  title: Text(albums[index]['title'], style: TextStyle(fontSize: 18, color: Colors.blue[600])),
-                  trailing: Row(
-                    spacing: 8,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                    albums[index]['count'] >= 0 ? Text(
-                        albums[index]['count'].toString(),
-                        style: TextStyle(fontSize: 16, color: Colors.white70),
-                      ) : const Icon(CupertinoIcons.lock_fill, size: 16, color: Colors.grey),
-                      Icon(CupertinoIcons.chevron_forward, size: 20, color: Colors.white38),
-                    ],
-                  ),
-                  onTap: albums[index]['onTap'],
-                ),
-              ),
-          ),
+        actions: [
+          IconButton(
+            icon: Icon(CupertinoIcons.add), 
+            onPressed: () {
+              log("Add Album Tapped");
+            },
+          )
         ],
+      ),
+      body: SingleChildScrollView(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height - kToolbarHeight + 30,
+          child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "My Albums",
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          )
+                        ),
+                        IconButton(onPressed: () {
+                          setState(() {
+                            isUnfolded = !isUnfolded;
+                          });
+                        }, 
+                        icon: Icon(isUnfolded ? CupertinoIcons.chevron_down : CupertinoIcons.chevron_right, size: 24, color: Colors.white70)),
+                      ],
+                    ),
+                ),
+                if (isUnfolded)
+                  GridView(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 1,
+                    mainAxisExtent: 160,
+                  ),
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: List.generate(4, (index) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[900],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Spacer(),
+                            Text(
+                              albums[index]['title'],
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),),);
+                  })),
+                  // TODO afficher les albums
+
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Utilities",
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          )
+                        ),
+                        Button(
+                          label: "Reorder",
+                          onPressed: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => ReorganisePage()),
+                          );
+                          setState(() {
+                            albums = _loadAlbums();
+                          });
+                        }, 
+                        )
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      physics: NeverScrollableScrollPhysics(),
+                      itemCount: albums.length,
+                      itemBuilder: (context, index) => ListTile(
+                        leading: Icon(albums[index]['icon'], size: 26, color: Colors.blue[600]),
+                        title: Text(albums[index]['title'], style: TextStyle(fontSize: 18, color: Colors.blue[600])),
+                        trailing: Row(
+                          spacing: 8,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                          albums[index]['count'] >= 0 ? Text(
+                              albums[index]['count'].toString(),
+                              style: TextStyle(fontSize: 16, color: Colors.white70),
+                            ) : const Icon(CupertinoIcons.lock_fill, size: 16, color: Colors.grey),
+                            Icon(CupertinoIcons.chevron_forward, size: 20, color: Colors.white38),
+                          ],
+                        ),
+                        onTap: albums[index]['onTap'],
+                      ),
+                    ),
+                ),
+              ],
+            ),
+          ),
       ),
     );
   }
