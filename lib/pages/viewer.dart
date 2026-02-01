@@ -38,23 +38,18 @@ class _ViewerPageState extends State<ViewerPage> {
                 )
               : AppBar(
                   key: const ValueKey('toolbar'),
-                  elevation: 0,
                   centerTitle: true,
                   backgroundColor: Colors.transparent,
                   leading: Row(
                     children: [
-                      // const SizedBox(width: 10),
-                      Transform.scale(
-                          scale: 1.2,
-                          child: Button.iconOnly(
-                            glassConfig: const CNButtonConfig(),
-                            padding: const EdgeInsets.all(8),
-                            icon: Icon(Icons.arrow_back_ios, size: 18),
-                            glassIcon: CNSymbol('chevron.left', size: 18),
-                            onPressed: () {
-                            Navigator.pop(context);
-                          },
-                        ),
+                      Button.iconOnly(
+                        glassConfig: const CNButtonConfig(),
+                        padding: const EdgeInsets.all(8),
+                        icon: Icon(Icons.arrow_back_ios, size: 18),
+                        glassIcon: CNSymbol('chevron.left', size: 18),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
                       ),
                     ],
                   ),
