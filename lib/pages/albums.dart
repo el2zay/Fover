@@ -32,6 +32,7 @@ final List<Map<String, dynamic>> _defaultAlbums = [
   },
   {
     'key': 'recently_deleted',
+    'title': "Recently Deleted",
     'count': -1,
   },
 ];
