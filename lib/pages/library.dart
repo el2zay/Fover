@@ -1,11 +1,9 @@
-
-import 'dart:ui';
-
 import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fover/main.dart';
 import 'package:fover/pages/viewer.dart';
 import 'package:fover/src/utils/requests.dart';
 import 'package:fover/src/widgets/blurred_app_bar.dart';
@@ -21,6 +19,9 @@ class LibraryPage extends StatefulWidget {
 
 class _LibraryPageState extends State<LibraryPage> {
   late final Future<List<Uint8List>> _imagesFuture;
+  bool selectedMode = false;
+  List<int> selectedImages = [];
+
   @override
   void initState() {
     super.initState();
@@ -29,10 +30,13 @@ class _LibraryPageState extends State<LibraryPage> {
 
   Future<List<Uint8List>> _loadImages() async {
     return await Future.wait(
-      List.generate(await fetchPhotosDir(), (_) async {
-        final bytes = await fetchImageBytes();
-        return bytes!;
-      })
+      List.generate(
+        await fetchPhotosDir(),
+        (_) async {
+          final bytes = await fetchImageBytes();
+          return bytes!;
+        },
+      ),
     );
   }
 
@@ -48,7 +52,7 @@ class _LibraryPageState extends State<LibraryPage> {
               brightness: Brightness.dark,
             ),
             child: Button.iconOnly(
-              icon: Icon(CupertinoIcons.settings, color: Colors.white),
+              icon: const Icon(CupertinoIcons.settings, color: Colors.white),
               glassIcon: CNSymbol('settings'),
               tint: Colors.white.withAlpha(10),
               glassConfig: const CNButtonConfig(
@@ -63,13 +67,19 @@ class _LibraryPageState extends State<LibraryPage> {
               brightness: Brightness.dark,
             ),
             child: Button(
-              label: "Select",
+              label: selectedMode ? "Cancel" : "Select",
               tint: Colors.white.withAlpha(10),
               glassConfig: const CNButtonConfig(
                 style: CNButtonStyle.prominentGlass,
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               ),
-              onPressed: () {},
+              onPressed: () {
+                setState(() {
+                  selectedMode = !selectedMode;
+                  selectedImages.clear();
+                  showTabBar.value = false;
+                });
+              },
             ),
           ),
         ],
@@ -82,6 +92,7 @@ class _LibraryPageState extends State<LibraryPage> {
             // TODO remplacer par une animation de chargement
             return const Center(child: CircularProgressIndicator());
           }
+
           final images = snapshot.data!;
 
           return Padding(
@@ -95,18 +106,22 @@ class _LibraryPageState extends State<LibraryPage> {
               itemCount: images.length,
               itemBuilder: (context, index) {
                 final bytes = images[index];
+
                 return Builder(
                   builder: (itemContext) => SizedBox(
                     width: MediaQuery.of(context).size.width / 3 - 2,
                     height: MediaQuery.of(context).size.width / 3 - 2,
                     child: GestureDetector(
                       onLongPress: () {
-                        final double screenWidth = MediaQuery.of(context).size.width;
-                        final RenderBox box = itemContext.findRenderObject() as RenderBox;
-                        final Offset position = box.localToGlobal(Offset.zero);
+                        final screenWidth = MediaQuery.of(context).size.width;
+                        final box =
+                            itemContext.findRenderObject() as RenderBox;
+                        final position = box.localToGlobal(Offset.zero);
 
-                        final double targetX = position.dx + (box.size.width / 2) - 115;
-                        final double clampedX = targetX.clamp(15, screenWidth - 230 - 10);
+                        final targetX =
+                            position.dx + (box.size.width / 2) - 115;
+                        final clampedX =
+                            targetX.clamp(15.0, screenWidth - 230 - 10);
 
                         HapticFeedback.mediumImpact();
 
@@ -115,7 +130,8 @@ class _LibraryPageState extends State<LibraryPage> {
                           // barrierColor: Colors.black26,
                           barrierDismissible: true,
                           barrierLabel: '',
-                          pageBuilder: (context, animation, secondaryAnimation) {
+                          pageBuilder:
+                              (context, animation, secondaryAnimation) {
                             return Stack(
                               children: [
                                 Positioned(
@@ -134,31 +150,54 @@ class _LibraryPageState extends State<LibraryPage> {
                         );
                       },
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ViewerPage(
-                              image: Image.memory(bytes),
+                        if (selectedMode) {
+                          setState(() {
+                            if (selectedImages.contains(index)) {
+                              selectedImages.remove(index);
+                            } else {
+                              selectedImages.add(index);
+                            }
+                          });
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ViewerPage(
+                                image: Image.memory(bytes),
+                              ),
                             ),
-                          ),
-                        );
+                          );
+                        }
                       },
-                      child: Image.memory(bytes, fit: BoxFit.cover),
+                      child: Stack(
+                        children: [
+                          Image.memory(bytes, fit: BoxFit.cover, width: double.infinity, height: double.infinity, opacity: selectedMode && selectedImages.contains(index) ? const AlwaysStoppedAnimation(0.8) : const AlwaysStoppedAnimation(1.0),),
+                          if (selectedMode && selectedImages.contains(index))
+                            Align(
+                              alignment: Alignment.bottomRight,
+                              child: Container(
+                                margin: const EdgeInsets.all(5),
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                                child:  Icon(
+                                  CupertinoIcons.checkmark_circle_fill,
+                                  color: CupertinoColors.systemBlue,
+                                  size: 22,
+                                ),
+                              ),
+                          )
+                        ],
+                      ),
                     ),
                   ),
                 );
               },
             ),
-                );
-              },
-            ),
           );
-          //}
-        }
-      // )
-    // );
-  // }
+        },
+      ),
+    );
+  }
 }
-
-
-

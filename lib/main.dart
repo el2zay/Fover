@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/pages/albums.dart';
+import 'package:fover/pages/camera.dart';
 import 'package:fover/pages/first.dart';
 import 'package:fover/pages/library.dart';
 import 'package:freebox/freebox.dart';
@@ -14,8 +15,7 @@ import 'dart:developer';
 
 FreeboxClient? client;
 bool is26OrNewer = false;
-bool showTabBar = true;
-
+final ValueNotifier<bool> showTabBar = ValueNotifier(true);
 
   void main() async {
     await GetStorage.init();
@@ -47,7 +47,7 @@ class _MainAppState extends State<MainApp> {
   @override
   void initState() {
     super.initState();
-    if (GetStorage().read("appToken") != null && showTabBar) { 
+    if (GetStorage().read("appToken") != null && showTabBar.value) { 
       final versionString = Platform.operatingSystemVersion;
       final match = RegExp(r'Version (\d+)\.').firstMatch(versionString);
       is26OrNewer = (int.tryParse(match?.group(1) ?? '') ?? 0) >= 26;
@@ -81,7 +81,7 @@ class _MainAppState extends State<MainApp> {
           children: const [
             LibraryPage(),
             AlbumsPage(),
-            Placeholder(),
+            CameraPage(),
             Placeholder(),
           ],
         ),
