@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
@@ -91,10 +93,22 @@ class _LibraryPageState extends State<LibraryPage> {
           if (!snapshot.hasData) {
             // TODO remplacer par une animation de chargement
             return const Center(child: CircularProgressIndicator());
-          }
+          } 
 
           final images = snapshot.data!;
-
+          if (images.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(CupertinoIcons.photo, size: 64),
+                  SizedBox(height: 5),
+                  const Text("No medias found", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            );
+          }
+          log("Images $images");
           return Padding(
             padding: const EdgeInsets.only(bottom: 8.0),
             child: GridView.builder(
