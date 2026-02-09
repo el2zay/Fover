@@ -228,10 +228,10 @@ packages:
     dependency: "direct main"
     description:
       name: freebox
-      sha256: "1330d6669f14cff30cd67e8def679a0db849998450faec384bd5195e1d221582"
+      sha256: "761c72068f1c005262674d9b57f27f68c6fabdb1a6946ed3048bed70c84702f9"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.2"
+    version: "1.0.3"
   get:
     dependency: transitive
     description:
