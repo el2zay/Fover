@@ -1,7 +1,9 @@
 import 'dart:developer';
 
+import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fover/main.dart';
 import 'package:fover/src/widgets/blurred_app_bar.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:get_storage/get_storage.dart';
@@ -138,6 +140,13 @@ class _AlbumsPageState extends State<AlbumsPage> {
             icon: Icon(CupertinoIcons.add), 
             onPressed: () {
               log("Add Album Tapped");
+              showModalBottomSheet(
+                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
+                backgroundColor: Colors.black,
+                isScrollControlled: true,
+                context: context, builder: (context) {
+                return NewAlbumSheet();
+            });
             },
           )
         ],
@@ -166,48 +175,65 @@ class _AlbumsPageState extends State<AlbumsPage> {
                             isUnfolded = !isUnfolded;
                           });
                         }, 
-                        icon: Icon(isUnfolded ? CupertinoIcons.chevron_down : CupertinoIcons.chevron_right, size: 24, color: Colors.white70)),
+                        icon: AnimatedRotation(
+                          turns: isUnfolded ? 0.25 : 0,
+                          duration: const Duration(milliseconds: 250),
+                          child: Icon(CupertinoIcons.chevron_right, size: 24, color: Colors.white70),
+                        ),
+                      ),
                       ],
                     ),
                 ),
-                if (isUnfolded)
-                  GridView(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 1,
-                    mainAxisExtent: 160,
-                  ),
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: List.generate(4, (index) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[900],
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Spacer(),
-                            Text(
-                              albums[index]['title'],
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  transitionBuilder: (child, animation) {
+                    return SizeTransition(
+                      sizeFactor: animation,
+                      child: FadeTransition(opacity: animation, child: child),
+                    );
+                  },
+                  child: isUnfolded
+                    ? GridView(
+                      key: const ValueKey('grid'),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      childAspectRatio: 1,
+                      mainAxisExtent: 160,
+                    ),
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    children: List.generate(4, (index) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[900],
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Spacer(),
+                              Text(
+                                albums[index]['title'],
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),),);
-                  })),
-                  // TODO afficher les albums
-
+                            ],
+                          ),
+                        ),
+                      );
+                    })
+                  ) : SizedBox.shrink(key: const ValueKey('empty')),
+                ),
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.only(top: 16, bottom: 0, left: 16, right: 16),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -259,6 +285,94 @@ class _AlbumsPageState extends State<AlbumsPage> {
             ),
           ),
       ),
+    );
+  }
+}
+
+class NewAlbumSheet extends StatefulWidget {
+  const NewAlbumSheet({super.key});
+
+  @override
+  State<NewAlbumSheet> createState() => _NewAlbumSheetState();
+}
+
+class _NewAlbumSheetState extends State<NewAlbumSheet> {
+  bool enableCreate = false;
+  @override
+  Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
+    return Scaffold(
+      appBar: AppBar(
+        leadingWidth: 100,
+        leading: Button(
+          label: "Cancel",
+          backgroundColor: Colors.transparent,
+          onPressed: () => Navigator.pop(context)
+        ),
+        title: Text("New Album", style: TextStyle(fontWeight: FontWeight.w600)),
+        actions: [
+          Button(
+            label: "Create",
+            enabled: enableCreate,
+            glassConfig: CNButtonConfig(
+              style: CNButtonStyle.prominentGlass,
+            ),
+            textColor: Colors.blue,
+            tint: Colors.blue.withAlpha(230),
+            backgroundColor: Colors.transparent,
+            onPressed: () {
+              log("Create");
+            },
+          ),
+          SizedBox(width: 10),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            SizedBox(height: size.height * 0.01),
+            Center(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white10,
+                  borderRadius: BorderRadius.all(Radius.circular(20)),
+                ),
+                width: size.width * 0.5,
+                height: size.height * 0.2,
+                child: Icon(CupertinoIcons.photo_fill, size: 30, color: Colors.white24),
+              )
+            ),
+            SizedBox(height: 10),
+            Padding(
+              padding: EdgeInsetsGeometry.symmetric(horizontal: 90),
+              child: Button(
+                label: "Add photos",
+                onPressed: () {}, 
+              )
+            ),
+            SizedBox(height: 25),
+            Padding(
+              padding: EdgeInsetsGeometry.symmetric(horizontal: 20),
+              child: TextField(
+                autofocus: true,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  fillColor: Colors.white10,
+                  filled: true,
+                  hint: Text("Album name", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white38)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(25)),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                onChanged: (value) {
+                  setState(() => enableCreate = value.isNotEmpty);
+                },
+              )
+            )
+          ],
+        ),
+      )
     );
   }
 }

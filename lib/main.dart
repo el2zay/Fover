@@ -148,6 +148,9 @@ class _MainAppState extends State<MainApp> {
             ),
           ),
         ),
+        textSelectionTheme: TextSelectionThemeData(
+          cursorColor: CupertinoColors.activeBlue,
+        )
       ),
     );
   }
