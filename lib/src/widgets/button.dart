@@ -10,8 +10,10 @@ class Button extends StatelessWidget {
     this.glassIcon,
     this.tint,
     this.backgroundColor,
+    this.textColor,
     this.glassConfig = const CNButtonConfig(),
     this.padding,
+    this.enabled = true,
     required this.onPressed,
   });
 
@@ -20,8 +22,10 @@ class Button extends StatelessWidget {
   final CNSymbol? glassIcon;
   final Color? tint;
   final Color? backgroundColor;
+  final Color? textColor;
   final CNButtonConfig? glassConfig;
   final EdgeInsetsGeometry? padding;
+  final bool enabled;
   final VoidCallback onPressed;
 
   // TODO :
@@ -33,17 +37,19 @@ class Button extends StatelessWidget {
     Color? backgroundColor,
     CNButtonConfig? glassConfig,
     EdgeInsetsGeometry? padding,
+    bool enabled = true,
   }) {
     return is26OrNewer
         ? CNButton.icon(
             icon: glassIcon,
             tint: tint,
             config: glassConfig ?? const CNButtonConfig(),
-            onPressed: onPressed,
+            enabled: enabled,
+            onPressed: enabled ? onPressed : null,
           )
         : IconButton(
             icon: icon!,
-            onPressed: onPressed,
+            onPressed: enabled ? onPressed : null,
             style: ElevatedButton.styleFrom(
               alignment: Alignment.centerRight,
               padding: padding ?? const EdgeInsets.all(12),
@@ -62,18 +68,21 @@ class Button extends StatelessWidget {
             icon: glassIcon,
             tint: tint,
             config: glassConfig!,
-            onPressed: onPressed,
+            onPressed: enabled ? onPressed : null ,
+            enabled: enabled,
           )
         : ElevatedButton(
-            onPressed: onPressed,
+            onPressed: enabled ? onPressed : null,
             style: ElevatedButton.styleFrom(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              backgroundColor: Colors.white12
+              disabledBackgroundColor: backgroundColor ?? Colors.white12,
+              backgroundColor: backgroundColor ?? Colors.white12,
+              textStyle: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)
             ),
-            child: icon ?? Text(label ?? ''),
+            child: icon ?? Text(label ?? '', style: TextStyle(color: enabled ? textColor : Colors.grey[700])),
           );
   }
 }
