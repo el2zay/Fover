@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -74,7 +75,9 @@ class _MainAppState extends State<MainApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        body: GetStorage().read("appToken") == null
+        extendBody: true,
+        // TODO remmettre == null!!!!
+        body: GetStorage().read("appToken") != null
           ? const FirstPage()
           : IndexedStack(
           index: _currentIndex,
@@ -85,26 +88,43 @@ class _MainAppState extends State<MainApp> {
             Placeholder(),
           ],
         ),
-        bottomNavigationBar: 
-        (!is26OrNewer) ?
-          BottomNavigationBar(
-            fixedColor: const Color.fromARGB(255, 52, 161, 250),
-            type: BottomNavigationBarType.fixed,
-            selectedFontSize: 13,
-            unselectedFontSize: 13,
-            currentIndex: _currentIndex,
-            onTap: (value) {
-              setState(() {
-                _currentIndex = value;
-              });
-            },
-            items: [
-              BottomNavigationBarItem(icon: Icon(CupertinoIcons.photo), label: "Library"),
-              BottomNavigationBarItem(icon: Icon(CupertinoIcons.collections), label: "Albums"),
-              BottomNavigationBarItem(icon: Icon(CupertinoIcons.camera), label: "Camera"),
-              BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: "Search"),
+        bottomNavigationBar: (!is26OrNewer) ?
+         
+         Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.transparent,
+                spreadRadius: 2,
+                blurRadius: 5,
+                offset: Offset(0, 3),
+              )
             ]
-          ) : null,
+          ),
+          child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+            child: BottomNavigationBar(
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+              fixedColor: const Color.fromARGB(255, 52, 161, 250),
+              type: BottomNavigationBarType.fixed,
+              selectedFontSize: 13,
+              unselectedFontSize: 13,
+              currentIndex: _currentIndex,
+              onTap: (value) {
+                setState(() {
+                  _currentIndex = value;
+                });
+              },
+              items: [
+                BottomNavigationBarItem(icon: Icon(CupertinoIcons.photo), label: "Library"),
+                BottomNavigationBarItem(icon: Icon(CupertinoIcons.collections), label: "Albums"),
+                BottomNavigationBarItem(icon: Icon(CupertinoIcons.camera), label: "Camera"),
+                BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: "Search"),
+              ]
+            ) 
+          ) 
+        ) : null,
       ),
       theme: ThemeData(
         brightness: Brightness.dark,
