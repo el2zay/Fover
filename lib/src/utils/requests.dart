@@ -39,19 +39,28 @@ Future fetchDir() async {
   log(directories.toString());
 }
 
-// Permet d'afficher le dossier sélectionné
-Future<int> fetchPhotosDir() async {
+Future<List<dynamic>> fetchPhotosDir() async {
   var directories = await client?.fetch(url: "v15/fs/ls/L0ZyZWVib3gvVGVzdA==");
   List<dynamic> entries = directories?['result']?['entries'] ?? [];
 
-  var filesOnly = entries.where((e) => e['name'] != '.' && e['name'] != '..' && (e['mimetype'].contains('image/') || e['mimetype'].contains('video/')));
-  log(filesOnly.toString());
-  fetchImageBytes();
-  return filesOnly.length;
+  var filesOnly = entries.where((e) =>
+      e['name'] != '.' &&
+      e['name'] != '..' &&
+      e['hidden'] != true &&
+      (e['mimetype'].contains('image/') || e['mimetype'].contains('video/')));
+  return filesOnly.toList();
 }
 
-Future<Uint8List?> fetchImageBytes() async {
-  var response = await client?.fetch(url: "v15/dl/L0ZyZWVib3gvVGVzdC9pc3RvY2twaG90by0xMDY5NTM5MjEwLTYxMng2MTIuanBn", parseJson: false);
+Future<Uint8List?> fetchImageBytes(String path) async {
+  var response = await client?.fetch(url: "v15/dl/$path", parseJson: false);
+
+  if (response is Uint8List) {
+    return response;
+  }
+
+  if (response is List<int>) {
+    return Uint8List.fromList(response);
+  }
 
   if (response is List<dynamic>) {
     return Uint8List.fromList(response.cast<int>());

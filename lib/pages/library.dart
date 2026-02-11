@@ -20,6 +20,7 @@ class LibraryPage extends StatefulWidget {
 }
 
 class _LibraryPageState extends State<LibraryPage> {
+  bool showButtons = false;
   late final Future<List<Uint8List>> _imagesFuture;
   bool selectedMode = false;
   List<int> selectedImages = [];
@@ -31,15 +32,15 @@ class _LibraryPageState extends State<LibraryPage> {
   }
 
   Future<List<Uint8List>> _loadImages() async {
-    return await Future.wait(
-      List.generate(
-        await fetchPhotosDir(),
-        (_) async {
-          final bytes = await fetchImageBytes();
-          return bytes!;
-        },
-      ),
+    final entries = await fetchPhotosDir();
+    final results = await Future.wait(
+      entries.map((entry) async {
+        final path = entry['path'] as String?;
+        if (path == null) return null;
+        return await fetchImageBytes(path);
+      }),
     );
+    return results.whereType<Uint8List>().toList();
   }
 
   @override
@@ -53,7 +54,7 @@ class _LibraryPageState extends State<LibraryPage> {
             data: const CupertinoThemeData(
               brightness: Brightness.dark,
             ),
-            child: Button.iconOnly(
+            child: showButtons ? Button.iconOnly(
               icon: const Icon(CupertinoIcons.settings, color: Colors.white),
               glassIcon: CNSymbol('settings'),
               tint: Colors.white.withAlpha(10),
@@ -61,14 +62,14 @@ class _LibraryPageState extends State<LibraryPage> {
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               ),
               onPressed: () {},
-            ),
+            ) : SizedBox(),
           ),
           const SizedBox(width: 5),
           CupertinoTheme(
             data: const CupertinoThemeData(
               brightness: Brightness.dark,
             ),
-            child: Button(
+            child: showButtons ? Button(
               label: selectedMode ? "Cancel" : "Select",
               tint: Colors.white.withAlpha(10),
               glassConfig: const CNButtonConfig(
@@ -82,7 +83,7 @@ class _LibraryPageState extends State<LibraryPage> {
                   showTabBar.value = false;
                 });
               },
-            ),
+            ) : SizedBox(),
           ),
         ],
       ),
@@ -92,10 +93,16 @@ class _LibraryPageState extends State<LibraryPage> {
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             // TODO remplacer par une animation de chargement
-            return const Center(child: CircularProgressIndicator());
+             return const Center(child: CircularProgressIndicator());
           } 
-
           final images = snapshot.data!;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            setState(() {
+              showButtons = images.isNotEmpty;
+            });
+          });
+          
           if (images.isEmpty) {
             return Center(
               child: Column(
@@ -108,7 +115,6 @@ class _LibraryPageState extends State<LibraryPage> {
               ),
             );
           }
-          log("Images $images");
           return Padding(
             padding: const EdgeInsets.only(bottom: 8.0),
             child: GridView.builder(
