@@ -3,13 +3,31 @@ import 'dart:developer';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:fover/main.dart';
 import 'package:fover/src/widgets/blurred_app_bar.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:local_auth/local_auth.dart';
 
 final LocalAuthentication auth = LocalAuthentication();
+
+final List<Map<String, dynamic>> _albums = [
+  {
+    'title': "Memes",
+    'preview': "assets/illustrations/rickroll.png"
+  },
+  {
+    'title': "Memories",
+    'preview': "assets/illustrations/pandas.jpg"
+  },
+  {
+    'title': "PS App",
+    'preview': "assets/illustrations/mirage.jpg"
+  },
+  {
+    'title': "Landscapes",
+    'preview': "assets/illustrations/lebanon.jpg"
+  }
+];
 
 final List<Map<String, dynamic>> _defaultAlbums = [
   {
@@ -210,6 +228,12 @@ class _AlbumsPageState extends State<AlbumsPage> {
                         decoration: BoxDecoration(
                           color: Colors.grey[900],
                           borderRadius: BorderRadius.circular(20),
+                          image: DecorationImage(
+                            image: AssetImage(
+                              _albums[index]['preview'],
+                            ),    
+                            fit: BoxFit.cover,
+                          )
                         ),
                         child: Padding(
                           padding: const EdgeInsets.all(12.0),
@@ -218,7 +242,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
                             children: [
                               Spacer(),
                               Text(
-                                albums[index]['title'],
+                                _albums[index]['title'],
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
