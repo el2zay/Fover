@@ -219,24 +219,50 @@ class _LibraryPageState extends State<LibraryPage> {
                         } else {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                              builder: (context) => ViewerPage(
-                                images: images,
-                                index: index,
+                            PageRouteBuilder(
+                              opaque: false,
+                              transitionDuration: const Duration(milliseconds: 300),
+                              reverseTransitionDuration: const Duration(milliseconds: 300),
+                              pageBuilder: (_, __, ___) => ViewerPage(
+                                images: images, 
+                                index: index, 
                                 length: images.length,
                               ),
-                            ),
+                              transitionsBuilder: (_, animation, ___, child) {
+                                return Stack(
+                                  children: [
+                                    FadeTransition(
+                                      opacity: animation,
+                                      child: const ColoredBox(
+                                        color: Colors.black,
+                                        child: SizedBox.expand(),
+                                      ),
+                                    ),
+                                    child
+                                  ],
+                                );
+                              }
+                            )
                           );
                         }
                       },
                       child: Stack(
                         children: [
-                          Image.memory(
-                            bytes, 
-                            fit: BoxFit.cover, 
-                            width: double.infinity, 
-                            height: double.infinity, 
-                            opacity: selectedMode && selectedImages.contains(index) ? const AlwaysStoppedAnimation(0.8) : const AlwaysStoppedAnimation(1.0),
+                          Hero(
+                            tag: "image_$index",
+                            flightShuttleBuilder: (_, animation, direction, fromContext, toContext) {
+                              return Image.memory(
+                                bytes,
+                                fit: BoxFit.cover,
+                              );
+                            },
+                            child: Image.memory(
+                              bytes, 
+                              fit: BoxFit.cover, 
+                              width: double.infinity, 
+                              height: double.infinity, 
+                              opacity: selectedMode && selectedImages.contains(index) ? const AlwaysStoppedAnimation(0.8) : const AlwaysStoppedAnimation(1.0),
+                            ),
                           ),
                           if (selectedMode && selectedImages.contains(index))
                             Align(
