@@ -19,14 +19,30 @@ class ViewerPage extends StatefulWidget {
   State<ViewerPage> createState() => _ViewerPageState();
 }
 
-class _ViewerPageState extends State<ViewerPage> {
+class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMixin {
   bool focused = false;
   late int currentIndex;
+  late AnimationController _animationController;
+  Animation<double>? _animation;
+  late VoidCallback animationListener;
+  final List<double> doubleTapScales = <double>[1.0, 3.0];
 
   @override
   void initState() {
     super.initState();
     currentIndex = widget.index;
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    animationListener = () {};
+  }
+
+  @override
+  void dispose() {
+    _animation?.removeListener(animationListener);
+    _animationController.dispose();
+    super.dispose();
   }
 
   @override
@@ -169,14 +185,42 @@ class _ViewerPageState extends State<ViewerPage> {
                 child: ExtendedImageGesturePageView.builder(
                   itemBuilder: (BuildContext context, int index) {
                     Widget image = ExtendedImage.memory(
+                      onDoubleTap: (ExtendedImageGestureState state) {
+                        var pointerDownPosition = state.pointerDownPosition;
+                        double begin = state.gestureDetails?.totalScale ?? 1.0;
+                        double end;
+
+                        //remove old
+                        _animation?.removeListener(animationListener);
+
+                        //stop pre
+                        _animationController.stop();
+
+                        //reset to use
+                        _animationController.reset();
+
+                        if (begin == doubleTapScales[0]) {
+                          end = doubleTapScales[1];
+                        } else {
+                          end = doubleTapScales[0];
+                        }
+
+                        animationListener = () {
+                          state.handleDoubleTap(
+                              scale: _animation?.value ?? 1.0,
+                              doubleTapPosition: pointerDownPosition);
+                        };
+                        _animation = _animationController
+                            .drive(Tween<double>(begin: begin, end: end));
+
+                        _animation?.addListener(animationListener);
+
+                        _animationController.forward();
+                      },
                       widget.images[index],
                       fit: BoxFit.contain,
                       mode: ExtendedImageMode.gesture,
                     );
-                      image = Container(
-                        padding: EdgeInsets.all(5.0),
-                        child: image,
-                      );
                       return image;
                     },
                     itemCount: widget.length,
