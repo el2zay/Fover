@@ -11,6 +11,7 @@ import 'package:fover/src/utils/requests.dart';
 import 'package:fover/src/widgets/blurred_app_bar.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/context_menu.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});
@@ -22,6 +23,7 @@ class LibraryPage extends StatefulWidget {
 class _LibraryPageState extends State<LibraryPage> {
   bool showButtons = false;
   late final Future<List<Uint8List>> _imagesFuture;
+  late final Future<List<Uint8List>> _thumbsFuture;
   bool selectedMode = false;
   List<int> selectedImages = [];
 
@@ -29,6 +31,7 @@ class _LibraryPageState extends State<LibraryPage> {
   void initState() {
     super.initState();
     _imagesFuture = _loadImages();
+    _thumbsFuture = _imagesFuture.then(_compressImages);
   }
 
   Future<List<Uint8List>> _loadImages() async {
@@ -42,6 +45,28 @@ class _LibraryPageState extends State<LibraryPage> {
     );
     return results.whereType<Uint8List>().toList();
   }
+
+  Future<List<Uint8List>> _compressImages(List<Uint8List> list) async {
+    final results = await Future.wait(list.map((origBytes) async {
+      final origSize = origBytes.lengthInBytes / 1024;
+      // log("Taille originale ${origSize.toStringAsFixed(1)} KB");
+
+      final compressed = await FlutterImageCompress.compressWithList(
+        origBytes,
+        minWidth: 300,
+        minHeight: 300, 
+        quality: 10,
+        format: CompressFormat.webp
+      );
+
+      final compSize = compressed.lengthInBytes / 1024;
+      log("Taille compressée ${compSize.toStringAsFixed(1)} KB - Réduit de ${((1 - compSize/origSize)*10).toStringAsFixed(1)}% ");
+      return compressed;
+    }));
+
+    return results;
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -89,11 +114,14 @@ class _LibraryPageState extends State<LibraryPage> {
       ),
       backgroundColor: Colors.black,
       body: FutureBuilder<List<Uint8List>>(
-        future: _imagesFuture,
+        future: _thumbsFuture,
         builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
           if (!snapshot.hasData) {
             // TODO remplacer par une animation de chargement
-             return const Center(child: CircularProgressIndicator());
+             return const Center(child: Text("Error loading images"));
           } 
           final images = snapshot.data!;
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -191,7 +219,13 @@ class _LibraryPageState extends State<LibraryPage> {
                       },
                       child: Stack(
                         children: [
-                          Image.memory(bytes, fit: BoxFit.cover, width: double.infinity, height: double.infinity, opacity: selectedMode && selectedImages.contains(index) ? const AlwaysStoppedAnimation(0.8) : const AlwaysStoppedAnimation(1.0),),
+                          Image.memory(
+                            bytes, 
+                            fit: BoxFit.cover, 
+                            width: double.infinity, 
+                            height: double.infinity, 
+                            opacity: selectedMode && selectedImages.contains(index) ? const AlwaysStoppedAnimation(0.8) : const AlwaysStoppedAnimation(1.0),
+                          ),
                           if (selectedMode && selectedImages.contains(index))
                             Align(
                               alignment: Alignment.bottomRight,
