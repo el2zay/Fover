@@ -1,17 +1,19 @@
 import 'package:cupertino_native_better/cupertino_native_better.dart';
+import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fover/main.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:photo_view/photo_view.dart';
 
 
 class ViewerPage extends StatefulWidget {
-  const ViewerPage({super.key, required this.image});
+  const ViewerPage({super.key, required this.images, required this.index, required this.length});
 
-  final Image image;
+  final List<Uint8List> images;
+  final int index;
+  final int length;
 
   @override
   State<ViewerPage> createState() => _ViewerPageState();
@@ -19,6 +21,13 @@ class ViewerPage extends StatefulWidget {
 
 class _ViewerPageState extends State<ViewerPage> {
   bool focused = false;
+  late int currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    currentIndex = widget.index;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,11 +166,30 @@ class _ViewerPageState extends State<ViewerPage> {
             Expanded(
               flex: 1,
               child: Center(
-                child: PhotoView(imageProvider: widget.image.image, 
-                maxScale: PhotoViewComputedScale.covered * 5,
-                minScale: PhotoViewComputedScale.contained,
-                enableRotation: false
-                )
+                child: ExtendedImageGesturePageView.builder(
+                  itemBuilder: (BuildContext context, int index) {
+                    Widget image = ExtendedImage.memory(
+                      widget.images[index],
+                      fit: BoxFit.contain,
+                      mode: ExtendedImageMode.gesture,
+                    );
+                      image = Container(
+                        padding: EdgeInsets.all(5.0),
+                        child: image,
+                      );
+                      return image;
+                    },
+                    itemCount: widget.length,
+                    onPageChanged: (int index) {
+                      setState(() {
+                      currentIndex = index;
+                      });
+                    },
+                    controller: ExtendedPageController(
+                      initialPage: currentIndex,
+                    ),
+                  scrollDirection: Axis.horizontal,
+                ),
               ),
             ),
             AnimatedSwitcher(

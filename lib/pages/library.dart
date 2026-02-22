@@ -211,7 +211,9 @@ class _LibraryPageState extends State<LibraryPage> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => ViewerPage(
-                                image: Image.memory(bytes),
+                                images: images,
+                                index: index,
+                                length: images.length,
                               ),
                             ),
                           );
