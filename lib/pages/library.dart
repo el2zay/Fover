@@ -20,18 +20,26 @@ class LibraryPage extends StatefulWidget {
   State<LibraryPage> createState() => _LibraryPageState();
 }
 
+class _GalleryData {
+  final List<Uint8List> images;
+  final List<Uint8List> thumbs;
+
+  const _GalleryData({required this.images, required this.thumbs});
+}
+
 class _LibraryPageState extends State<LibraryPage> {
   bool showButtons = false;
-  late final Future<List<Uint8List>> _imagesFuture;
-  late final Future<List<Uint8List>> _thumbsFuture;
+  late final Future<_GalleryData> _galleryFuture;
   bool selectedMode = false;
   List<int> selectedImages = [];
 
   @override
   void initState() {
     super.initState();
-    _imagesFuture = _loadImages();
-    _thumbsFuture = _imagesFuture.then(_compressImages);
+    _galleryFuture = _loadImages().then((images) async {
+      final thumbs = await _compressImages(images);
+      return _GalleryData(images: images, thumbs: thumbs);
+    });
   }
 
   Future<List<Uint8List>> _loadImages() async {
@@ -113,8 +121,8 @@ class _LibraryPageState extends State<LibraryPage> {
         ],
       ),
       backgroundColor: Colors.black,
-      body: FutureBuilder<List<Uint8List>>(
-        future: _thumbsFuture,
+      body: FutureBuilder<_GalleryData>(
+        future: _galleryFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -122,8 +130,10 @@ class _LibraryPageState extends State<LibraryPage> {
           if (!snapshot.hasData) {
             // TODO remplacer par une animation de chargement
              return const Center(child: Text("Error loading images"));
-          } 
-          final images = snapshot.data!;
+          }
+          final data = snapshot.data!;
+          final images = data.images;
+          final thumbs = data.thumbs;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             setState(() {
@@ -151,9 +161,9 @@ class _LibraryPageState extends State<LibraryPage> {
                 crossAxisSpacing: 2,
                 mainAxisSpacing: 2,
               ),
-              itemCount: images.length,
+              itemCount: thumbs.length,
               itemBuilder: (context, index) {
-                final bytes = images[index];
+                final bytes = thumbs[index];
 
                 return Builder(
                   builder: (itemContext) => SizedBox(
