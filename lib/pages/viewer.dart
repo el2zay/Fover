@@ -122,7 +122,11 @@ class _ViewerPageState extends State<ViewerPage>
                   itemBuilder: (context, index) {
                     return GestureDetector(
                       onTap: _toggleFocus,
-                      child: ExtendedImage.memory(
+                      child: 
+                      
+                      ExtendedImage.memory(
+                      
+                      ExtendedImage.memory(
                         widget.images[index],
                         fit: BoxFit.contain,
                         mode: ExtendedImageMode.gesture,
