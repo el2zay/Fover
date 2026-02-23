@@ -11,6 +11,7 @@ import 'package:fover/pages/library.dart';
 import 'package:freebox/freebox.dart';
 import 'package:fover/src/utils/requests.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:media_kit/media_kit.dart'; 
 import 'dart:developer';
 
 FreeboxClient? client;
@@ -19,6 +20,7 @@ final ValueNotifier<bool> showTabBar = ValueNotifier(false);
 
   void main() async {
     WidgetsFlutterBinding.ensureInitialized();
+    MediaKit.ensureInitialized();
     await GetStorage.init();
     if (GetStorage().read("appToken") != null) {
       client = FreeboxClient(
@@ -50,21 +52,21 @@ class _MainAppState extends State<MainApp> {
     super.initState();
     log(showTabBar.value.toString());
     if (GetStorage().read("appToken") != null && showTabBar.value) {
-      CNTabBarNative.enable(
-        isDark: true,
-        selectedIndex: _currentIndex,
-        tabs: [
-          CNTab(title: 'Library', sfSymbol: CNSymbol('photo.fill.on.rectangle.fill')),
-          CNTab(title: 'Albums', sfSymbol: CNSymbol('rectangle.stack.fill')),
-          CNTab(title: 'Camera', sfSymbol: CNSymbol('camera.fill')),
-          CNTab(title: 'Search', sfSymbol: CNSymbol('magnifyingglass'), isSearchTab: true),
-        ],
-        onTabSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-      );
+      // CNTabBarNative.enable(
+      //   isDark: true,
+      //   selectedIndex: _currentIndex,
+      //   tabs: [
+      //     CNTab(title: 'Library', sfSymbol: CNSymbol('photo.fill.on.rectangle.fill')),
+      //     CNTab(title: 'Albums', sfSymbol: CNSymbol('rectangle.stack.fill')),
+      //     CNTab(title: 'Camera', sfSymbol: CNSymbol('camera.fill')),
+      //     CNTab(title: 'Search', sfSymbol: CNSymbol('magnifyingglass'), isSearchTab: true),
+      //   ],
+      //   onTabSelected: (index) {
+      //     setState(() {
+      //       _currentIndex = index;
+      //     });
+      //   },
+      // );
     }
   }
 
