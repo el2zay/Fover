@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
@@ -15,12 +14,12 @@ import 'package:get_storage/get_storage.dart';
 import 'dart:developer';
 
 FreeboxClient? client;
-bool is26OrNewer = false;
-final ValueNotifier<bool> showTabBar = ValueNotifier(true);
+bool is26OrNewer =  PlatformVersion.supportsLiquidGlass;
+final ValueNotifier<bool> showTabBar = ValueNotifier(false);
 
   void main() async {
+    WidgetsFlutterBinding.ensureInitialized();
     await GetStorage.init();
-    log(GetStorage().read("appToken").toString());
     if (GetStorage().read("appToken") != null) {
       client = FreeboxClient(
         appToken: GetStorage().read("appToken"),
@@ -30,6 +29,7 @@ final ValueNotifier<bool> showTabBar = ValueNotifier(true);
       );
 
       await client?.authentificate();
+      showTabBar.value = true;
     }
     fetchPhotosDir();
     runApp(Phoenix(child:const MainApp()));
@@ -48,10 +48,8 @@ class _MainAppState extends State<MainApp> {
   @override
   void initState() {
     super.initState();
-    if (GetStorage().read("appToken") != null && showTabBar.value) { 
-      final versionString = Platform.operatingSystemVersion;
-      final match = RegExp(r'Version (\d+)\.').firstMatch(versionString);
-      is26OrNewer = (int.tryParse(match?.group(1) ?? '') ?? 0) >= 26;
+    log(showTabBar.value.toString());
+    if (GetStorage().read("appToken") != null && showTabBar.value) {
       CNTabBarNative.enable(
         isDark: true,
         selectedIndex: _currentIndex,
@@ -76,8 +74,7 @@ class _MainAppState extends State<MainApp> {
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         extendBody: true,
-        // TODO remmettre == null!!!!
-        body: GetStorage().read("appToken") != null
+        body: GetStorage().read("appToken") == null
           ? const FirstPage()
           : IndexedStack(
           index: _currentIndex,
@@ -88,8 +85,7 @@ class _MainAppState extends State<MainApp> {
             Placeholder(),
           ],
         ),
-        bottomNavigationBar: (!is26OrNewer) ?
-         
+        bottomNavigationBar: (!is26OrNewer && showTabBar.value) ?
          Container(
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
@@ -153,11 +149,5 @@ class _MainAppState extends State<MainApp> {
         )
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    CNTabBarNative.disable();
-    super.dispose();
   }
 }
