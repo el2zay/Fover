@@ -177,38 +177,43 @@ class _ViewerPageState extends State<ViewerPage>
           ),
         ],
       ),
-      title: LiquidGlassContainer(
-        config: LiquidGlassConfig(
-          effect: CNGlassEffect.regular,
-          shape: CNGlassEffectShape.rect,
-          cornerRadius: 20,
-          interactive: true,
-          tint: Colors.white.withAlpha(4),
-        ),
-        child: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 30, vertical: 6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "8 August 2012",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          LiquidGlassContainer(
+            config: LiquidGlassConfig(
+              effect: CNGlassEffect.regular,
+              shape: CNGlassEffectShape.rect,
+              cornerRadius: 20,
+              interactive: true,
+              tint: Colors.white.withAlpha(4),
+            ),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 30, vertical: 6),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "8 August 2012",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    "18:32",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                "18:32",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
       actionsPadding: const EdgeInsets.only(right: 15),
       actions: [
