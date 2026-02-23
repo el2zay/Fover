@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
+import 'package:fover/src/utils/video_thumbnail.dart';
 import 'package:freebox/freebox.dart';
 import 'package:fover/main.dart';
 import 'package:get_storage/get_storage.dart';
@@ -39,6 +40,7 @@ Future fetchDir() async {
   log(directories.toString());
 }
 
+
 Future<List<dynamic>> fetchPhotosDir() async {
   var directories = await client?.fetch(url: "v15/fs/ls/L0ZyZWVib3gvVGVzdA==");
   List<dynamic> entries = directories?['result']?['entries'] ?? [];
@@ -51,40 +53,19 @@ Future<List<dynamic>> fetchPhotosDir() async {
   return filesOnly.toList();
 }
 
-Future<Uint8List?> fetchImageBytes(String path) async {
-  var response = await client?.fetch(url: "v15/dl/$path", parseJson: false);
+Future<Uint8List?> fetchImageBytes(String path, String mimetype) async {
+  var response = await client?.fetch(
+    url: "v15/dl/$path",
+    parseJson: false,
+  );
 
   if (response is Uint8List) {
+    if (mimetype.startsWith('video/')) {
+      return await VideoThumbnailService.getFirstFrame(response);
+    }
     return response;
-  }
-
-  if (response is List<int>) {
-    return Uint8List.fromList(response);
-  }
-
-  if (response is List<dynamic>) {
-    return Uint8List.fromList(response.cast<int>());
   }
 
   return null;
 }
 
-// Future fetchThumbnails() async {
-//   CachedNetworkImage(
-//     imageUrl: await client?.fetch(url: "v15/dl/L0ZyZWVib3gvVGVzdC9pc3RvY2twaG90by0xMDY5NTM5MjEwLTYxMng2MTIuanBn", parseJson: false),
-//     placeholder: (context, url) => CircularProgressIndicator(color: Colors.red,),
-//     errorWidget: (context, url, error) => Icon(Icons.error, color: Colors.red),
-//   // Optionnel : redimensionne en mémoire pour économiser la RAM
-//   // memCacheWidth: 200, 
-//   );
-// }
-
-Future<Image> fetchThumbnails() async {
-  var response = await client?.fetch(url: "v15/dl/L0ZyZWVib3gvVGVzdC9pc3RvY2twaG90by0xMDY5NTM5MjEwLTYxMng2MTIuanBn", parseJson: false);
-  if (response is List<dynamic>) {
-    Uint8List bytes = Uint8List.fromList(response.cast<int>());
-    return Image.memory(bytes);
-  }
-  throw Exception('Failed to load image');
-
-}
