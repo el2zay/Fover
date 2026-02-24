@@ -40,9 +40,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   final GlobalKey<ExtendedImageSlidePageState> _slideKey = GlobalKey<ExtendedImageSlidePageState>();
 
   late final player = Player();
-  late final controller = VideoController(
-    player, 
-  );
+  late final controller = VideoController(player);
   final box = GetStorage();
 
   @override
@@ -410,91 +408,110 @@ class CupertinoVideoControls extends StatelessWidget {
   Widget build(BuildContext context) {
     final player = controller.player;
 
-    return !focused ?
-     SafeArea(
-      top: false,
-      child: Padding(
-        padding: EdgeInsetsGeometry.symmetric(horizontal: 10),
-        child: Transform.scale(
-          scaleY: 1.1,
-            child: LiquidGlassContainer(
-            config: LiquidGlassConfig(
-              shape: CNGlassEffectShape.capsule,
-              tint: Colors.black.withAlpha(70),
-            ),
-            child: Row(
-              children: [
-                StreamBuilder<bool>(
-                  stream: player.stream.playing,
-                  initialData: player.state.playing,
-                  builder: (context, snapshot) {
-                    final playing = snapshot.data ?? false;
-                    return CupertinoButton(
-                      padding: EdgeInsets.only(left:15),
-                      onPressed: () => playing ? player.pause() : player.play(),
-                      child: Icon(
-                        playing
-                            ? CupertinoIcons.pause_fill
-                            : CupertinoIcons.play_fill,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    );
-                  },
+    return AnimatedSwitcher(
+      duration: Duration(milliseconds: 200),
+      child: !focused ?
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsetsGeometry.symmetric(horizontal: 10),
+            child: Transform.scale(
+              scaleY: 1.15,
+                child: LiquidGlassContainer(
+                config: LiquidGlassConfig(
+                  shape: CNGlassEffectShape.capsule,
+                  tint: Colors.black.withAlpha(70),
                 ),
-                Expanded(
-                  child: StreamBuilder<Duration>(
-                    stream: player.stream.position,
-                    initialData: player.state.position,
-                    builder: (context, posSnap) {
-                      final position = posSnap.data ?? Duration.zero;
-                      return StreamBuilder<Duration>(
-                        stream: player.stream.duration,
-                        initialData: player.state.duration,
-                        builder: (context, durSnap) {
-                          final duration = durSnap.data ?? Duration.zero;
-                          final double max = duration.inMilliseconds
-                              .toDouble()
-                              .clamp(0, double.infinity);
-                          final value = position.inMilliseconds
-                              .clamp(0, duration.inMilliseconds)
-                              .toDouble();
+                child: Row(
+                  children: [
+                    StreamBuilder<bool>(
+                      stream: player.stream.playing,
+                      initialData: player.state.playing,
+                      builder: (context, snapshot) {
+                        final playing = snapshot.data ?? false;
+                        return CupertinoButton(
+                          padding: EdgeInsets.only(left: 15),
+                          onPressed: () => playing ? player.pause() : player.play(),
+                          child: Icon(
+                            playing
+                                ? CupertinoIcons.pause_fill
+                                : CupertinoIcons.play_fill,
+                            color: Colors.white,
+                            size: 26,
+                          ),
+                        );
+                      },
+                    ),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.7,
+                      child: StreamBuilder<Duration>(
+                        stream: player.stream.position,
+                        initialData: player.state.position,
+                        builder: (context, posSnap) {
+                          final position = posSnap.data ?? Duration.zero;
+                          return StreamBuilder<Duration>(
+                            stream: player.stream.duration,
+                            initialData: player.state.duration,
+                            builder: (context, durSnap) {
+                              final duration = durSnap.data ?? Duration.zero;
+                              final double max = duration.inMilliseconds
+                                  .toDouble()
+                                  .clamp(0, double.infinity);
+                              final value = position.inMilliseconds
+                                  .clamp(0, duration.inMilliseconds)
+                                  .toDouble();
 
-                          return Transform.scale(
-                            scaleY: 1.3,
-                            child: SliderTheme(
-                              data: SliderTheme.of(context).copyWith(
-                                thumbShape: SliderComponentShape.noThumb,
-                                overlayShape: SliderComponentShape.noOverlay,
-                                padding: EdgeInsets.only(left: 15, right: 30)
-                              ),
-                              child: Slider(
-                                min: 0,
-                                max: max == 0 ? 1 : max,
-                                value: max == 0 ? 0 : value,
-                                activeColor: Colors.white,
-                                inactiveColor: Colors.grey.withAlpha(150),
-                                thumbColor: Colors.transparent,
-                                overlayColor:
-                                    WidgetStateProperty.all(Colors.transparent),
-                                onChanged: (v) {
-                                  if (duration == Duration.zero) return;
-                                  player.seek(Duration(milliseconds: v.toInt()));
-                                },
-                              ),
-                            ),
+                              return Transform.scale(
+                                scaleY: 1.3,
+                                child: SliderTheme(
+                                  data: SliderTheme.of(context).copyWith(
+                                    thumbShape: SliderComponentShape.noThumb,
+                                    overlayShape: SliderComponentShape.noOverlay,
+                                    padding: EdgeInsets.only(left: 15, right: 10)
+                                  ),
+                                  child: Slider(
+                                    min: 0,
+                                    max: max == 0 ? 1 : max,
+                                    value: max == 0 ? 0 : value,
+                                    activeColor: Colors.white,
+                                    inactiveColor: Colors.grey.withAlpha(100),
+                                    thumbColor: Colors.transparent,
+                                    overlayColor:
+                                        WidgetStateProperty.all(Colors.transparent),
+                                    onChanged: (v) {
+                                      if (duration == Duration.zero) return;
+                                      player.seek(Duration(milliseconds: v.toInt()));
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
                           );
                         },
-                      );
-                    },
-                  ),
+                      ),
+                    ),
+                    StreamBuilder<Duration>(
+                      stream: player.stream.position,
+                      initialData: player.state.position,
+                      builder: (context, posSnap) {
+                        final dur = posSnap.data ?? Duration.zero;
+                        return Text(
+                          _formatDuration(dur), 
+                          style: TextStyle(
+                          color: Colors.white, 
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600
+                        ));
+                      }
+                    )
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
-    ) : SizedBox();
+        ) 
+      : SizedBox()
+    );
   }
 
   String _formatDuration(Duration d) {
