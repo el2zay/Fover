@@ -23,8 +23,9 @@ class LibraryPage extends StatefulWidget {
 class _GalleryData {
   final List<Uint8List> images;
   final List<Uint8List> thumbs;
+  final List<String> mimetypes;
 
-  const _GalleryData({required this.images, required this.thumbs});
+  const _GalleryData({required this.images, required this.thumbs, required this.mimetypes});
 }
 
 class _LibraryPageState extends State<LibraryPage> {
@@ -37,21 +38,21 @@ class _LibraryPageState extends State<LibraryPage> {
   void initState() {
     super.initState();
     _galleryFuture = _loadImages().then((images) async {
-      final thumbs = await _compressImages(images);
-      return _GalleryData(images: images, thumbs: thumbs);
+      final thumbs = await _compressImages(images.keys.toList());
+      return _GalleryData(images: images.keys.toList(), thumbs: thumbs, mimetypes: images.values.toList());
     });
   }
 
-  Future<List<Uint8List>> _loadImages() async {
+  Future<Map<Uint8List, String>> _loadImages() async {
     final entries = await fetchPhotosDir();
+
     final results = await Future.wait(
-      entries.map((entry) async {
-        final path = entry['path'] as String?;
-        if (path == null) return null;
-        return await fetchImageBytes(path);
-      }),
+      entries.map((entry) => fetchImageBytes(entry['path'], entry['mimetype'])),
     );
-    return results.whereType<Uint8List>().toList();
+
+    return Map.fromEntries(
+      results.asMap().entries.where((e) => e.value != null).map((e) => MapEntry(e.value as Uint8List, entries[e.key]['mimetype'] as String)),
+    );
   }
 
   Future<List<Uint8List>> _compressImages(List<Uint8List> list) async {
@@ -128,11 +129,11 @@ class _LibraryPageState extends State<LibraryPage> {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData) {
-            // TODO remplacer par une animation de chargement
              return const Center(child: Text("Error loading images"));
           }
           final data = snapshot.data!;
           final images = data.images;
+          final mimetypes = data.mimetypes;
           final thumbs = data.thumbs;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
@@ -225,6 +226,7 @@ class _LibraryPageState extends State<LibraryPage> {
                               reverseTransitionDuration: const Duration(milliseconds: 300),
                               pageBuilder: (_, __, ___) => ViewerPage(
                                 images: images, 
+                                mimetype: mimetypes,
                                 index: index, 
                                 length: images.length,
                               ),
