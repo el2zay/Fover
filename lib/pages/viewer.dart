@@ -18,11 +18,13 @@ class ViewerPage extends StatefulWidget {
   const ViewerPage({
     super.key,
     required this.images,
+    required this.mimetype,
     required this.index,
     required this.length,
   });
 
   final List<Uint8List> images;
+  final List<String> mimetype;
   final int index;
   final int length;
 
@@ -42,9 +44,9 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   late final player = Player();
   late final controller = VideoController(player);
   final box = GetStorage();
-
   @override
   void initState() {
+    // TODO a changer par le vrai path
     String encodedPath = "L0ZyZWVib3gvVGVzdC84RTZEMjI5Qi1FNjcyLTRERkUtOTg5QS1BRjRCNUExNDc1NTkubW92";
     super.initState();
     currentIndex = widget.index;
@@ -142,38 +144,39 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   itemBuilder: (context, index) {
                     return GestureDetector(
                       onTap: _toggleFocus,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Video(
-                            controller: controller,
-                            controls: (state) => const SizedBox.shrink(),
-                          ),
-                          Positioned(
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            child: CupertinoVideoControls(
+                      child: widget.mimetype[index].startsWith("video/") 
+                        ? Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Video(
                               controller: controller,
+                              controls: (state) => const SizedBox.shrink(),
                             ),
-                          ),
-                        ],
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              child: CupertinoVideoControls(
+                                controller: controller,
+                              ),
+                            ),
+                          ],
+                        ) : 
+                      ExtendedImage.memory(
+                        widget.images[index],
+                        fit: BoxFit.contain,
+                        mode: ExtendedImageMode.gesture,
+                        enableSlideOutPage: true,
+                        onDoubleTap: _handleDoubleTap,
+                        heroBuilderForSlidingPage: (Widget result) {
+                          return Hero(
+                            tag: 'image_$index',
+                            child: result,
+                            flightShuttleBuilder:
+                                (_, __, ___, ____, _____) => result,
+                          );
+                        },
                       ),
-                      // ExtendedImage.memory(
-                      //   widget.images[index],
-                      //   fit: BoxFit.contain,
-                      //   mode: ExtendedImageMode.gesture,
-                      //   enableSlideOutPage: true,
-                      //   onDoubleTap: _handleDoubleTap,
-                      //   heroBuilderForSlidingPage: (Widget result) {
-                      //     return Hero(
-                      //       tag: 'image_$index',
-                      //       child: result,
-                      //       flightShuttleBuilder:
-                      //           (_, __, ___, ____, _____) => result,
-                      //     );
-                      //   },
-                      // ),
                     );
                   },
                 ),
