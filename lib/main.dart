@@ -17,6 +17,7 @@ import 'dart:developer';
 FreeboxClient? client;
 bool is26OrNewer =  PlatformVersion.supportsLiquidGlass;
 final ValueNotifier<bool> showTabBar = ValueNotifier(false);
+late String model;
 
   void main() async {
     WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +34,8 @@ final ValueNotifier<bool> showTabBar = ValueNotifier(false);
       await client?.authentificate();
       showTabBar.value = true;
     }
+
+    model = await getFreeboxModel();
     fetchPhotosDir();
     runApp(Phoenix(child:const MainApp()));
   }

@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/src/utils/video_thumbnail.dart';
 import 'package:freebox/freebox.dart';
@@ -31,6 +30,18 @@ Future signUp(context) async {
   }
 
   return register;
+}
+
+Future<String> getFreeboxModel() async {
+  var info = await client?.fetch(url: "v15/system");
+  String deviceName = info['result']?['model_info']?['name'] ?? ""; 
+
+  if (deviceName.contains("fbxgw9")) return "Ultra";
+  if (deviceName.contains("fbxgw8")) return "Pop";
+  if (deviceName.contains("fbxgw7")) return "Delta";
+  if (deviceName.contains("fbxgw6")) return "Révolution";
+  if (deviceName.contains("fbxgw")) return "Mini 4K";
+  return "Unknown";
 }
 
 // Permet d'afficher tous les dossiers
