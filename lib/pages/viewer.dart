@@ -1,6 +1,3 @@
-import 'dart:developer';
-
-import 'package:camerawesome/pigeon.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
@@ -19,12 +16,14 @@ class ViewerPage extends StatefulWidget {
     super.key,
     required this.images,
     required this.mimetype,
+    required this.encodedPaths,
     required this.index,
     required this.length,
   });
 
   final List<Uint8List> images;
   final List<String> mimetype;
+  final List<String> encodedPaths;
   final int index;
   final int length;
 
@@ -46,8 +45,6 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   final box = GetStorage();
   @override
   void initState() {
-    // TODO a changer par le vrai path
-    String encodedPath = "L0ZyZWVib3gvVGVzdC84RTZEMjI5Qi1FNjcyLTRERkUtOTg5QS1BRjRCNUExNDc1NTkubW92";
     super.initState();
     currentIndex = widget.index;
     _animationController = AnimationController(
@@ -55,15 +52,12 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
       duration: const Duration(milliseconds: 200),
     );
     animationListener = () {};
-    player.open(
-      Media(
-        "https://${box.read('apiDomain')}:${box.read('httpsPort')}/api/v15/dl/$encodedPath",
-        httpHeaders: {
-          "X-Fbx-App-Auth": client!.sessionToken!,
-        },
-      ),
-      play: false
-    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (widget.mimetype[currentIndex].startsWith('video/')) {
+      _loadVideo(currentIndex);
+    }
+  });
   }
 
   @override
@@ -72,6 +66,19 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     _animationController.dispose();
     player.dispose();
     super.dispose();
+  }
+
+  void _loadVideo(int index) {
+    final encodedPath = widget.encodedPaths[index];
+    player.open(
+      Media(
+        "https://${box.read('apiDomain')}:${box.read('httpsPort')}/api/v15/dl/$encodedPath",
+        httpHeaders: {
+          "X-Fbx-App-Auth": client!.sessionToken!,
+        },
+      ),
+      play: false,
+    );
   }
 
   void _toggleFocus() {
@@ -140,43 +147,48 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   controller: ExtendedPageController(initialPage: currentIndex),
                   onPageChanged: (index) {
                     setState(() => currentIndex = index);
+                    player.stop();
+                    if (widget.mimetype[index].startsWith("video/")) {
+                      _loadVideo(index);
+                    }
                   },
                   itemBuilder: (context, index) {
                     return GestureDetector(
                       onTap: _toggleFocus,
                       child: widget.mimetype[index].startsWith("video/") 
-                        ? Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Video(
-                              controller: controller,
-                              controls: (state) => const SizedBox.shrink(),
-                            ),
-                            Positioned(
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              child: CupertinoVideoControls(
+                        ? index == currentIndex 
+                          ? Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Video(
                                 controller: controller,
+                                controls: (state) => const SizedBox.shrink(),
                               ),
-                            ),
-                          ],
-                        ) : 
-                      ExtendedImage.memory(
-                        widget.images[index],
-                        fit: BoxFit.contain,
-                        mode: ExtendedImageMode.gesture,
-                        enableSlideOutPage: true,
-                        onDoubleTap: _handleDoubleTap,
-                        heroBuilderForSlidingPage: (Widget result) {
-                          return Hero(
-                            tag: 'image_$index',
-                            child: result,
-                            flightShuttleBuilder:
-                                (_, __, ___, ____, _____) => result,
-                          );
-                        },
-                      ),
+                              Positioned(
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                child: CupertinoVideoControls(
+                                  controller: controller,
+                                ),
+                              ),
+                            ],
+                          ) : const SizedBox() 
+                        : ExtendedImage.memory(
+                          widget.images[index],
+                          fit: BoxFit.contain,
+                          mode: ExtendedImageMode.gesture,
+                          enableSlideOutPage: true,
+                          onDoubleTap: _handleDoubleTap,
+                          heroBuilderForSlidingPage: (Widget result) {
+                            return Hero(
+                              tag: 'image_$index',
+                              child: result,
+                              flightShuttleBuilder:
+                                  (_, __, ___, ____, _____) => result,
+                            );
+                          },
+                        ),
                     );
                   },
                 ),

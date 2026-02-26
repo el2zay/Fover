@@ -25,8 +25,17 @@ class _GalleryData {
   final List<Uint8List> images;
   final List<Uint8List> thumbs;
   final List<String> mimetypes;
+  final List<String> encodedPaths;
 
-  const _GalleryData({required this.images, required this.thumbs, required this.mimetypes});
+  const _GalleryData({required this.images, required this.thumbs, required this.mimetypes, required this.encodedPaths});
+}
+
+class _MediaEntry {
+  final Uint8List bytes;
+  final String mimetype;
+  final String encodedPath;
+
+  const _MediaEntry({required this.bytes, required this.mimetype, required this.encodedPath});
 }
 
 class _LibraryPageState extends State<LibraryPage> {
@@ -39,22 +48,28 @@ class _LibraryPageState extends State<LibraryPage> {
   void initState() {
     super.initState();
     _galleryFuture = _loadImages().then((images) async {
-      final thumbs = await _compressImages(images.keys.toList());
-      return _GalleryData(images: images.keys.toList(), thumbs: thumbs, mimetypes: images.values.toList());
+      final thumbs = await _compressImages(images.map((e) => e.bytes).toList());
+      return _GalleryData(images: images.map((e) => e.bytes).toList(), thumbs: thumbs, mimetypes: images.map((e) => e.mimetype).toList(), encodedPaths: images.map((e) => e.encodedPath.split('/').last).toList());
     });
   }
 
-  Future<Map<Uint8List, String>> _loadImages() async {
-    final entries = await fetchPhotosDir();
+Future<List<_MediaEntry>> _loadImages() async {
+  final entries = await fetchPhotosDir();
 
-    final results = await Future.wait(
-      entries.map((entry) => fetchImageBytes(entry['path'], entry['mimetype'])),
-    );
+  final results = await Future.wait(
+    entries.map((entry) => fetchImageBytes(entry['path'], entry['mimetype'])),
+  );
 
-    return Map.fromEntries(
-      results.asMap().entries.where((e) => e.value != null).map((e) => MapEntry(e.value as Uint8List, entries[e.key]['mimetype'] as String)),
-    );
-  }
+  return results.asMap().entries
+    .where((e) => e.value != null)
+    .map((e) => _MediaEntry(
+      bytes: e.value as Uint8List,
+      mimetype: entries[e.key]['mimetype'] as String,
+      encodedPath: entries[e.key]['path'] as String,
+    ))
+    .toList();
+}
+
 
   Future<List<Uint8List>> _compressImages(List<Uint8List> list) async {
     final results = await Future.wait(list.map((origBytes) async {
@@ -242,6 +257,7 @@ class _LibraryPageState extends State<LibraryPage> {
                                 mimetype: mimetypes,
                                 index: index, 
                                 length: images.length,
+                                encodedPaths: data.encodedPaths
                               ),
                               transitionsBuilder: (_, animation, ___, child) {
                                 return Stack(
