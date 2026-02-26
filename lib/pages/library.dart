@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fover/main.dart';
+import 'package:fover/pages/settings.dart';
 import 'package:fover/pages/viewer.dart';
 import 'package:fover/src/utils/requests.dart';
 import 'package:fover/src/widgets/blurred_app_bar.dart';
@@ -83,43 +84,55 @@ class _LibraryPageState extends State<LibraryPage> {
       extendBodyBehindAppBar: true,
       appBar: BlurredAppBar(
         title: "Library",
-        actions: [
+        actions: showButtons ? [
           CupertinoTheme(
             data: const CupertinoThemeData(
               brightness: Brightness.dark,
             ),
-            child: showButtons ? Button.iconOnly(
+            child: Button.iconOnly(
               icon: const Icon(CupertinoIcons.settings, color: Colors.white),
-              glassIcon: CNSymbol('settings'),
+              glassIcon: CNSymbol('gear', size: 17),
               tint: Colors.white.withAlpha(10),
               glassConfig: const CNButtonConfig(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              ),
-              onPressed: () {},
-            ) : SizedBox(),
-          ),
-          const SizedBox(width: 5),
-          CupertinoTheme(
-            data: const CupertinoThemeData(
-              brightness: Brightness.dark,
-            ),
-            child: showButtons ? Button(
-              label: selectedMode ? "Cancel" : "Select",
-              tint: Colors.white.withAlpha(10),
-              glassConfig: const CNButtonConfig(
-                style: CNButtonStyle.prominentGlass,
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               ),
               onPressed: () {
-                setState(() {
-                  selectedMode = !selectedMode;
-                  selectedImages.clear();
-                  showTabBar.value = false;
-                });
+                 showModalBottomSheet(
+                    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
+                    backgroundColor: Colors.black,
+                    isScrollControlled: true,
+                    // showDragHandle: true,
+                    context: context, builder: (context) {
+                    return SettingsPage();
+                  }
+                );
               },
-            ) : SizedBox(),
+            )
           ),
-        ],
+          const SizedBox(width: 10),
+          CupertinoTheme(
+            data: const CupertinoThemeData(
+              brightness: Brightness.dark,
+            ),
+            child: ConstrainedBox(
+              constraints : const BoxConstraints(maxWidth: 95),
+              child: Button(
+                label: selectedMode ? "Cancel" : "Select",
+                tint: Colors.white.withAlpha(10),
+                glassConfig: const CNButtonConfig(
+                  style: CNButtonStyle.prominentGlass,
+                ),
+                onPressed: () {
+                  setState(() {
+                    selectedMode = !selectedMode;
+                    selectedImages.clear();
+                    showTabBar.value = false;
+                  });
+                },
+              )
+            ),
+          ),
+        ] : null,
       ),
       backgroundColor: Colors.black,
       body: FutureBuilder<_GalleryData>(
