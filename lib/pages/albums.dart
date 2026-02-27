@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fover/pages/library.dart';
 import 'package:fover/src/widgets/blurred_app_bar.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:get_storage/get_storage.dart';
@@ -327,11 +328,14 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
     Size size = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
-        leadingWidth: 100,
-        leading: Button(
-          label: "Cancel",
-          backgroundColor: Colors.transparent,
-          onPressed: () => Navigator.pop(context)
+        leading: Transform.scale(
+          scale: 0.8,
+          child: Button.iconOnly(
+            icon: Icon(Icons.close),
+            glassIcon: CNSymbol('xmark', size: 16),
+            backgroundColor: Colors.transparent,
+            onPressed: () => Navigator.pop(context)
+          ),
         ),
         title: Text("New Album", style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
@@ -368,10 +372,58 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
             ),
             SizedBox(height: 10),
             Padding(
-              padding: EdgeInsetsGeometry.symmetric(horizontal: 90),
+              padding: EdgeInsetsGeometry.symmetric(horizontal: 120),
               child: Button(
                 label: "Add photos",
-                onPressed: () {}, 
+                onPressed: () {
+                  showModalBottomSheet(
+                    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
+                    backgroundColor: Colors.black,
+                    isScrollControlled: true,
+                    context: context, builder: (context) {
+                      return Scaffold(
+                        appBar: AppBar(
+                          leading: 
+                          Transform.scale(
+                            scale: 0.9,
+                            child: Button.iconOnly(
+                                icon: Icon(Icons.close, size: 16),
+                                glassIcon: CNSymbol('xmark', size: 16),
+                                backgroundColor: Colors.transparent,
+                                onPressed: () => Navigator.pop(context)
+                            ),
+                          ),
+                          title: Text("Select photos", style: TextStyle(fontWeight: FontWeight.w500),),
+                          actionsPadding: EdgeInsets.only(left: 10),
+                          actions: [
+                            ValueListenableBuilder<int>(
+                              valueListenable: countSelected,
+                              builder: (context, value, _) {
+                                return Button.iconOnly(
+                                  enabled: value > 0,
+                            
+                                  onPressed: () => Navigator.pop(context),
+                                  icon: Icon(CupertinoIcons.check_mark, size: 14),
+                                  glassIcon: CNSymbol('checkmark', size: 14),
+                                  tint: Colors.blue,
+                                  glassConfig: CNButtonConfig(
+                                    style: CNButtonStyle.prominentGlass,
+
+                                  ),
+                                  backgroundColor: Colors.blue
+                            
+                                );
+                              }
+                            ),
+                          ]
+                        ),
+                        body: LibraryPage(
+                          onlySelect: true,
+                        ),
+                      );
+                    }
+                  );
+                }, 
               )
             ),
             SizedBox(height: 25),

@@ -14,8 +14,11 @@ import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/context_menu.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 
+final ValueNotifier<int> countSelected = ValueNotifier<int>(0);
+
 class LibraryPage extends StatefulWidget {
-  const LibraryPage({super.key});
+  final bool onlySelect;
+  const LibraryPage({super.key, required this.onlySelect});
 
   @override
   State<LibraryPage> createState() => _LibraryPageState();
@@ -97,9 +100,9 @@ Future<List<_MediaEntry>> _loadImages() async {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: BlurredAppBar(
+      appBar: !widget.onlySelect ? BlurredAppBar(
         title: "Library",
-        actions: showButtons ? [
+        actions: showButtons || !widget.onlySelect ? [
           CupertinoTheme(
             data: const CupertinoThemeData(
               brightness: Brightness.dark,
@@ -148,7 +151,7 @@ Future<List<_MediaEntry>> _loadImages() async {
             ),
           ),
         ] : null,
-      ),
+      ) : null,
       backgroundColor: Colors.black,
       body: FutureBuilder<_GalleryData>(
         future: _galleryFuture,
@@ -237,7 +240,7 @@ Future<List<_MediaEntry>> _loadImages() async {
                         );
                       },
                       onTap: () {
-                        if (selectedMode) {
+                        if (selectedMode || widget.onlySelect) {
                           setState(() {
                             if (selectedImages.contains(index)) {
                               selectedImages.remove(index);
@@ -245,6 +248,7 @@ Future<List<_MediaEntry>> _loadImages() async {
                               selectedImages.add(index);
                             }
                           });
+                          countSelected.value =  selectedImages.length;
                         } else {
                           Navigator.push(
                             context,
@@ -292,10 +296,10 @@ Future<List<_MediaEntry>> _loadImages() async {
                               fit: BoxFit.cover, 
                               width: double.infinity, 
                               height: double.infinity, 
-                              opacity: selectedMode && selectedImages.contains(index) ? const AlwaysStoppedAnimation(0.8) : const AlwaysStoppedAnimation(1.0),
+                              opacity: (selectedMode || widget.onlySelect) && selectedImages.contains(index) ? const AlwaysStoppedAnimation(0.8) : const AlwaysStoppedAnimation(1.0),
                             ),
                           ),
-                          if (selectedMode && selectedImages.contains(index))
+                          if ((selectedMode || widget.onlySelect) && selectedImages.contains(index))
                             Align(
                               alignment: Alignment.bottomRight,
                               child: Container(

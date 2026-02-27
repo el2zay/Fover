@@ -55,21 +55,21 @@ class _MainAppState extends State<MainApp> {
     super.initState();
     log(showTabBar.value.toString());
     if (GetStorage().read("appToken") != null && showTabBar.value) {
-      // CNTabBarNative.enable(
-      //   isDark: true,
-      //   selectedIndex: _currentIndex,
-      //   tabs: [
-      //     CNTab(title: 'Library', sfSymbol: CNSymbol('photo.fill.on.rectangle.fill')),
-      //     CNTab(title: 'Albums', sfSymbol: CNSymbol('rectangle.stack.fill')),
-      //     CNTab(title: 'Camera', sfSymbol: CNSymbol('camera.fill')),
-      //     CNTab(title: 'Search', sfSymbol: CNSymbol('magnifyingglass'), isSearchTab: true),
-      //   ],
-      //   onTabSelected: (index) {
-      //     setState(() {
-      //       _currentIndex = index;
-      //     });
-      //   },
-      // );
+      CNTabBarNative.enable(
+        isDark: true,
+        selectedIndex: _currentIndex,
+        tabs: [
+          CNTab(title: 'Library', sfSymbol: CNSymbol('photo.fill.on.rectangle.fill')),
+          CNTab(title: 'Albums', sfSymbol: CNSymbol('rectangle.stack.fill')),
+          CNTab(title: 'Camera', sfSymbol: CNSymbol('camera.fill')),
+          CNTab(title: 'Search', sfSymbol: CNSymbol('magnifyingglass'), isSearchTab: true),
+        ],
+        onTabSelected: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+      );
     }
   }
 
@@ -84,7 +84,7 @@ class _MainAppState extends State<MainApp> {
           : IndexedStack(
           index: _currentIndex,
           children: const [
-            LibraryPage(),
+            LibraryPage(onlySelect: false),
             AlbumsPage(),
             CameraPage(),
             Placeholder(),
