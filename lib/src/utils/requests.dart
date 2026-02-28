@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -6,7 +7,9 @@ import 'package:fover/src/utils/video_thumbnail.dart';
 import 'package:freebox/freebox.dart';
 import 'package:fover/main.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:hive_ce/hive.dart';
 import 'dart:developer';
+import 'package:path_provider/path_provider.dart';
 
 final box = GetStorage();
 
@@ -42,6 +45,33 @@ Future<String> getFreeboxModel() async {
   if (deviceName.contains("fbxgw6")) return "Révolution";
   if (deviceName.contains("fbxgw")) return "Mini 4K";
   return "Unknown";
+}
+
+Future<int> getStorageUsed() async {
+  //! TODO
+  var result = await client?.fetch(url: "v15/storage/partition");
+  print(result);
+  // int used =  result['used_bytes'];
+  return 10;
+}
+
+Future uploadLocalFile(File file) async {
+  final uploader = FreeboxUploader(
+  apiDomain: client!.apiDomain,
+  httpsPort: client!.httpsPort,
+  sessionToken: client!.sessionToken!,
+);
+
+  await uploader.uploadFile(
+    fileBytes: file.readAsBytesSync(),
+    filename: "report.pdf",
+    dirname: base64Url.encode(utf8.encode('/Freebox/Photos')),
+    onProgress: (uploaded, total) {
+      final percent = (uploaded / total * 100).toStringAsFixed(1);
+      log('$percent% — $uploaded / $total bytes');
+      // setState(() => _progress = uploaded / total); // pour une ProgressBar
+    },
+  );
 }
 
 // Permet d'afficher tous les dossiers
