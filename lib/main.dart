@@ -51,29 +51,6 @@ class _MainAppState extends State<MainApp> {
   int _currentIndex = 0;
 
   @override
-  void initState() {
-    super.initState();
-    log(showTabBar.value.toString());
-    if (GetStorage().read("appToken") != null && showTabBar.value) {
-      CNTabBarNative.enable(
-        isDark: true,
-        selectedIndex: _currentIndex,
-        tabs: [
-          CNTab(title: 'Library', sfSymbol: CNSymbol('photo.fill.on.rectangle.fill')),
-          CNTab(title: 'Albums', sfSymbol: CNSymbol('rectangle.stack.fill')),
-          CNTab(title: 'Camera', sfSymbol: CNSymbol('camera.fill')),
-          CNTab(title: 'Search', sfSymbol: CNSymbol('magnifyingglass'), isSearchTab: true),
-        ],
-        onTabSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-      );
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -90,43 +67,76 @@ class _MainAppState extends State<MainApp> {
             Placeholder(),
           ],
         ),
-        bottomNavigationBar: (!is26OrNewer && showTabBar.value) ?
-         Container(
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            boxShadow: [
-              BoxShadow(
-                color: Colors.transparent,
-                spreadRadius: 2,
-                blurRadius: 5,
-                offset: Offset(0, 3),
-              )
-            ]
-          ),
-          child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-            child: BottomNavigationBar(
-              elevation: 0,
-              backgroundColor: Colors.transparent,
-              fixedColor: const Color.fromARGB(255, 52, 161, 250),
-              type: BottomNavigationBarType.fixed,
-              selectedFontSize: 13,
-              unselectedFontSize: 13,
-              currentIndex: _currentIndex,
-              onTap: (value) {
-                setState(() {
-                  _currentIndex = value;
-                });
-              },
-              items: [
-                BottomNavigationBarItem(icon: Icon(CupertinoIcons.photo), label: "Library"),
-                BottomNavigationBarItem(icon: Icon(CupertinoIcons.collections), label: "Albums"),
-                BottomNavigationBarItem(icon: Icon(CupertinoIcons.camera), label: "Camera"),
-                BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: "Search"),
+        bottomNavigationBar: (true) ?
+           Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.transparent,
+                  spreadRadius: 2,
+                  blurRadius: 5,
+                  offset: Offset(0, 3),
+                )
               ]
+            ),
+            child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+              child: BottomNavigationBar(
+                elevation: 0,
+                backgroundColor: Colors.transparent,
+                fixedColor: const Color.fromARGB(255, 52, 161, 250),
+                type: BottomNavigationBarType.fixed,
+                selectedFontSize: 13,
+                unselectedFontSize: 13,
+                currentIndex: _currentIndex,
+                onTap: (value) {
+                  setState(() {
+                    _currentIndex = value;
+                  });
+                },
+                items: [
+                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.photo), label: "Library"),
+                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.collections), label: "Albums"),
+                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.camera), label: "Camera"),
+                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: "Search"),
+                ]
+              ) 
             ) 
-          ) 
-        ) : null,
-      ),
+          ) : CNTabBar(
+            tint: Colors.blue,
+            iconSize: 18,
+            items: [
+              CNTabBarItem(
+                label: 'Library',
+                icon: CNSymbol('photo.fill.on.rectangle.fill'),
+              ),
+              CNTabBarItem(
+                label: 'Albums',
+                icon: CNSymbol('rectangle.stack.fill'),
+              ),
+              CNTabBarItem(
+                label: 'Search',
+                icon: CNSymbol('magnifyingglass'),
+              ),
+            ],
+            currentIndex: _currentIndex,
+            onTap: (i) => setState(() => _currentIndex = i),
+            // searchItem: CNTabBarSearchItem(
+            //   placeholder: 'Search',
+            //   automaticallyActivatesSearch: false,
+            //   onSearchChanged: (query) {
+            //   },
+            //   onSearchSubmit: (query) {
+            //   },
+            //   onSearchActiveChanged: (isActive) {
+            //   },
+            //   style: const CNTabBarSearchStyle(
+            //     iconSize: 20,
+            //     animationDuration: Duration(milliseconds: 400),
+            //   ),
+            // ),
+          )
+        ),
       theme: ThemeData(
         brightness: Brightness.dark,
         colorScheme: ColorScheme.dark(primary: Colors.white),
