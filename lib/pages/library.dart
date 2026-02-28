@@ -46,6 +46,7 @@ class _LibraryPageState extends State<LibraryPage> {
   late final Future<_GalleryData> _galleryFuture;
   bool selectedMode = false;
   List<int> selectedImages = [];
+  int elements = 0;
 
   @override
   void initState() {
@@ -58,6 +59,7 @@ class _LibraryPageState extends State<LibraryPage> {
 
 Future<List<_MediaEntry>> _loadImages() async {
   final entries = await fetchPhotosDir();
+
 
   final results = await Future.wait(
     entries.map((entry) => fetchImageBytes(entry['path'], entry['mimetype'])),
@@ -102,6 +104,7 @@ Future<List<_MediaEntry>> _loadImages() async {
       extendBodyBehindAppBar: true,
       appBar: !widget.onlySelect ? BlurredAppBar(
         title: "Library",
+        subtitle: "$elements element${elements > 1 ? "s" : ""}",
         actions: showButtons || !widget.onlySelect ? [
           CupertinoTheme(
             data: const CupertinoThemeData(
@@ -169,6 +172,7 @@ Future<List<_MediaEntry>> _loadImages() async {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             setState(() {
+              elements = images.length;
               showButtons = images.isNotEmpty;
             });
           });

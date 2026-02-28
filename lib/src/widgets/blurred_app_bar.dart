@@ -15,7 +15,7 @@ class BlurredAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
   
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => Size.fromHeight(subtitle != null ?  kToolbarHeight + 10 : kToolbarHeight - 10);
 }
 
 AppBar buildBlurredAppBar({required String title, String? subtitle,  List<Widget>? actions}) {
@@ -57,7 +57,7 @@ AppBar buildBlurredAppBar({required String title, String? subtitle,  List<Widget
        Text(
           subtitle, 
           style: TextStyle(
-          color: Colors.white.withAlpha(200),
+          color: Colors.white.withAlpha(230),
           fontSize: 18,
           fontWeight: FontWeight.bold,
           ),
