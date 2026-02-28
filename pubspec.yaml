@@ -7,11 +7,13 @@ environment:
   sdk: ^3.9.2
 
 dependencies:
+  freebox:
+    path: package/freebox/
   flutter:
     sdk: flutter
   cupertino_native_better: ^1.3.1
   cupertino_icons: ^1.0.8
-  freebox: ^1.0.3
+  # freebox: ^1.0.3
   get_storage: ^2.1.1
   flutter_phoenix: ^1.1.1
   super_drag_and_drop: ^0.9.1
@@ -26,8 +28,12 @@ dependencies:
   media_kit_video: ^2.0.1
   media_kit_libs_video: ^1.0.7
   gradient_progress_bar: ^1.0.7
+  hive_ce: ^2.19.3
+  hive_ce_flutter: ^2.3.4
 
 dev_dependencies:
+  hive_ce_generator: ^1.11.1
+  build_runner: ^2.4.0
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
