@@ -39,7 +39,8 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   late VoidCallback animationListener;
   final List<double> doubleTapScales = <double>[1.0, 3.0];
   final GlobalKey<ExtendedImageSlidePageState> _slideKey = GlobalKey<ExtendedImageSlidePageState>();
-
+  Offset _videoOffset = Offset.zero;
+  double _videoScale = 1.0;
   late final player = Player();
   late final controller = VideoController(player);
   final box = GetStorage();
@@ -146,34 +147,63 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   scrollDirection: Axis.horizontal,
                   controller: ExtendedPageController(initialPage: currentIndex),
                   onPageChanged: (index) {
-                    setState(() => currentIndex = index);
+                    setState(() {
+                      currentIndex = index;
+                      _videoOffset = Offset.zero;
+                      _videoScale = 1.0;
+                    });
                     player.stop();
                     if (widget.mimetype[index].startsWith("video/")) {
                       _loadVideo(index);
                     }
                   },
+
                   itemBuilder: (context, index) {
                     return GestureDetector(
                       onTap: _toggleFocus,
-                      child: widget.mimetype[index].startsWith("video/") 
-                        ? index == currentIndex 
-                          ? Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              Video(
-                                controller: controller,
-                                controls: (state) => const SizedBox.shrink(),
-                              ),
-                              Positioned(
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                child: CupertinoVideoControls(
-                                  controller: controller,
+                      child: widget.mimetype[index].startsWith("video/")
+                        ? index == currentIndex
+                          ? GestureDetector(
+                              onTap: _toggleFocus,
+                              onVerticalDragUpdate: (details) {
+                                setState(() {
+                                  _videoOffset += Offset(0, details.delta.dy);
+                                  final progress = (_videoOffset.dy.abs() / 300).clamp(0.0, 1.0);
+                                  _videoScale = 1.0 - (progress * 0.3);
+                                });
+                              },
+                              onVerticalDragEnd: (details) {
+                                final velocity = details.primaryVelocity ?? 0;
+                                if (_videoOffset.dy.abs() > 100 || velocity.abs() > 500) {
+                                  Navigator.pop(context);
+                                } else {
+                                  setState(() {
+                                    _videoOffset = Offset.zero;
+                                    _videoScale = 1.0;
+                                  });
+                                }
+                              },
+                              child: Transform.scale(
+                                scale: _videoScale,
+                                child: Transform.translate(
+                                  offset: _videoOffset,
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      Video(
+                                        controller: controller,
+                                        controls: (state) => const SizedBox.shrink(),
+                                      ),
+                                      Positioned(
+                                        left: 0, right: 0, bottom: 0,
+                                        child: CupertinoVideoControls(controller: controller),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ],
-                          ) : const SizedBox() 
+                            )
+                          : const SizedBox()
                         : ExtendedImage.memory(
                           widget.images[index],
                           fit: BoxFit.contain,
