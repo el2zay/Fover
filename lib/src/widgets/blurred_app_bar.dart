@@ -3,22 +3,24 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class BlurredAppBar extends StatelessWidget implements PreferredSizeWidget {
- const BlurredAppBar({super.key, required this.title, required this.actions});
+ const BlurredAppBar({super.key, required this.title, this.subtitle, required this.actions});
 
   final String title;
+  final String? subtitle;
   final List<Widget>? actions;
 
   @override
   AppBar build(BuildContext context) {
-    return buildBlurredAppBar(title: title, actions: actions);
+    return buildBlurredAppBar(title: title, subtitle: subtitle, actions: actions);
   }
   
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
-AppBar buildBlurredAppBar({required String title, List<Widget>? actions}) {
+AppBar buildBlurredAppBar({required String title, String? subtitle,  List<Widget>? actions}) {
   return AppBar(
+    clipBehavior: Clip.none,
     elevation: 0,
     centerTitle: false,
     flexibleSpace: ClipRect(
@@ -39,7 +41,11 @@ AppBar buildBlurredAppBar({required String title, List<Widget>? actions}) {
         ),
       ),
     ),
-    title: Text(
+    title: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+       Text(
         title,
         style: const TextStyle(
           color: Colors.white,
@@ -47,6 +53,18 @@ AppBar buildBlurredAppBar({required String title, List<Widget>? actions}) {
           fontWeight: FontWeight.bold,
         ),
       ),
+      if (subtitle != null)
+       Text(
+          subtitle, 
+          style: TextStyle(
+          color: Colors.white.withAlpha(200),
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    ),
+    
     backgroundColor: Colors.transparent,
     actions: actions,
   );
