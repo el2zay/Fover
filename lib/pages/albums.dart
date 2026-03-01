@@ -3,10 +3,10 @@ import 'dart:developer';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fover/main.dart';
 import 'package:fover/pages/library.dart';
 import 'package:fover/src/widgets/blurred_app_bar.dart';
 import 'package:fover/src/widgets/button.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:local_auth/local_auth.dart';
 
 final LocalAuthentication auth = LocalAuthentication();
@@ -115,7 +115,7 @@ List<Map<String, dynamic>> _buildAlbums(List<Map<String, dynamic>> albums) {
 // Generated with AI
 
 List<Map<String, dynamic>> _loadAlbums() {
-  final saved = (GetStorage().read("albumOrder") as List?)
+  final saved = (box.get("albumOrder") as List?)
           ?.cast<Map>()
           .map((e) => Map<String, dynamic>.from(e))
           .toList() ??
@@ -124,7 +124,7 @@ List<Map<String, dynamic>> _loadAlbums() {
 }
 
 final List<Map<String, dynamic>> otherAlbums = _buildAlbums(
-  (GetStorage().read("albumOrder") as List?)
+  (box.get("albumOrder") as List?)
           ?.cast<Map>()
           .map((e) => Map<String, dynamic>.from(e))
           .toList() ?? _defaultAlbums,
@@ -461,7 +461,6 @@ class ReorganisePage extends StatefulWidget {
 }
 
 class _ReorganiseState extends State<ReorganisePage> {
-  GetStorage box = GetStorage();
     late List<Map<String, dynamic>> albums;
 
   @override
@@ -492,7 +491,7 @@ class _ReorganiseState extends State<ReorganisePage> {
               'count': a['count'],
             }).toList();
 
-            box.write("albumOrder", toSave);
+            box.put("albumOrder", toSave);
           },
           itemCount: albums.length,
           itemBuilder: (context, index) {

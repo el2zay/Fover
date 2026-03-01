@@ -10,35 +10,38 @@ import 'package:fover/pages/library.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:freebox/freebox.dart';
 import 'package:fover/src/utils/requests.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:media_kit/media_kit.dart'; 
-import 'dart:developer';
 
 FreeboxClient? client;
 bool is26OrNewer =  PlatformVersion.supportsLiquidGlass;
+final box = Hive.box('settings');
 final ValueNotifier<bool> showTabBar = ValueNotifier(false);
 late String model;
+
 
   void main() async {
     WidgetsFlutterBinding.ensureInitialized();
     MediaKit.ensureInitialized();
-    await GetStorage.init();
-    if (GetStorage().read("appToken") != null) {
+    await Hive.initFlutter();
+    final box = await Hive.openBox('settings');
+    if (box.get("appToken") != null) {
       client = FreeboxClient(
-        appToken: GetStorage().read("appToken"),
+        appToken: box.get("appToken"),
         appId: 'fbx.fover',
-        apiDomain: GetStorage().read("apiDomain"),
-        httpsPort: GetStorage().read("httpsPort"),
+        apiDomain: box.get("apiDomain"),
+        httpsPort: box.get("httpsPort"),
       );
 
       await client?.authentificate();
       showTabBar.value = true;
+
+       await PhotoStore.init();
+
+      model = await getFreeboxModel();
+      fetchPhotosDir();
+
     }
-
-    await PhotoStore.init();
-
-    model = await getFreeboxModel();
-    fetchPhotosDir();
     runApp(Phoenix(child:const MainApp()));
   }
 
@@ -52,13 +55,14 @@ class MainApp extends StatefulWidget {
 class _MainAppState extends State<MainApp> {
   int _currentIndex = 0;
 
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         extendBody: true,
-        body: GetStorage().read("appToken") == null
+        body: box.get("appToken") == null
           ? const FirstPage()
           : IndexedStack(
           index: _currentIndex,

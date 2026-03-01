@@ -6,11 +6,8 @@ import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/video_thumbnail.dart';
 import 'package:freebox/freebox.dart';
 import 'package:fover/main.dart';
-import 'package:get_storage/get_storage.dart';
 import 'dart:developer';
 import 'package:path_provider/path_provider.dart';
-
-final box = GetStorage();
 
 Future signUp(context) async {
   var register = await FreeboxClient.registerFreebox(
@@ -24,9 +21,9 @@ Future signUp(context) async {
   String sRegister = register.toString();
 
   if (sRegister.contains("appToken") && sRegister.contains("apiDomain") && sRegister.contains("httpsPort")) {
-    box.write("appToken", register["appToken"]);
-    box.write("apiDomain", register["apiDomain"]);
-    box.write("httpsPort", register["httpsPort"]);
+    box.put("appToken", register["appToken"]);
+    box.put("apiDomain", register["apiDomain"]);
+    box.put("httpsPort", register["httpsPort"]);
 
     Phoenix.rebirth(context);
   }

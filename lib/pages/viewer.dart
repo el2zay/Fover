@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fover/main.dart';
 import 'package:fover/src/widgets/button.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:fover/src/widgets/dialog.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:media_kit/media_kit.dart';
 
@@ -43,7 +43,6 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   double _videoScale = 1.0;
   late final player = Player();
   late final controller = VideoController(player);
-  final box = GetStorage();
   @override
   void initState() {
     super.initState();
@@ -73,7 +72,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     final encodedPath = widget.encodedPaths[index];
     player.open(
       Media(
-        "https://${box.read('apiDomain')}:${box.read('httpsPort')}/api/v15/dl/$encodedPath",
+        "https://${box.get('apiDomain')}:${box.get('httpsPort')}/api/v15/dl/$encodedPath",
         httpHeaders: {
           "X-Fbx-App-Auth": client!.sessionToken!,
         },
@@ -325,7 +324,8 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   icon: CNSymbol('plus.rectangle.on.rectangle', size: 20),
                 ),
               ],
-              onSelected: (item) {},
+              onSelected: (item) {
+              },
             ),
           ),
         ),
@@ -361,7 +361,18 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
               Button.iconOnly(
                 icon: const Icon(CupertinoIcons.trash),
                 glassIcon: CNSymbol('trash', size: 18),
-                onPressed: () {},
+                onPressed: () {
+                  showGeneralDialog(
+                    barrierDismissible: false,
+                    context: context,
+                    pageBuilder: (context, animation, secondaryAnimation) {
+                      return MyDialog(
+                        content: "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
+                        onTap: () {},
+                      );
+                    }
+                  );
+                },
               ),
             ],
           ),
