@@ -8,26 +8,35 @@ class PhotoEntry extends HiveObject {
   final String path;
 
   @HiveField(1)
-  final DateTime date;
+  final String name;
 
   @HiveField(2)
-  final int size;
+  final DateTime date;
 
   @HiveField(3)
-  String? description;
+  final int size;
 
   @HiveField(4)
-  String? localisation;
+  String? description;
 
   @HiveField(5)
-  Map<String, String>? exif;
+  String? mimetype;
 
   @HiveField(6)
-  String? detectedText;
+  String? localisation;
 
   @HiveField(7)
+  Map<String, String>? exif;
+
+  @HiveField(8)
+  String? detectedText;
+
+  @HiveField(9)
   List<String>? albums; 
 
-  PhotoEntry({required this.path, required this.date, required this.size, this.description, this.localisation, this.exif, this.detectedText, this.albums});
+  @HiveField(10)
+  bool? hidden;
+
+  PhotoEntry({required this.path, required this.name, required this.date, required this.size, this.description, required this.mimetype,  this.localisation, this.exif, this.detectedText, this.albums, this.hidden});
 
 }

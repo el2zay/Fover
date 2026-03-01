@@ -3,26 +3,31 @@ import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:fover/src/models/photo_entry.dart';
 
 class PhotoStore {
-  static const _photoBoxName = 'photos';
   static late Box<PhotoEntry> _photoBox;
   static late Box<AlbumEntry> _albumBox;
+
+  static const _photoBoxName = 'photos';
+  static const _albumBoxName = 'albums';
 
     static Future<void> init() async {
     await Hive.initFlutter();
     Hive.registerAdapter(PhotoEntryAdapter());
     Hive.registerAdapter(AlbumEntryAdapter());
-    _photoBox = await Hive.openBox<PhotoEntry>(_photoBoxName);
+    _photoBox = await Hive.openBox(_photoBoxName);
+    _albumBox = await Hive.openBox(_albumBoxName);
   }
 
-  static Future<void> addIfAbsent ({
-    required String path, 
+  static Future<void> addPhoto ({
+    required String path,
+    required String name,
     required DateTime date, 
     required int size,
+    required String mimetype,
     Map<String, String>? exif,
   }) async {
     if (_photoBox.containsKey(path)) return;
 
-    await _photoBox.put(path, PhotoEntry(path: path, date: date, size: size, exif: exif));
+    await _photoBox.put(path, PhotoEntry(path: path, name: name, date: date, size: size, mimetype: mimetype, exif: exif));
   }
 
   static Future<void> update({
@@ -31,6 +36,8 @@ class PhotoStore {
     String? localisation,
     Map<String, String>? exif,
     String? detectedText,
+    bool? hidden,
+    
   }) async {
     final entry = _photoBox.get(path);
     if (entry == null) return;
@@ -39,7 +46,7 @@ class PhotoStore {
     if (localisation != null) entry.localisation = localisation;
     if (exif != null) entry.exif = exif;
     if (detectedText != null) entry.detectedText = detectedText;
-
+    if (hidden != null) entry.hidden = hidden;
     await entry.save();
   }
 
