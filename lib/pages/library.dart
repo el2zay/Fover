@@ -20,7 +20,9 @@ final ValueNotifier<int> countSelected = ValueNotifier<int>(0);
 
 class LibraryPage extends StatefulWidget {
   final bool onlySelect;
-  const LibraryPage({super.key, required this.onlySelect});
+  final bool trashMode;
+
+  const LibraryPage({super.key, this.onlySelect = false, this.trashMode = false});
 
   @override
   State<LibraryPage> createState() => _LibraryPageState();
@@ -70,7 +72,9 @@ class _LibraryPageState extends State<LibraryPage> {
       .where((e) => e.value != null)
       .where((e) {
         final stored = PhotoStore.get(entries[e.key]['path'] as String);
-        return stored?.deletedAt == null;
+        return widget.trashMode 
+          ? stored?.deletedAt != null
+          : stored?.deletedAt == null;
       }).map((e) => _MediaEntry(
         bytes: e.value as Uint8List,
         mimetype: entries[e.key]['mimetype'] as String,
@@ -106,14 +110,16 @@ class _LibraryPageState extends State<LibraryPage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: !widget.onlySelect ? BlurredAppBar(
-        title: "Library",
-        subtitle: "$elements element${elements > 1 ? "s" : ""}",
+        title: widget.trashMode ? "Trash" :  "Library",
+        subtitle: !widget.trashMode ? "$elements element${elements > 1 ? "s" : ""}" : null,
         actions: showButtons || !widget.onlySelect ? [
           CupertinoTheme(
             data: const CupertinoThemeData(
               brightness: Brightness.dark,
             ),
-            child: Button.iconOnly(
+            child: 
+            !widget.trashMode ?
+            Button.iconOnly(
               icon: const Icon(CupertinoIcons.settings, color: Colors.white),
               glassIcon: CNSymbol('gear', size: 17),
               tint: Colors.white.withAlpha(10),
@@ -131,7 +137,7 @@ class _LibraryPageState extends State<LibraryPage> {
                   }
                 );
               },
-            )
+            ) : SizedBox()
           ),
           const SizedBox(width: 10),
           CupertinoTheme(
@@ -320,7 +326,34 @@ class _LibraryPageState extends State<LibraryPage> {
                                   size: 22,
                                 ),
                               ),
-                          )
+                          ),
+
+                          if (widget.trashMode)...[
+                            Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                  stops: const [0.0, 0.3],
+                                  colors: [
+                                    Colors.black.withAlpha(190),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Align(
+                              alignment: Alignment.bottomCenter,
+                              child: Builder(builder: (context) {
+                                final entry = PhotoStore.get(data.encodedPaths[index]);
+                                final days = 30 - DateTime.now().difference(entry!.deletedAt!).inDays;
+                                return Text(
+                                    "$days days",
+                                );
+                              }
+                            )
+                          ),
+                          ],
                         ],
                       ),
                     ),
