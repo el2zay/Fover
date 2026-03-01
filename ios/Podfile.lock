@@ -1,6 +1,4 @@
 PODS:
-  - camerawesome (0.0.1):
-    - Flutter
   - CocoaLumberjack (3.9.0):
     - CocoaLumberjack/Core (= 3.9.0)
   - CocoaLumberjack/Core (3.9.0)
@@ -60,7 +58,6 @@ PODS:
     - Flutter
 
 DEPENDENCIES:
-  - camerawesome (from `.symlinks/plugins/camerawesome/ios`)
   - cupertino_native_better (from `.symlinks/plugins/cupertino_native_better/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - Flutter (from `Flutter`)
@@ -85,8 +82,6 @@ SPEC REPOS:
     - SVGKit
 
 EXTERNAL SOURCES:
-  camerawesome:
-    :path: ".symlinks/plugins/camerawesome/ios"
   cupertino_native_better:
     :path: ".symlinks/plugins/cupertino_native_better/ios"
   device_info_plus:
@@ -115,7 +110,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/wakelock_plus/ios"
 
 SPEC CHECKSUMS:
-  camerawesome: a961fa32dafc00d2f093d824311c84f849586b58
   CocoaLumberjack: 5644158777912b7de7469fa881f8a3f259c2512a
   cupertino_native_better: 1548ee565186534a34a406bf56b7c49510485844
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
