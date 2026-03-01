@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 
 class MyDialog extends StatelessWidget {
   final String content;
-  final Function onTap;
-  const MyDialog({super.key, required this.content, required this.onTap});
+  final TextButton principalButton;
+  const MyDialog({super.key, required this.content, required this.principalButton});
 
   @override
   Widget build(BuildContext context) {
@@ -47,10 +47,7 @@ class MyDialog extends StatelessWidget {
                         Navigator.pop(context);
                       }
                     ),
-                    TextButton(
-                      child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
-                      onPressed: () {}
-                    ),
+                    principalButton
                   ],
                 )
               ]
