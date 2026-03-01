@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fover/main.dart';
 import 'package:fover/pages/library.dart';
+import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/widgets/blurred_app_bar.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:local_auth/local_auth.dart';
@@ -75,7 +76,7 @@ IconData _iconFor(String key) {
   }
 }
 
-VoidCallback _onTapFor(String key) {
+VoidCallback _onTapFor(String key, BuildContext context) {
   switch (key) {
     case 'videos':
       return () => log("Videos tapped");
@@ -94,41 +95,40 @@ VoidCallback _onTapFor(String key) {
         }
     };
     case 'recently_deleted':
-      return () => log("Recently Deleted tapped");
+      return () => Navigator.push(
+        context, 
+        CupertinoPageRoute(builder: (_) => const LibraryPage(
+          trashMode: true,
+        ))
+      );
     default:
       return () {};
   }
 }
 
-List<Map<String, dynamic>> _buildAlbums(List<Map<String, dynamic>> albums) {
+List<Map<String, dynamic>> _buildAlbums(List<Map<String, dynamic>> albums, BuildContext context) {
   return albums.map((album) {
     return {
       'key': album['key'],
       'icon': _iconFor(album['key']),
       'title': album['title'],
       'count': album['count'],
-      'onTap': _onTapFor(album['key']),
+      'onTap': _onTapFor(album['key'], context),
     };
   }).toList();
 }
 
 // Generated with AI
 
-List<Map<String, dynamic>> _loadAlbums() {
+List<Map<String, dynamic>> _loadAlbums(BuildContext context) {
   final saved = (box.get("albumOrder") as List?)
           ?.cast<Map>()
           .map((e) => Map<String, dynamic>.from(e))
           .toList() ??
       _defaultAlbums;
-  return _buildAlbums(saved);
+  return _buildAlbums(saved, context);
 }
 
-final List<Map<String, dynamic>> otherAlbums = _buildAlbums(
-  (box.get("albumOrder") as List?)
-          ?.cast<Map>()
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList() ?? _defaultAlbums,
-);
 // 
 
 class AlbumsPage extends StatefulWidget {
@@ -146,7 +146,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
   @override
   void initState() {
     super.initState();
-    albums = _loadAlbums();
+    albums = _loadAlbums(context);
   }
 
   @override
@@ -277,7 +277,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
                               MaterialPageRoute(builder: (context) => ReorganisePage()),
                           );
                           setState(() {
-                            albums = _loadAlbums();
+                            albums = _loadAlbums(context);
                           });
                         }, 
                         )
@@ -466,7 +466,7 @@ class _ReorganiseState extends State<ReorganisePage> {
   @override
   void initState() {
     super.initState();
-    albums = _loadAlbums();
+    albums = _loadAlbums(context);
   }
   
   @override
