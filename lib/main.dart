@@ -35,8 +35,8 @@ late String model;
 
       await client?.authentificate();
       showTabBar.value = true;
-
-       await PhotoStore.init();
+      await PhotoStore.init();
+      await PhotoStore.purgeExpired(client!);
 
       model = await getFreeboxModel();
       fetchPhotosDir();

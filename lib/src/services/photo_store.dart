@@ -1,4 +1,6 @@
 import 'package:fover/src/models/album_entry.dart';
+import 'package:fover/src/utils/requests.dart';
+import 'package:freebox/freebox.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:fover/src/models/photo_entry.dart';
 
@@ -8,6 +10,7 @@ class PhotoStore {
 
   static const _photoBoxName = 'photos';
   static const _albumBoxName = 'albums';
+  static const _deletionDelay = Duration(days:30);
 
     static Future<void> init() async {
     await Hive.initFlutter();
@@ -48,6 +51,39 @@ class PhotoStore {
     if (detectedText != null) entry.detectedText = detectedText;
     if (hidden != null) entry.hidden = hidden;
     await entry.save();
+  }
+
+  static Future<void> softDelete(String path) async {
+    final entry = _photoBox.get(path);
+    if (entry == null) return;
+    entry.deletedAt = DateTime.now();
+    await entry.save();
+  }
+
+  static Future<void> restore(String path) async {
+    final entry = _photoBox.get(path);
+    if (entry == null) return;
+    entry.deletedAt = null;
+    await entry.save();
+  }
+
+  static Future<void> purgeExpired(FreeboxClient client) async {
+    final now = DateTime.now();
+    final expired = _photoBox.values.where((e) =>
+      e.deletedAt != null &&
+      now.difference(e.deletedAt!) > _deletionDelay,
+    ).toList();
+
+    for (final photo in expired) {
+      // Supprime sur la Freebox
+      await client.fetch(
+        url: 'v6/fs/rm/',
+        method: 'POST',
+        body: {'files': [photo.path]},
+      );
+      // Supprime de Hive
+      await photo.delete();
+    }
   }
 
   static Future<void> addToAlbum({
@@ -120,13 +156,21 @@ class PhotoStore {
   }
 
   static PhotoEntry? get(String path) => _photoBox.get(path);
-  static List<PhotoEntry> getAll() => _photoBox.values.toList();
-  static Future<void> delete(String path) async => await _photoBox.delete(path);
+
+  static List<PhotoEntry> getAll() =>
+    _photoBox.values.where((e) => e.deletedAt == null).toList();
+
+  static List<PhotoEntry> getDeleted() =>
+    _photoBox.values.where((e) => e.deletedAt != null).toList();
+
   static List<PhotoEntry> getAlbum(String album) =>
     _photoBox.values.where((e) => e.albums!.contains(album)).toList();
+
   static List<String> getAllAlbums() =>
     _photoBox.values.expand((e) => e.albums!).toSet().toList()..sort();
+
   static AlbumEntry? getAlbumEntry(String name) => _albumBox.get(name);
+
   static List<AlbumEntry> getAllAlbumEntries() =>
       _albumBox.values.toList()..sort((a, b) => a.name.compareTo(b.name));
 }

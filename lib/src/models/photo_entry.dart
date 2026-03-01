@@ -37,6 +37,9 @@ class PhotoEntry extends HiveObject {
   @HiveField(10)
   bool? hidden;
 
-  PhotoEntry({required this.path, required this.name, required this.date, required this.size, this.description, required this.mimetype,  this.localisation, this.exif, this.detectedText, this.albums, this.hidden});
+  @HiveField(11)
+  DateTime? deletedAt;
+
+  PhotoEntry({required this.path, required this.name, required this.date, required this.size, this.description, required this.mimetype,  this.localisation, this.exif, this.detectedText, this.albums, this.hidden, this.deletedAt});
 
 }
