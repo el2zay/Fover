@@ -8,6 +8,7 @@ import 'package:fover/pages/albums.dart';
 import 'package:fover/pages/camera.dart';
 import 'package:fover/pages/first.dart';
 import 'package:fover/pages/library.dart';
+import 'package:fover/src/services/photo_store.dart';
 import 'package:freebox/freebox.dart';
 import 'package:fover/src/utils/requests.dart';
 import 'package:get_storage/get_storage.dart';
@@ -34,6 +35,8 @@ late String model;
       await client?.authentificate();
       showTabBar.value = true;
     }
+
+    await PhotoStore.init();
 
     model = await getFreeboxModel();
     fetchPhotosDir();
