@@ -161,6 +161,11 @@ class _MainAppState extends State<MainApp> {
         ),
         textSelectionTheme: TextSelectionThemeData(
           cursorColor: CupertinoColors.activeBlue,
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: ButtonStyle(
+            overlayColor: WidgetStatePropertyAll(Colors.transparent)
+          )
         )
       ),
     );
