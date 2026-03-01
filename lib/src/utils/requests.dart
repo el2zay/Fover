@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -8,7 +7,6 @@ import 'package:fover/src/utils/video_thumbnail.dart';
 import 'package:freebox/freebox.dart';
 import 'package:fover/main.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:hive_ce/hive.dart';
 import 'dart:developer';
 import 'package:path_provider/path_provider.dart';
 
@@ -88,7 +86,7 @@ Future fetchDir() async {
 Future<List<dynamic>> fetchPhotosDir() async {
   var directories = await client?.fetch(url: "v15/fs/ls/L0ZyZWVib3gvVGVzdA=="); // TODO changer par le vrai dossier
   List<dynamic> entries = directories?['result']?['entries'] ?? [];
-
+  bool hasBeenEdited = false;
   var filesOnly = entries.where((e) =>
       e['name'] != '.' &&
       e['name'] != '..' &&
@@ -97,6 +95,7 @@ Future<List<dynamic>> fetchPhotosDir() async {
 
   for (var entry in filesOnly) {
     if (PhotoStore.get(entry['path']) == null) {
+      hasBeenEdited = true;
       await PhotoStore.addPhoto(
         path: entry['path'],
         name: entry['name'],
@@ -107,14 +106,15 @@ Future<List<dynamic>> fetchPhotosDir() async {
     }
   }
   
-  // TODO uploader le fichier
-  uploadLocalFile([
-    File("${(await getApplicationDocumentsDirectory()).path}/photos.hive"),
-    File("${(await getApplicationDocumentsDirectory()).path}/photos.lock"),
-    File("${(await getApplicationDocumentsDirectory()).path}/albums.hive"),
-    File("${(await getApplicationDocumentsDirectory()).path}/albums.lock")
-  ]);
-        
+  if (hasBeenEdited) {
+    uploadLocalFile([
+      File("${(await getApplicationDocumentsDirectory()).path}/photos.hive"),
+      File("${(await getApplicationDocumentsDirectory()).path}/photos.lock"),
+      File("${(await getApplicationDocumentsDirectory()).path}/albums.hive"),
+      File("${(await getApplicationDocumentsDirectory()).path}/albums.lock")
+    ]);
+  }
+
   return filesOnly.toList();
 }
 
