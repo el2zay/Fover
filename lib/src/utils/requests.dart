@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_phoenix/flutter_phoenix.dart';
+import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/video_thumbnail.dart';
 import 'package:freebox/freebox.dart';
 import 'package:fover/main.dart';
@@ -55,23 +56,25 @@ Future<int> getStorageUsed() async {
   return 10;
 }
 
-Future uploadLocalFile(File file) async {
+Future uploadLocalFile(List<File> file) async {
   final uploader = FreeboxUploader(
-  apiDomain: client!.apiDomain,
-  httpsPort: client!.httpsPort,
-  sessionToken: client!.sessionToken!,
-);
-
-  await uploader.uploadFile(
-    fileBytes: file.readAsBytesSync(),
-    filename: "report.pdf",
-    dirname: base64Url.encode(utf8.encode('/Freebox/Photos')),
-    onProgress: (uploaded, total) {
-      final percent = (uploaded / total * 100).toStringAsFixed(1);
-      log('$percent% — $uploaded / $total bytes');
-      // setState(() => _progress = uploaded / total); // pour une ProgressBar
-    },
+    apiDomain: client!.apiDomain,
+    httpsPort: client!.httpsPort,
+    sessionToken: client!.sessionToken!,
   );
+
+  for (int i = 0; i < file.length; i++) {
+    await uploader.uploadFile(
+      fileBytes: file[i].readAsBytesSync(),
+      filename: file[i].path.split('/').last,
+      dirname: "L0ZyZWVib3gvVGVzdA==",
+      onProgress: (uploaded, total) {
+        final percent = (uploaded / total * 100).toStringAsFixed(1);
+        log('$percent% — $uploaded / $total bytes');
+        // setState(() => _progress = uploaded / total); // pour une ProgressBar
+      },
+    );
+  }
 }
 
 // Permet d'afficher tous les dossiers
@@ -83,7 +86,7 @@ Future fetchDir() async {
 
 
 Future<List<dynamic>> fetchPhotosDir() async {
-  var directories = await client?.fetch(url: "v15/fs/ls/L0ZyZWVib3gvVGVzdA==");
+  var directories = await client?.fetch(url: "v15/fs/ls/L0ZyZWVib3gvVGVzdA=="); // TODO changer par le vrai dossier
   List<dynamic> entries = directories?['result']?['entries'] ?? [];
 
   var filesOnly = entries.where((e) =>
@@ -91,8 +94,31 @@ Future<List<dynamic>> fetchPhotosDir() async {
       e['name'] != '..' &&
       e['hidden'] != true &&
       (e['mimetype'].contains('image/') || e['mimetype'].contains('video/')));
+
+  for (var entry in filesOnly) {
+    if (PhotoStore.get(entry['path']) == null) {
+      await PhotoStore.addPhoto(
+        path: entry['path'],
+        name: entry['name'],
+        date: DateTime.fromMillisecondsSinceEpoch(entry['modification'] * 1000),
+        size: entry['size'] ?? 0,
+        mimetype: entry['mimetype']
+      );
+    }
+  }
+  
+  // TODO uploader le fichier
+  uploadLocalFile([
+    File("${(await getApplicationDocumentsDirectory()).path}/photos.hive"),
+    File("${(await getApplicationDocumentsDirectory()).path}/photos.lock"),
+    File("${(await getApplicationDocumentsDirectory()).path}/albums.hive"),
+    File("${(await getApplicationDocumentsDirectory()).path}/albums.lock")
+  ]);
+        
   return filesOnly.toList();
 }
+
+
 
 Future<Uint8List?> fetchImageBytes(String path, String mimetype) async {
   var response = await client?.fetch(
