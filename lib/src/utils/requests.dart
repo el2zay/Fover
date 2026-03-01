@@ -51,7 +51,7 @@ Future<int> getStorageUsed() async {
   return 10;
 }
 
-Future uploadLocalFile(List<File> file) async {
+Future uploadLocalFiles(List<File> file) async {
   final uploader = FreeboxUploader(
     apiDomain: client!.apiDomain,
     httpsPort: client!.httpsPort,
@@ -104,7 +104,7 @@ Future<List<dynamic>> fetchPhotosDir() async {
   }
   
   if (hasBeenEdited) {
-    uploadLocalFile([
+    uploadLocalFiles([
       File("${(await getApplicationDocumentsDirectory()).path}/photos.hive"),
       File("${(await getApplicationDocumentsDirectory()).path}/photos.lock"),
       File("${(await getApplicationDocumentsDirectory()).path}/albums.hive"),
