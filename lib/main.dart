@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/pages/albums.dart';
-import 'package:fover/pages/camera.dart';
 import 'package:fover/pages/first.dart';
 import 'package:fover/pages/library.dart';
 import 'package:fover/src/services/photo_store.dart';
@@ -66,7 +65,6 @@ class _MainAppState extends State<MainApp> {
           children: const [
             LibraryPage(onlySelect: false),
             AlbumsPage(),
-            CameraPage(),
             Placeholder(),
           ],
         ),
@@ -100,7 +98,6 @@ class _MainAppState extends State<MainApp> {
                 items: [
                   BottomNavigationBarItem(icon: Icon(CupertinoIcons.photo), label: "Library"),
                   BottomNavigationBarItem(icon: Icon(CupertinoIcons.collections), label: "Albums"),
-                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.camera), label: "Camera"),
                   BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: "Search"),
                 ]
               ) 
