@@ -2,12 +2,14 @@ import 'dart:developer';
 
 import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
+import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fover/main.dart';
 import 'package:fover/pages/settings.dart';
 import 'package:fover/pages/viewer.dart';
+import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/requests.dart';
 import 'package:fover/src/widgets/blurred_app_bar.dart';
 import 'package:fover/src/widgets/button.dart';
@@ -57,23 +59,24 @@ class _LibraryPageState extends State<LibraryPage> {
     });
   }
 
-Future<List<_MediaEntry>> _loadImages() async {
-  final entries = await fetchPhotosDir();
+  Future<List<_MediaEntry>> _loadImages() async {
+    final entries = await fetchPhotosDir();
 
+    final results = await Future.wait(
+      entries.map((entry) => fetchImageBytes(entry['path'], entry['mimetype'])),
+    );
 
-  final results = await Future.wait(
-    entries.map((entry) => fetchImageBytes(entry['path'], entry['mimetype'])),
-  );
-
-  return results.asMap().entries
-    .where((e) => e.value != null)
-    .map((e) => _MediaEntry(
-      bytes: e.value as Uint8List,
-      mimetype: entries[e.key]['mimetype'] as String,
-      encodedPath: entries[e.key]['path'] as String,
-    ))
-    .toList();
-}
+    return results.asMap().entries
+      .where((e) => e.value != null)
+      .where((e) {
+        final stored = PhotoStore.get(entries[e.key]['path'] as String);
+        return stored?.deletedAt == null;
+      }).map((e) => _MediaEntry(
+        bytes: e.value as Uint8List,
+        mimetype: entries[e.key]['mimetype'] as String,
+        encodedPath: entries[e.key]['path'] as String,
+    )).toList();
+  }
 
 
   Future<List<Uint8List>> _compressImages(List<Uint8List> list) async {
@@ -264,7 +267,6 @@ Future<List<_MediaEntry>> _loadImages() async {
                                 images: images, 
                                 mimetype: mimetypes,
                                 index: index, 
-                                length: images.length,
                                 encodedPaths: data.encodedPaths
                               ),
                               transitionsBuilder: (_, animation, ___, child) {

@@ -1,9 +1,12 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fover/main.dart';
+import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/dialog.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -18,14 +21,12 @@ class ViewerPage extends StatefulWidget {
     required this.mimetype,
     required this.encodedPaths,
     required this.index,
-    required this.length,
   });
 
   final List<Uint8List> images;
   final List<String> mimetype;
   final List<String> encodedPaths;
   final int index;
-  final int length;
 
   @override
   State<ViewerPage> createState() => _ViewerPageState();
@@ -43,10 +44,13 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   double _videoScale = 1.0;
   late final player = Player();
   late final controller = VideoController(player);
+  late final ExtendedPageController _pageController;
+
   @override
   void initState() {
     super.initState();
     currentIndex = widget.index;
+    _pageController = ExtendedPageController(initialPage: currentIndex);
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
@@ -64,6 +68,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   void dispose() {
     _animation?.removeListener(animationListener);
     _animationController.dispose();
+    _pageController.dispose();
     player.dispose();
     super.dispose();
   }
@@ -142,9 +147,9 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
             Expanded(
               child: Center(
                 child: ExtendedImageGesturePageView.builder(
-                  itemCount: widget.length,
+                  controller: _pageController,
+                  itemCount: widget.images.length,
                   scrollDirection: Axis.horizontal,
-                  controller: ExtendedPageController(initialPage: currentIndex),
                   onPageChanged: (index) {
                     setState(() {
                       currentIndex = index;
@@ -368,7 +373,36 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                     pageBuilder: (context, animation, secondaryAnimation) {
                       return MyDialog(
                         content: "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
-                        onTap: () {},
+                        principalButton: TextButton(
+                          child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
+                          onPressed: () async {
+                            await PhotoStore.softDelete(widget.encodedPaths[currentIndex]);
+                            Navigator.pop(context);
+                            final totalRemaining = widget.images.length - 1;
+
+                            if (totalRemaining == 0) {
+                              Navigator.pop(context);
+                              return;
+                            }
+
+                            setState(() {
+                              widget.images.removeAt(currentIndex);
+                              widget.encodedPaths.removeAt(currentIndex);
+                              widget.mimetype.removeAt(currentIndex);
+                            });
+
+                            if (currentIndex >= totalRemaining) {
+                              _pageController.animateToPage(
+                                totalRemaining - 1, 
+                                duration: const Duration(milliseconds: 300), 
+                                curve: Curves.easeInOut
+                              );
+                              setState(() => currentIndex = totalRemaining - 1);
+                            }
+
+
+                          }
+                        ),
                       );
                     }
                   );
