@@ -21,12 +21,14 @@ class ViewerPage extends StatefulWidget {
     required this.mimetype,
     required this.encodedPaths,
     required this.index,
+    this.trashMode = false,
   });
 
   final List<Uint8List> images;
   final List<String> mimetype;
   final List<String> encodedPaths;
   final int index;
+  final bool trashMode;
 
   @override
   State<ViewerPage> createState() => _ViewerPageState();
@@ -354,61 +356,120 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Button.iconOnly(
-                icon: const Icon(CupertinoIcons.share),
-                glassIcon: CNSymbol('square.and.arrow.up', size: 18),
-                onPressed: () async {
-                  // final params = ShareParams(files: []);
-                  // await SharePlus.instance.share(params);
-                },
-              ),
-              _buildMediaControls(),
-              Button.iconOnly(
-                icon: const Icon(CupertinoIcons.trash),
-                glassIcon: CNSymbol('trash', size: 18),
-                onPressed: () {
-                  showGeneralDialog(
-                    barrierDismissible: false,
-                    context: context,
-                    pageBuilder: (context, animation, secondaryAnimation) {
-                      return MyDialog(
-                        content: "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
-                        principalButton: TextButton(
-                          child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
-                          onPressed: () async {
-                            await PhotoStore.softDelete(widget.encodedPaths[currentIndex]);
-                            Navigator.pop(context);
-                            final totalRemaining = widget.images.length - 1;
-
-                            if (totalRemaining == 0) {
+              if (!widget.trashMode)...[
+                Button.iconOnly(
+                  icon: const Icon(CupertinoIcons.share),
+                  glassIcon: CNSymbol('square.and.arrow.up', size: 18),
+                  onPressed: () async {
+                    // final params = ShareParams(files: []);
+                    // await SharePlus.instance.share(params);
+                  },
+                ),
+                _buildMediaControls(),
+                Button.iconOnly(
+                  icon: const Icon(CupertinoIcons.trash),
+                  glassIcon: CNSymbol('trash', size: 18),
+                  onPressed: () {
+                    showGeneralDialog(
+                      barrierDismissible: false,
+                      context: context,
+                      pageBuilder: (context, animation, secondaryAnimation) {
+                        return MyDialog(
+                          content: "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
+                          principalButton: TextButton(
+                            child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
+                            onPressed: () async {
+                              await PhotoStore.softDelete(widget.encodedPaths[currentIndex]);
                               Navigator.pop(context);
-                              return;
+                              final totalRemaining = widget.images.length - 1;
+
+                              if (totalRemaining == 0) {
+                                Navigator.pop(context);
+                                return;
+                              }
+
+                              setState(() {
+                                widget.images.removeAt(currentIndex);
+                                widget.encodedPaths.removeAt(currentIndex);
+                                widget.mimetype.removeAt(currentIndex);
+                              });
+
+                              if (currentIndex >= totalRemaining) {
+                                _pageController.animateToPage(
+                                  totalRemaining - 1, 
+                                  duration: const Duration(milliseconds: 300), 
+                                  curve: Curves.easeInOut
+                                );
+                                setState(() => currentIndex = totalRemaining - 1);
+                              }
+                              
                             }
+                          ),
+                        );
+                      }
+                    );
+                  },
+                ),
+              ] else ...[
+                Button(
+                  label: "Recover",
+                  onPressed: () async {
+                    await PhotoStore.restore(widget.encodedPaths[currentIndex]);
+                    final totalRemaining = widget.images.length - 1;
 
-                            setState(() {
-                              widget.images.removeAt(currentIndex);
-                              widget.encodedPaths.removeAt(currentIndex);
-                              widget.mimetype.removeAt(currentIndex);
-                            });
-
-                            if (currentIndex >= totalRemaining) {
-                              _pageController.animateToPage(
-                                totalRemaining - 1, 
-                                duration: const Duration(milliseconds: 300), 
-                                curve: Curves.easeInOut
-                              );
-                              setState(() => currentIndex = totalRemaining - 1);
-                            }
-
-
-                          }
-                        ),
-                      );
+                    if (totalRemaining == 0) {
+                      Navigator.pop(context);
+                      return;
                     }
-                  );
-                },
-              ),
-            ],
+
+                    if (currentIndex >= totalRemaining) {
+                      _pageController.animateToPage(
+                        totalRemaining - 1, 
+                        duration: const Duration(milliseconds: 300), 
+                        curve: Curves.easeInOut
+                      );
+                      setState(() => currentIndex = totalRemaining - 1);
+                    }
+                  }
+                ),
+                Button(
+                  label: "Delete",
+                  onPressed: () {
+                    showGeneralDialog(
+                      barrierDismissible: false,
+                      context: context,
+                      pageBuilder: (context, animation, secondaryAnimation) {
+                        return MyDialog(
+                          content: "This action cannot be undone. The image will also be deleted from your server.",
+                          principalButton: TextButton(
+                            child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
+                            onPressed: () async {
+                              await PhotoStore.hardDelete(widget.encodedPaths[currentIndex]);
+                              Navigator.pop(context);
+                              final totalRemaining = widget.images.length - 1;
+
+                              if (totalRemaining == 0) {
+                                Navigator.pop(context);
+                                return;
+                              }
+
+                              if (currentIndex >= totalRemaining) {
+                                _pageController.animateToPage(
+                                  totalRemaining - 1, 
+                                  duration: const Duration(milliseconds: 300), 
+                                  curve: Curves.easeInOut
+                                );
+                                setState(() => currentIndex = totalRemaining - 1);
+                              }
+                            }
+                          ),
+                        );
+                      }
+                    );
+                  }
+                )
+              ],
+            ]
           ),
         ),
         const SizedBox(height: 20),
