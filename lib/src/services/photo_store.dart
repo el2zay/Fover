@@ -60,6 +60,11 @@ class PhotoStore {
     await entry.save();
   }
 
+  static Future<void> hardDelete(String path) async {
+    deleteLocalFile(path);
+    await _photoBox.delete(path);
+  }
+
   static Future<void> restore(String path) async {
     final entry = _photoBox.get(path);
     if (entry == null) return;
