@@ -47,19 +47,48 @@ class _MediaEntry {
 
 class _LibraryPageState extends State<LibraryPage> {
   bool showButtons = false;
-  late Future<_GalleryData> _galleryFuture;
-  bool selectedMode = false;
+  _GalleryData? _data;  bool selectedMode = false;
+  bool _loading = true;
   List<int> selectedImages = [];
   int elements = 0;
 
   @override
   void initState() {
     super.initState();
-    _galleryFuture = _loadImages().then((images) async {
-      final thumbs = await _compressImages(images.map((e) => e.bytes).toList());
-      return _GalleryData(images: images.map((e) => e.bytes).toList(), thumbs: thumbs, mimetypes: images.map((e) => e.mimetype).toList(), encodedPaths: images.map((e) => e.encodedPath).toList());
+    _load();
+  }
+
+  // Generated with AI
+  Future<void> _load() async {
+    final images = await _loadImages();
+    final thumbs = await _compressImages(images.map((e) => e.bytes).toList());
+
+    setState(() {
+      _data = _GalleryData(
+        images: images.map((e) => e.bytes).toList(),
+        thumbs: thumbs,
+        mimetypes: images.map((e) => e.mimetype).toList(),
+        encodedPaths: images.map((e) => e.encodedPath).toList(),
+      );
+      _loading = false;
     });
   }
+
+
+  void _removeLocally(List<int> indexes) {
+    setState(() {
+      final sorted = indexes.toList()..sort((a, b) => b.compareTo(a));
+      for (final i in sorted) {
+        _data!.images.removeAt(i);
+        _data!.thumbs.removeAt(i);
+        _data!.mimetypes.removeAt(i);
+        _data!.encodedPaths.removeAt(i);
+      }
+      selectedImages.clear();
+    });
+  }
+  //
+
 
   Future<List<_MediaEntry>> _loadImages() async {
     final entries = await fetchPhotosDir();
@@ -104,19 +133,18 @@ class _LibraryPageState extends State<LibraryPage> {
     return results;
   }
 
-  void _refresh() {
+  Future<void> _refresh() async {
+    final images = await _loadImages(); // réseau seulement
     setState(() {
-      _galleryFuture = _loadImages().then((images) async {
-        final thumbs = await _compressImages(images.map((e) => e.bytes).toList());
-        return _GalleryData(
-          images: images.map((e) => e.bytes).toList(),
-          thumbs: thumbs,
-          mimetypes: images.map((e) => e.mimetype).toList(),
-          encodedPaths: images.map((e) => e.encodedPath).toList(),
-        );
-      });
+      _data = _GalleryData(
+        images: images.map((e) => e.bytes).toList(),
+        thumbs: _data!.thumbs, // ← garde les thumbs existants si possible
+        mimetypes: images.map((e) => e.mimetype).toList(),
+        encodedPaths: images.map((e) => e.encodedPath).toList(),
+      );
     });
   }
+
 
 
   @override
@@ -179,19 +207,20 @@ class _LibraryPageState extends State<LibraryPage> {
         ] : null,
       ) : null,
       backgroundColor: Colors.black,
-      body: FutureBuilder<_GalleryData>(
-        future: _galleryFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (!snapshot.hasData) {
-             return const Center(child: Text("Error loading images"));
-          }
-          final data = snapshot.data!;
-          final images = data.images;
-          final mimetypes = data.mimetypes;
-          final thumbs = data.thumbs;
+      body: Builder(
+          builder: (context) {
+            if (_loading) {
+              return SizedBox();
+            }
+            if (_data == null) {
+              return const Center(child: Text("Error loading images"));
+            }
+
+            final data = _data!;
+            final images = data.images;
+            final mimetypes = data.mimetypes;
+            final thumbs = data.thumbs;
+
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             setState(() {
@@ -396,8 +425,7 @@ class _LibraryPageState extends State<LibraryPage> {
                               for (final i in selectedImages) {
                                 await PhotoStore.restore(data.encodedPaths[i]);
                               }
-                              setState(() => selectedImages.clear());
-                              _refresh();
+                              _removeLocally(selectedImages);
                             },
                             glassIcon: CNSymbol('arrow.up.bin', size: 20),
                             icon: Icon(CupertinoIcons.arrow_up_bin, size: 20),
@@ -420,9 +448,8 @@ class _LibraryPageState extends State<LibraryPage> {
                                         for (final i in selectedImages) {
                                           await PhotoStore.hardDelete(data.encodedPaths[i]);
                                         }
-                                        setState(() => selectedImages.clear());
                                         Navigator.pop(context);
-                                        _refresh();
+                                        _removeLocally(selectedImages);
                                       }
                                     ),
                                   );
