@@ -2,7 +2,6 @@ import 'dart:developer';
 
 import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
-import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +14,7 @@ import 'package:fover/src/widgets/blurred_app_bar.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/context_menu.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:fover/src/widgets/dialog.dart';
 
 final ValueNotifier<int> countSelected = ValueNotifier<int>(0);
 
@@ -47,7 +47,7 @@ class _MediaEntry {
 
 class _LibraryPageState extends State<LibraryPage> {
   bool showButtons = false;
-  late final Future<_GalleryData> _galleryFuture;
+  late Future<_GalleryData> _galleryFuture;
   bool selectedMode = false;
   List<int> selectedImages = [];
   int elements = 0;
@@ -57,7 +57,7 @@ class _LibraryPageState extends State<LibraryPage> {
     super.initState();
     _galleryFuture = _loadImages().then((images) async {
       final thumbs = await _compressImages(images.map((e) => e.bytes).toList());
-      return _GalleryData(images: images.map((e) => e.bytes).toList(), thumbs: thumbs, mimetypes: images.map((e) => e.mimetype).toList(), encodedPaths: images.map((e) => e.encodedPath.split('/').last).toList());
+      return _GalleryData(images: images.map((e) => e.bytes).toList(), thumbs: thumbs, mimetypes: images.map((e) => e.mimetype).toList(), encodedPaths: images.map((e) => e.encodedPath).toList());
     });
   }
 
@@ -102,6 +102,20 @@ class _LibraryPageState extends State<LibraryPage> {
     }));
 
     return results;
+  }
+
+  void _refresh() {
+    setState(() {
+      _galleryFuture = _loadImages().then((images) async {
+        final thumbs = await _compressImages(images.map((e) => e.bytes).toList());
+        return _GalleryData(
+          images: images.map((e) => e.bytes).toList(),
+          thumbs: thumbs,
+          mimetypes: images.map((e) => e.mimetype).toList(),
+          encodedPaths: images.map((e) => e.encodedPath).toList(),
+        );
+      });
+    });
   }
 
 
@@ -200,166 +214,232 @@ class _LibraryPageState extends State<LibraryPage> {
           }
           return Padding(
             padding: const EdgeInsets.only(bottom: 8.0),
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 2,
-                mainAxisSpacing: 2,
-              ),
-              itemCount: thumbs.length,
-              itemBuilder: (context, index) {
-                final bytes = thumbs[index];
-
-                return Builder(
-                  builder: (itemContext) => SizedBox(
-                    width: MediaQuery.of(context).size.width / 3 - 2,
-                    height: MediaQuery.of(context).size.width / 3 - 2,
-                    child: GestureDetector(
-                      onLongPress: () {
-                        final screenWidth = MediaQuery.of(context).size.width;
-                        final box =
-                            itemContext.findRenderObject() as RenderBox;
-                        final position = box.localToGlobal(Offset.zero);
-
-                        final targetX =
-                            position.dx + (box.size.width / 2) - 115;
-                        final clampedX =
-                            targetX.clamp(15.0, screenWidth - 230 - 10);
-
-                        HapticFeedback.mediumImpact();
-
-                        showGeneralDialog(
-                          context: context,
-                          // barrierColor: Colors.black26,
-                          barrierDismissible: true,
-                          barrierLabel: '',
-                          pageBuilder:
-                              (context, animation, secondaryAnimation) {
-                            return Stack(
-                              children: [
-                                Positioned(
-                                  left: clampedX,
-                                  top: position.dy + box.size.height + 10,
-                                  width: 230,
-                                  child: const Material(
-                                    color: Colors.transparent,
-                                    elevation: 0,
-                                    child: ContextMenu(),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                      onTap: () {
-                        if (selectedMode || widget.onlySelect) {
-                          setState(() {
-                            if (selectedImages.contains(index)) {
-                              selectedImages.remove(index);
-                            } else {
-                              selectedImages.add(index);
-                            }
-                          });
-                          countSelected.value =  selectedImages.length;
-                        } else {
-                          Navigator.push(
-                            context,
-                            PageRouteBuilder(
-                              opaque: false,
-                              transitionDuration: const Duration(milliseconds: 300),
-                              reverseTransitionDuration: const Duration(milliseconds: 300),
-                              pageBuilder: (_, __, ___) => ViewerPage(
-                                images: images, 
-                                mimetype: mimetypes,
-                                index: index, 
-                                encodedPaths: data.encodedPaths
-                              ),
-                              transitionsBuilder: (_, animation, ___, child) {
-                                return Stack(
-                                  children: [
-                                    FadeTransition(
-                                      opacity: animation,
-                                      child: const ColoredBox(
-                                        color: Colors.black,
-                                        child: SizedBox.expand(),
+            child: Column(
+              children: [
+                Expanded(
+                  child: GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 2,
+                      mainAxisSpacing: 2,
+                    ),
+                    itemCount: thumbs.length,
+                    itemBuilder: (context, index) {
+                      final bytes = thumbs[index];
+                  
+                      return Builder(
+                        builder: (itemContext) => SizedBox(
+                          width: MediaQuery.of(context).size.width / 3 - 2,
+                          height: MediaQuery.of(context).size.width / 3 - 2,
+                          child: GestureDetector(
+                            onLongPress: () {
+                              final screenWidth = MediaQuery.of(context).size.width;
+                              final box =
+                                  itemContext.findRenderObject() as RenderBox;
+                              final position = box.localToGlobal(Offset.zero);
+                  
+                              final targetX =
+                                  position.dx + (box.size.width / 2) - 115;
+                              final clampedX =
+                                  targetX.clamp(15.0, screenWidth - 230 - 10);
+                  
+                              HapticFeedback.mediumImpact();
+                  
+                              showGeneralDialog(
+                                context: context,
+                                // barrierColor: Colors.black26,
+                                barrierDismissible: true,
+                                barrierLabel: '',
+                                pageBuilder:
+                                    (context, animation, secondaryAnimation) {
+                                  return Stack(
+                                    children: [
+                                      Positioned(
+                                        left: clampedX,
+                                        top: position.dy + box.size.height + 10,
+                                        width: 230,
+                                        child: const Material(
+                                          color: Colors.transparent,
+                                          elevation: 0,
+                                          child: ContextMenu(),
+                                        ),
                                       ),
-                                    ),
-                                    child
-                                  ],
-                                );
-                              }
-                            )
-                          );
-                        }
-                      },
-                      child: Stack(
-                        children: [
-                          Hero(
-                            tag: "image_$index",
-                            flightShuttleBuilder: (_, animation, direction, fromContext, toContext) {
-                              return Image.memory(
-                                bytes,
-                                fit: BoxFit.cover,
+                                    ],
+                                  );
+                                },
                               );
                             },
-                            child: Image.memory(
-                              bytes, 
-                              fit: BoxFit.cover, 
-                              width: double.infinity, 
-                              height: double.infinity, 
-                              opacity: (selectedMode || widget.onlySelect) && selectedImages.contains(index) ? const AlwaysStoppedAnimation(0.8) : const AlwaysStoppedAnimation(1.0),
-                            ),
-                          ),
-                          if ((selectedMode || widget.onlySelect) && selectedImages.contains(index))
-                            Align(
-                              alignment: Alignment.bottomRight,
-                              child: Container(
-                                margin: const EdgeInsets.all(5),
-                                decoration: const BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                ),
-                                child:  Icon(
-                                  CupertinoIcons.checkmark_circle_fill,
-                                  color: CupertinoColors.systemBlue,
-                                  size: 22,
-                                ),
-                              ),
-                          ),
-
-                          if (widget.trashMode)...[
-                            Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.bottomCenter,
-                                  end: Alignment.topCenter,
-                                  stops: const [0.0, 0.3],
-                                  colors: [
-                                    Colors.black.withAlpha(190),
-                                    Colors.transparent,
-                                  ],
-                                ),
-                              ),
-                            ),
-                            Align(
-                              alignment: Alignment.bottomCenter,
-                              child: Builder(builder: (context) {
-                                final entry = PhotoStore.get(data.encodedPaths[index]);
-                                final days = 30 - DateTime.now().difference(entry!.deletedAt!).inDays;
-                                return Text(
-                                    "$days days",
-                                );
+                            onTap: () {
+                              if (selectedMode || widget.onlySelect) {
+                                setState(() {
+                                  if (selectedImages.contains(index)) {
+                                    selectedImages.remove(index);
+                                  } else {
+                                    selectedImages.add(index);
+                                  }
+                                });
+                                countSelected.value =  selectedImages.length;
+                              } else {
+                                Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                    opaque: false,
+                                    transitionDuration: const Duration(milliseconds: 300),
+                                    reverseTransitionDuration: const Duration(milliseconds: 300),
+                                    pageBuilder: (_, __, ___) => ViewerPage(
+                                      images: images, 
+                                      mimetype: mimetypes,
+                                      index: index, 
+                                      encodedPaths: data.encodedPaths,
+                                      trashMode: widget.trashMode,
+                                    ),
+                                    transitionsBuilder: (_, animation, ___, child) {
+                                      return Stack(
+                                        children: [
+                                          FadeTransition(
+                                            opacity: animation,
+                                            child: const ColoredBox(
+                                              color: Colors.black,
+                                              child: SizedBox.expand(),
+                                            ),
+                                          ),
+                                          child
+                                        ],
+                                      );
+                                    }
+                                  )
+                                ).then((_) => _refresh());
                               }
-                            )
+                            },
+                            child: Stack(
+                              children: [
+                                Hero(
+                                  tag: "image_$index",
+                                  flightShuttleBuilder: (_, animation, direction, fromContext, toContext) {
+                                    return Image.memory(
+                                      bytes,
+                                      fit: BoxFit.cover,
+                                    );
+                                  },
+                                  child: Image.memory(
+                                    bytes, 
+                                    fit: BoxFit.cover, 
+                                    width: double.infinity, 
+                                    height: double.infinity, 
+                                    opacity: (selectedMode || widget.onlySelect) && selectedImages.contains(index) ? const AlwaysStoppedAnimation(0.8) : const AlwaysStoppedAnimation(1.0),
+                                  ),
+                                ),
+                                if ((selectedMode || widget.onlySelect) && selectedImages.contains(index))
+                                  Align(
+                                    alignment: Alignment.bottomRight,
+                                    child: Container(
+                                      margin: const EdgeInsets.all(5),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child:  Icon(
+                                        CupertinoIcons.checkmark_circle_fill,
+                                        color: CupertinoColors.systemBlue,
+                                        size: 22,
+                                      ),
+                                    ),
+                                ),
+                  
+                                if (widget.trashMode)...[
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.bottomCenter,
+                                        end: Alignment.topCenter,
+                                        stops: const [0.0, 0.3],
+                                        colors: [
+                                          Colors.black.withAlpha(190),
+                                          Colors.transparent,
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  Align(
+                                    alignment: Alignment.bottomCenter,
+                                    child: Builder(
+                                      builder: (context) {
+                                        final entry = PhotoStore.get(data.encodedPaths[index]);
+                                        if (entry?.deletedAt == null) return const SizedBox();
+                                        final days = (30 - DateTime.now().difference(entry!.deletedAt!).inDays).clamp(0, 30);
+                                        return Text(
+                                          "$days days",
+                                          style: TextStyle(fontWeight: FontWeight.w500),
+                                        );
+                                      },
+                                    ),
+                                  ),
+
+                                ],
+                              ],
+                            ),
                           ),
-                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                if (widget.trashMode && selectedImages.isNotEmpty)
+                SafeArea(
+                  child: Padding(
+                    padding: EdgeInsetsGeometry.symmetric(horizontal: 15),
+                    child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Button.iconOnly(
+                            onPressed: () async {
+                              for (final i in selectedImages) {
+                                await PhotoStore.restore(data.encodedPaths[i]);
+                              }
+                              setState(() => selectedImages.clear());
+                              _refresh();
+                            },
+                            glassIcon: CNSymbol('arrow.up.bin', size: 20),
+                            icon: Icon(CupertinoIcons.arrow_up_bin, size: 20),
+                            tint: Theme.of(context).scaffoldBackgroundColor,
+                            glassConfig: CNButtonConfig(
+                              style: CNButtonStyle.prominentGlass
+                          )),
+
+                          Button.iconOnly(
+                            onPressed: () async {
+                              showGeneralDialog(
+                                barrierDismissible: false,
+                                context: context,
+                                pageBuilder: (context, animation, secondaryAnimation) {
+                                  return MyDialog(
+                                    content: "This action cannot be undone. The image will also be deleted from your server.",
+                                    principalButton: TextButton(
+                                      child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
+                                      onPressed: () async {
+                                        for (final i in selectedImages) {
+                                          await PhotoStore.hardDelete(data.encodedPaths[i]);
+                                        }
+                                        setState(() => selectedImages.clear());
+                                        Navigator.pop(context);
+                                        _refresh();
+                                      }
+                                    ),
+                                  );
+                                }
+                              );
+                            },
+                            glassIcon: CNSymbol('trash', size: 20),
+                            icon: Icon(CupertinoIcons.trash, size: 20),
+                            tint: Theme.of(context).scaffoldBackgroundColor,
+                            glassConfig: CNButtonConfig(
+                              style: CNButtonStyle.prominentGlass
+                          )),
                         ],
                       ),
-                    ),
                   ),
-                );
-              },
+                ),
+              ],
             ),
           );
         },
