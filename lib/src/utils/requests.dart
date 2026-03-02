@@ -115,6 +115,13 @@ Future<List<dynamic>> fetchPhotosDir() async {
   return filesOnly.toList();
 }
 
+Future<void> deleteLocalFile(String path) async {
+  await client?.fetch(
+      url: 'v15/fs/rm/',
+      method: 'POST',
+      body: {'files': [path]},
+    );
+}
 
 
 Future<Uint8List?> fetchImageBytes(String path, String mimetype) async {
