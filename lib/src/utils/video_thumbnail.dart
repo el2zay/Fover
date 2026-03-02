@@ -9,24 +9,22 @@ import 'package:path_provider/path_provider.dart';
 class VideoThumbnailService {
   static const _channel = MethodChannel('fover/video_thumbnail');
 
-  static Future<Uint8List?> getFirstFrame(Uint8List videoBytes) async {
-    final tempDir = await getTemporaryDirectory();
-    final tempFile = File(
-      '${tempDir.path}/tmp_${DateTime.now().millisecondsSinceEpoch}.mp4'
-    );
+static Future<Uint8List?> getFirstFrame(Uint8List videoBytes) async {
+  final tempDir = await getTemporaryDirectory();
+  final tempFile = File('${tempDir.path}/tmp_${DateTime.now().millisecondsSinceEpoch}.mp4');
 
-    try {
-      await tempFile.writeAsBytes(videoBytes);
-      final Uint8List? frame = await _channel.invokeMethod('getFirstFrame', {
-        'path': tempFile.path,
-      });
-      log('Frame reçue: ${frame?.length} bytes');
-      return frame;
-    } catch (e) {
-      log('Erreur: $e');
-      return null;
-    } finally {
-      if (await tempFile.exists()) await tempFile.delete();
-    }
+  try {
+    await tempFile.writeAsBytes(videoBytes);
+    final Uint8List? frame = await _channel.invokeMethod('getFirstFrame', {
+      'path': tempFile.path,
+    });
+    return frame;
+  } catch (e) {
+    log('Erreur: $e');
+    return null;
+  } finally {
+    if (await tempFile.exists()) await tempFile.delete();
   }
+}
+
 }

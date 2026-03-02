@@ -29,8 +29,8 @@ class LibraryPage extends StatefulWidget {
 }
 
 class _GalleryData {
-  final List<Uint8List> images;
-  final List<Uint8List> thumbs;
+  final List<Uint8List?> images;
+  final List<Uint8List?> thumbs;
   final List<String> mimetypes;
   final List<String> encodedPaths;
 
@@ -38,7 +38,7 @@ class _GalleryData {
 }
 
 class _MediaEntry {
-  final Uint8List bytes;
+  final Uint8List? bytes;
   final String mimetype;
   final String encodedPath;
 
@@ -97,48 +97,62 @@ class _LibraryPageState extends State<LibraryPage> {
       entries.map((entry) => fetchImageBytes(entry['path'], entry['mimetype'])),
     );
 
-    return results.asMap().entries
-      .where((e) => e.value != null)
-      .where((e) {
-        final stored = PhotoStore.get(entries[e.key]['path'] as String);
-        return widget.trashMode 
-          ? stored?.deletedAt != null
-          : stored?.deletedAt == null;
-      }).map((e) => _MediaEntry(
-        bytes: e.value as Uint8List,
-        mimetype: entries[e.key]['mimetype'] as String,
-        encodedPath: entries[e.key]['path'] as String,
+    // return results.asMap().entries
+    //   .where((e) => e.value != null)
+    //   .where((e) {
+    //     final stored = PhotoStore.get(entries[e.key]['path'] as String);
+    //     return widget.trashMode 
+    //       ? stored?.deletedAt != null
+    //       : stored?.deletedAt == null;
+    //   }).map((e) => _MediaEntry(
+    //     bytes: e.value as Uint8List,
+    //     mimetype: entries[e.key]['mimetype'] as String,
+    //     encodedPath: entries[e.key]['path'] as String,
+    // )).toList();
+
+  return results.asMap().entries
+    .where((e) {
+      final stored = PhotoStore.get(entries[e.key]['path'] as String);
+      return widget.trashMode 
+        ? stored?.deletedAt != null
+        : stored?.deletedAt == null;
+    }).map((e) => _MediaEntry(
+      bytes: e.value, // ← peut être null
+      mimetype: entries[e.key]['mimetype'] as String,
+      encodedPath: entries[e.key]['path'] as String,
     )).toList();
   }
 
 
-  Future<List<Uint8List>> _compressImages(List<Uint8List> list) async {
+  Future<List<Uint8List?>> _compressImages(List<Uint8List?> list) async {
     final results = await Future.wait(list.map((origBytes) async {
+      if (origBytes == null) return null;
+
       final origSize = origBytes.lengthInBytes / 1024;
-      // log("Taille originale ${origSize.toStringAsFixed(1)} KB");
 
       final compressed = await FlutterImageCompress.compressWithList(
         origBytes,
         minWidth: 300,
-        minHeight: 300, 
+        minHeight: 300,
         quality: 10,
-        format: CompressFormat.webp
+        format: CompressFormat.webp,
       );
 
       final compSize = compressed.lengthInBytes / 1024;
-      log("Taille compressée ${compSize.toStringAsFixed(1)} KB - Réduit de ${((1 - compSize/origSize)*10).toStringAsFixed(1)}% ");
+      log("Taille compressée ${compSize.toStringAsFixed(1)} KB - Réduit de ${((1 - compSize/origSize)*10).toStringAsFixed(1)}%");
       return compressed;
     }));
 
     return results;
   }
 
+
   Future<void> _refresh() async {
-    final images = await _loadImages(); // réseau seulement
+    final images = await _loadImages();
     setState(() {
       _data = _GalleryData(
         images: images.map((e) => e.bytes).toList(),
-        thumbs: _data!.thumbs, // ← garde les thumbs existants si possible
+        thumbs: _data!.thumbs,
         mimetypes: images.map((e) => e.mimetype).toList(),
         encodedPaths: images.map((e) => e.encodedPath).toList(),
       );
@@ -155,12 +169,21 @@ class _LibraryPageState extends State<LibraryPage> {
         title: widget.trashMode ? "Trash" :  "Library",
         subtitle: !widget.trashMode ? "$elements element${elements > 1 ? "s" : ""}" : null,
         actions: showButtons || !widget.onlySelect ? [
-          CupertinoTheme(
-            data: const CupertinoThemeData(
-              brightness: Brightness.dark,
-            ),
-            child: 
-            !widget.trashMode ?
+          // !widget.trashMode ?
+          //   Button.iconOnly(
+          //     icon: const Icon(CupertinoIcons.refresh, color: Colors.white),
+          //     glassIcon: CNSymbol('arrow.clockwise', size: 17),
+          //     tint: Colors.white.withAlpha(10),
+          //     glassConfig: const CNButtonConfig(
+          //       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          //     ),
+          //     onPressed: () {
+          //        _refresh();
+          //     },
+          //   ) : SizedBox(),
+
+          SizedBox(width: 10),
+          !widget.trashMode ?
             Button.iconOnly(
               icon: const Icon(CupertinoIcons.settings, color: Colors.white),
               glassIcon: CNSymbol('gear', size: 17),
@@ -169,7 +192,7 @@ class _LibraryPageState extends State<LibraryPage> {
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               ),
               onPressed: () {
-                 showModalBottomSheet(
+                  showModalBottomSheet(
                     constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
                     backgroundColor: Colors.black,
                     isScrollControlled: true,
@@ -179,31 +202,27 @@ class _LibraryPageState extends State<LibraryPage> {
                   }
                 );
               },
-            ) : SizedBox()
-          ),
+            ) : SizedBox(),
+
           const SizedBox(width: 10),
-          CupertinoTheme(
-            data: const CupertinoThemeData(
-              brightness: Brightness.dark,
-            ),
-            child: ConstrainedBox(
-              constraints : const BoxConstraints(maxWidth: 95),
-              child: Button(
-                label: selectedMode ? "Cancel" : "Select",
-                tint: Colors.white.withAlpha(10),
-                glassConfig: const CNButtonConfig(
-                  style: CNButtonStyle.prominentGlass,
-                ),
-                onPressed: () {
-                  setState(() {
-                    selectedMode = !selectedMode;
-                    selectedImages.clear();
-                    showTabBar.value = false;
-                  });
-                },
-              )
-            ),
-          ),
+
+          ConstrainedBox(
+            constraints : const BoxConstraints(maxWidth: 95),
+            child: Button(
+              label: selectedMode ? "Cancel" : "Select",
+              tint: Colors.white.withAlpha(10),
+              glassConfig: const CNButtonConfig(
+                style: CNButtonStyle.prominentGlass,
+              ),
+              onPressed: () {
+                setState(() {
+                  selectedMode = !selectedMode;
+                  selectedImages.clear();
+                  showTabBar.value = false;
+                });
+              },
+            )
+          )
         ] : null,
       ) : null,
       backgroundColor: Colors.black,
@@ -256,7 +275,8 @@ class _LibraryPageState extends State<LibraryPage> {
                     itemBuilder: (context, index) {
                       final bytes = thumbs[index];
                   
-                      return Builder(
+                      return bytes == null ? Container(color: Colors.grey[900]) :
+                       Builder(
                         builder: (itemContext) => SizedBox(
                           width: MediaQuery.of(context).size.width / 3 - 2,
                           height: MediaQuery.of(context).size.width / 3 - 2,
@@ -316,7 +336,7 @@ class _LibraryPageState extends State<LibraryPage> {
                                     transitionDuration: const Duration(milliseconds: 300),
                                     reverseTransitionDuration: const Duration(milliseconds: 300),
                                     pageBuilder: (_, __, ___) => ViewerPage(
-                                      images: images, 
+                                      images: data.images.whereType<Uint8List>().toList(), 
                                       mimetype: mimetypes,
                                       index: index, 
                                       encodedPaths: data.encodedPaths,

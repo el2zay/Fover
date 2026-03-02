@@ -3,11 +3,12 @@ import 'dart:typed_data';
 
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/src/services/photo_store.dart';
-import 'package:fover/src/utils/video_thumbnail.dart';
+
 import 'package:freebox/freebox.dart';
 import 'package:fover/main.dart';
 import 'dart:developer';
 import 'package:path_provider/path_provider.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 
 Future signUp(context) async {
   var register = await FreeboxClient.registerFreebox(
@@ -33,7 +34,7 @@ Future signUp(context) async {
 
 Future<String> getFreeboxModel() async {
   var info = await client?.fetch(url: "v15/system");
-  String deviceName = info['result']?['model_info']?['name'] ?? ""; 
+  String deviceName = info?['result']['model_info']['name'] ?? ""; 
 
   if (deviceName.contains("fbxgw9")) return "Ultra";
   if (deviceName.contains("fbxgw8")) return "Pop";
@@ -125,18 +126,45 @@ Future<void> deleteLocalFile(String path) async {
 
 
 Future<Uint8List?> fetchImageBytes(String path, String mimetype) async {
-  var response = await client?.fetch(
+  final isVideo = mimetype.startsWith('video/');
+
+if (isVideo) {
+  final response = await client?.fetch(
+    url: "v15/dl/$path",
+    parseJson: false,
+    // limite de 10Mo pour éviter de télécharger la vidéo entière juste pour la miniature
+    headers: {'Range': 'bytes=0-10000000'},
+  );
+
+  if (response?.data is! Uint8List) return null;
+
+  // 2. Écris dans un fichier temporaire
+  final tempDir = await getTemporaryDirectory();
+  final tempFile = File('${tempDir.path}/tmp_${DateTime.now().millisecondsSinceEpoch}.mp4');
+  await tempFile.writeAsBytes(response!.data as Uint8List);
+
+  final bytes = await VideoThumbnail.thumbnailData(
+    video: tempFile.path,
+    imageFormat: ImageFormat.WEBP,
+    maxWidth: 300,
+    quality: 50,
+  );
+
+  print("🎬 thumbnail bytes: ${bytes?.length}");
+
+
+  await tempFile.delete();
+  return bytes;
+}
+
+
+
+  final response = await client?.fetch(
     url: "v15/dl/$path",
     parseJson: false,
   );
 
-  if (response is Uint8List) {
-    if (mimetype.startsWith('video/')) {
-      return await VideoThumbnailService.getFirstFrame(response);
-    }
-    return response;
-  }
-
-  return null;
+  return response?.data is Uint8List ? response!.data : null;
 }
+
 
