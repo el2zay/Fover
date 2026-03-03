@@ -45,11 +45,9 @@ class PhotoStore {
 
     final decoded = utf8.decode(base64.decode(path));
     final parentDecoded = decoded.substring(0, decoded.lastIndexOf('/'));
-    final dst = base64.encode(utf8.encode("$parentDecoded"));
+    final dst = base64.encode(utf8.encode(parentDecoded));
     final filename = decoded.substring(decoded.lastIndexOf('/') + 1);
 
-    print("dst" +  dst);
-    print("entry " +  entry.name);
     final success = await client?.fetch(
       url: "v15/fs/cp",
       method: "POST",
@@ -64,7 +62,7 @@ class PhotoStore {
     final newPath = base64.encode(utf8.encode("$parentDecoded/$newName"));
 
     if (success?.data?['success'] != true) return;
-    print(success?.data);
+
     await _photoBox.put(
       dst,
       PhotoEntry(
@@ -85,6 +83,7 @@ class PhotoStore {
     Map<String, String>? exif,
     String? detectedText,
     bool? hidden,
+    bool? favorite,
     
   }) async {
     final entry = _photoBox.get(path);
@@ -95,6 +94,7 @@ class PhotoStore {
     if (exif != null) entry.exif = exif;
     if (detectedText != null) entry.detectedText = detectedText;
     if (hidden != null) entry.hidden = hidden;
+    if (favorite != null) entry.favorite = favorite;
     await entry.save();
   }
 

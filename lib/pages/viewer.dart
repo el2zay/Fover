@@ -331,11 +331,19 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   label: 'Hide',
                   icon: CNSymbol('eye.slash', size: 20),
                 ),
-                CNPopupMenuDivider(),
                 CNPopupMenuItem(
                   label: 'Add to Album',
                   icon: CNSymbol('plus.rectangle.on.rectangle', size: 20),
                 ),
+                CNPopupMenuDivider(),
+                CNPopupMenuItem(
+                  label: 'Adjust the date and time',
+                  icon: CNSymbol('calendar.badge.clock', size: 20),
+                ),
+                CNPopupMenuItem(
+                  label: 'Adjust the location',
+                  icon: CNSymbol('mappin.circle', size: 20),
+                )
               ],
               onSelected: (item) async {
                 int realItem = widget.mimetype[currentIndex].startsWith('video/') ? item + 1 : item;
@@ -493,6 +501,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   }
 
   Widget _buildMediaControls() {
+    bool isFavorite = PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true;
     if (is26OrNewer) {
       return CNGlassButtonGroup(
         axis: Axis.horizontal,
@@ -500,8 +509,13 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
         spacingForGlass: 40.0,
         buttons: [
           CNButtonData.icon(
-            icon: const CNSymbol('heart', size: 22),
-            onPressed: () {},
+            icon: CNSymbol(isFavorite ? 'heart.fill' :  'heart', size: 22),
+            onPressed: () async {
+              await PhotoStore.update(path: widget.encodedPaths[currentIndex], favorite: !isFavorite);
+              setState(() {
+                isFavorite = !isFavorite;
+              });
+            },
             config: CNButtonDataConfig(
               style: CNButtonStyle.prominentGlass,
               glassEffectUnionId: 'media-controls',
