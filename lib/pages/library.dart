@@ -149,10 +149,12 @@ class _LibraryPageState extends State<LibraryPage> {
 
   Future<void> _refresh() async {
     final images = await _loadImages();
+    final thumbs = await _compressImages(images.map((e) => e.bytes).toList());
     setState(() {
       _data = _GalleryData(
         images: images.map((e) => e.bytes).toList(),
-        thumbs: _data!.thumbs,
+        // thumbs: _data!.thumbs,
+        thumbs: thumbs,
         mimetypes: images.map((e) => e.mimetype).toList(),
         encodedPaths: images.map((e) => e.encodedPath).toList(),
       );
@@ -341,6 +343,7 @@ class _LibraryPageState extends State<LibraryPage> {
                                       index: index, 
                                       encodedPaths: data.encodedPaths,
                                       trashMode: widget.trashMode,
+                                      onRefresh: _refresh,
                                     ),
                                     transitionsBuilder: (_, animation, ___, child) {
                                       return Stack(

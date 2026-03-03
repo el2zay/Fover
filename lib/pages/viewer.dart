@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:clipboard/clipboard.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
@@ -22,13 +23,15 @@ class ViewerPage extends StatefulWidget {
     required this.encodedPaths,
     required this.index,
     this.trashMode = false,
+    required this.onRefresh,
   });
 
-  final List<Uint8List> images;
+  final List<Uint8List?> images;
   final List<String> mimetype;
   final List<String> encodedPaths;
   final int index;
   final bool trashMode;
+  final VoidCallback? onRefresh;
 
   @override
   State<ViewerPage> createState() => _ViewerPageState();
@@ -210,20 +213,22 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                               ),
                             )
                           : const SizedBox()
-                        : ExtendedImage.memory(
-                          widget.images[index],
-                          fit: BoxFit.contain,
-                          mode: ExtendedImageMode.gesture,
-                          enableSlideOutPage: true,
-                          onDoubleTap: _handleDoubleTap,
-                          heroBuilderForSlidingPage: (Widget result) {
-                            return Hero(
-                              tag: 'image_$index',
-                              child: result,
-                              flightShuttleBuilder:
-                                  (_, __, ___, ____, _____) => result,
-                            );
-                          },
+                        : widget.images[index] != null
+                          ? ExtendedImage.memory(
+                            widget.images[index]!,
+                            fit: BoxFit.contain,
+                            mode: ExtendedImageMode.gesture,
+                            enableSlideOutPage: true,
+                            onDoubleTap: _handleDoubleTap,
+                            heroBuilderForSlidingPage: (Widget result) {
+                              return Hero(
+                                tag: 'image_$index',
+                                child: result,
+                                flightShuttleBuilder:
+                                    (_, __, ___, ____, _____) => result,
+                              );
+                            },
+                          ) : Container(color: Colors.grey[900]
                         ),
                     );
                   },
@@ -313,10 +318,11 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
               size: 40,
               buttonIcon: CNSymbol('ellipsis', size: 15),
               items: [
-                CNPopupMenuItem(
-                  label: 'Copy',
-                  icon: CNSymbol('doc.on.doc', size: 20),
-                ),
+                if (!widget.mimetype[currentIndex].startsWith('video/'))
+                  CNPopupMenuItem(
+                    label: 'Copy',
+                    icon: CNSymbol('doc.on.doc', size: 20),
+                  ),
                 CNPopupMenuItem(
                   label: 'Duplicate',
                   icon: CNSymbol('plus.square.on.square', size: 20),
@@ -331,7 +337,16 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   icon: CNSymbol('plus.rectangle.on.rectangle', size: 20),
                 ),
               ],
-              onSelected: (item) {
+              onSelected: (item) async {
+                int realItem = widget.mimetype[currentIndex].startsWith('video/') ? item + 1 : item;
+                if (realItem == 0) {
+                  final bytes = widget.images[currentIndex];
+                  if (bytes == null) return;
+                  await FlutterClipboard.copyImage(bytes);
+                } else if (realItem == 1) {
+                  await PhotoStore.duplicate(path: widget.encodedPaths[currentIndex]);
+                  widget.onRefresh?.call();
+                }
               },
             ),
           ),
