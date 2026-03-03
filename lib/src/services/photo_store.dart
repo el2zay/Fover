@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:fover/main.dart';
 import 'package:fover/src/models/album_entry.dart';
 import 'package:fover/src/utils/requests.dart';
 import 'package:freebox/freebox.dart';
@@ -12,7 +15,7 @@ class PhotoStore {
   static const _albumBoxName = 'albums';
   static const _deletionDelay = Duration(days:30);
 
-    static Future<void> init() async {
+  static Future<void> init() async {
     await Hive.initFlutter();
     Hive.registerAdapter(PhotoEntryAdapter());
     Hive.registerAdapter(AlbumEntryAdapter());
@@ -31,6 +34,48 @@ class PhotoStore {
     if (_photoBox.containsKey(path)) return;
 
     await _photoBox.put(path, PhotoEntry(path: path, name: name, date: date, size: size, mimetype: mimetype, exif: exif));
+  }
+
+  static Future<void> duplicate({
+    required String path
+  }) async {
+
+    final entry = _photoBox.get(path);
+    if (entry == null) return;
+
+    final decoded = utf8.decode(base64.decode(path));
+    final parentDecoded = decoded.substring(0, decoded.lastIndexOf('/'));
+    final dst = base64.encode(utf8.encode("$parentDecoded"));
+    final filename = decoded.substring(decoded.lastIndexOf('/') + 1);
+
+    print("dst" +  dst);
+    print("entry " +  entry.name);
+    final success = await client?.fetch(
+      url: "v15/fs/cp",
+      method: "POST",
+      body: {
+        "files" : [path],
+        "dst" : dst,
+        "mode" : "both"
+      },
+    );
+
+    final newName = success?.data?['result']?['name'] ?? filename;
+    final newPath = base64.encode(utf8.encode("$parentDecoded/$newName"));
+
+    if (success?.data?['success'] != true) return;
+    print(success?.data);
+    await _photoBox.put(
+      dst,
+      PhotoEntry(
+        path: newPath, 
+        name: newName, 
+        date: entry.date, 
+        size: entry.size, 
+        mimetype: entry.mimetype
+      )
+    );
+
   }
 
   static Future<void> update({
