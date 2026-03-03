@@ -341,7 +341,7 @@ class FreeboxUploader {
   final int? httpsPort;
   final String sessionToken;
 
-  static const int chunkSize = 512 * 1024; // 512KB par chunk
+  static const int chunkSize = 512 * 1024;
 
   FreeboxUploader({
     required this.apiDomain,
@@ -368,11 +368,10 @@ class FreeboxUploader {
     );
 
     final completer = Completer<bool>();
-    bool chunksSent = false;
 
     channel.stream.listen(
       (message) {
-        print('[WS RECEIVED] $message'); // ← log pour voir ce qui arrive
+        print('[WS RECEIVED] $message');
         final json = jsonDecode(message as String);
         final action = json['action'];
 
@@ -380,12 +379,10 @@ class FreeboxUploader {
           if (json['success'] == true) {
             print('[WS] Upload start OK, envoi des chunks...');
             _sendChunks(channel, fileBytes, onProgress);
-            // Envoie finalize après tous les chunks
             channel.sink.add(jsonEncode({
               'action': 'upload_finalize',
               'request_id': requestId,
             }));
-            chunksSent = true;
           } else {
             print('[WS] Upload start FAILED: ${json['msg']} (${json['error_code']})');
             completer.complete(false);
@@ -395,7 +392,7 @@ class FreeboxUploader {
           final totalLen = json['result']?['total_len'] ?? 0;
           onProgress(totalLen, fileBytes.lengthInBytes);
         } else if (action == 'upload_finalize') {
-          print('[WS] Finalize: ${json}');
+          print('[WS] Finalize: $json');
           completer.complete(json['success'] == true);
           channel.sink.close();
         }
