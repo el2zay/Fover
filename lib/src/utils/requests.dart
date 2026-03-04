@@ -128,34 +128,29 @@ Future<void> deleteLocalFile(String path) async {
 Future<Uint8List?> fetchImageBytes(String path, String mimetype) async {
   final isVideo = mimetype.startsWith('video/');
 
-if (isVideo) {
-  final response = await client?.fetch(
-    url: "v15/dl/$path",
-    parseJson: false,
-    // limite de 10Mo pour éviter de télécharger la vidéo entière juste pour la miniature
-    headers: {'Range': 'bytes=0-10000000'},
-  );
+    if (isVideo) {
+      final response = await client?.fetch(
+        url: "v15/dl/$path",
+        parseJson: false,
+        headers: {'Range': 'bytes=0-10000000'},
+      );
 
-  if (response?.data is! Uint8List) return null;
+      if (response?.data is! Uint8List) return null;
 
-  // 2. Écris dans un fichier temporaire
-  final tempDir = await getTemporaryDirectory();
-  final tempFile = File('${tempDir.path}/tmp_${DateTime.now().millisecondsSinceEpoch}.mp4');
-  await tempFile.writeAsBytes(response!.data as Uint8List);
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/tmp_${DateTime.now().millisecondsSinceEpoch}.mp4');
+      await tempFile.writeAsBytes(response!.data as Uint8List);
 
-  final bytes = await VideoThumbnail.thumbnailData(
-    video: tempFile.path,
-    imageFormat: ImageFormat.WEBP,
-    maxWidth: 300,
-    quality: 50,
-  );
+      final bytes = await VideoThumbnail.thumbnailData(
+        video: tempFile.path,
+        imageFormat: ImageFormat.WEBP,
+        maxWidth: 300,
+        quality: 50,
+      );
 
-  print("🎬 thumbnail bytes: ${bytes?.length}");
-
-
-  await tempFile.delete();
-  return bytes;
-}
+      await tempFile.delete();
+      return bytes;
+    }
 
 
 
