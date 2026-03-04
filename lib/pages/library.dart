@@ -21,8 +21,9 @@ final ValueNotifier<int> countSelected = ValueNotifier<int>(0);
 class LibraryPage extends StatefulWidget {
   final bool onlySelect;
   final bool trashMode;
+  final bool favoriteMode;
 
-  const LibraryPage({super.key, this.onlySelect = false, this.trashMode = false});
+  const LibraryPage({super.key, this.onlySelect = false, this.trashMode = false, this.favoriteMode = false});
 
   @override
   State<LibraryPage> createState() => _LibraryPageState();
@@ -113,11 +114,12 @@ class _LibraryPageState extends State<LibraryPage> {
   return results.asMap().entries
     .where((e) {
       final stored = PhotoStore.get(entries[e.key]['path'] as String);
+      if (widget.favoriteMode) return stored?.favorite == true;
       return widget.trashMode 
         ? stored?.deletedAt != null
         : stored?.deletedAt == null;
     }).map((e) => _MediaEntry(
-      bytes: e.value, // ← peut être null
+      bytes: e.value,
       mimetype: entries[e.key]['mimetype'] as String,
       encodedPath: entries[e.key]['path'] as String,
     )).toList();
@@ -166,9 +168,11 @@ class _LibraryPageState extends State<LibraryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       extendBodyBehindAppBar: true,
       appBar: !widget.onlySelect ? BlurredAppBar(
-        title: widget.trashMode ? "Trash" :  "Library",
+        showLeading: widget.trashMode || widget.favoriteMode,
+        title: widget.trashMode ? "Trash" : widget.favoriteMode ? "Favorites" :  "Library",
         subtitle: !widget.trashMode ? "$elements element${elements > 1 ? "s" : ""}" : null,
         actions: showButtons || !widget.onlySelect ? [
           // !widget.trashMode ?
@@ -185,7 +189,7 @@ class _LibraryPageState extends State<LibraryPage> {
           //   ) : SizedBox(),
 
           SizedBox(width: 10),
-          !widget.trashMode ?
+          !widget.trashMode && !widget.favoriteMode ?
             Button.iconOnly(
               icon: const Icon(CupertinoIcons.settings, color: Colors.white),
               glassIcon: CNSymbol('gear', size: 17),
@@ -227,7 +231,6 @@ class _LibraryPageState extends State<LibraryPage> {
           )
         ] : null,
       ) : null,
-      backgroundColor: Colors.black,
       body: Builder(
           builder: (context) {
             if (_loading) {
