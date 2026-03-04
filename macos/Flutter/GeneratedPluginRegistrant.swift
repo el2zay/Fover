@@ -5,6 +5,7 @@
 import FlutterMacOS
 import Foundation
 
+import clipboard
 import cupertino_native_better
 import device_info_plus
 import flutter_image_compress_macos
@@ -19,6 +20,7 @@ import super_native_extensions
 import wakelock_plus
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
+  ClipboardPlugin.register(with: registry.registrar(forPlugin: "ClipboardPlugin"))
   CupertinoNativePlugin.register(with: registry.registrar(forPlugin: "CupertinoNativePlugin"))
   DeviceInfoPlusMacosPlugin.register(with: registry.registrar(forPlugin: "DeviceInfoPlusMacosPlugin"))
   FlutterImageCompressMacosPlugin.register(with: registry.registrar(forPlugin: "FlutterImageCompressMacosPlugin"))
