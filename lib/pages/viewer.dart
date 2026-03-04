@@ -546,7 +546,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
         ],
       );
     }
-
+    // TODO voir ce que cela donne sans sur IOS < 26
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5),
       decoration: BoxDecoration(
@@ -559,7 +559,12 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
             icon: const Icon(CupertinoIcons.heart),
             glassIcon: CNSymbol('heart', size: 18),
             backgroundColor: Colors.transparent,
-            onPressed: () {},
+            onPressed: () async {
+              await PhotoStore.update(path: widget.encodedPaths[currentIndex], favorite: !isFavorite);
+              setState(() {
+                isFavorite = !isFavorite;
+              });
+            },
           ),
           Button.iconOnly(
             icon: const Icon(CupertinoIcons.info_circle),
