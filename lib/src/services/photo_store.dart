@@ -1,5 +1,6 @@
 import 'dart:convert';
-
+import 'dart:developer';
+import 'package:flutter/foundation.dart';
 import 'package:fover/main.dart';
 import 'package:fover/src/models/album_entry.dart';
 import 'package:fover/src/utils/requests.dart';
@@ -102,6 +103,8 @@ class PhotoStore {
     final entry = _photoBox.get(path);
     if (entry == null) return;
     entry.deletedAt = DateTime.now();
+    entry.albums = [];
+    entry.favorite = false;
     await entry.save();
   }
 
@@ -134,6 +137,23 @@ class PhotoStore {
       // Supprime de Hive
       await photo.delete();
     }
+  }
+
+  static Future<void> existsOnServer() async {
+    final response = await client?.fetch(
+      url: 'v15/fs/ls/L0ZyZWVib3gvVGVzdA=='
+    );
+
+    final serverFiles = (response?.data?['result']?['entries'] as List<dynamic>?)
+      ?.map((e) => e['path'] as String).toSet() ?? {};
+
+    final toDelete = _photoBox.keys.where((key) => !serverFiles.contains(key)).toList();
+  
+    for (final key in toDelete) {
+      log('File ${_photoBox.get(key)?.name} does not exist on server, deleting locally');
+      await _photoBox.delete(key);
+    }
+
   }
 
   static Future<void> addToAlbum({
@@ -209,6 +229,14 @@ class PhotoStore {
 
   static List<PhotoEntry> getAll() =>
     _photoBox.values.where((e) => e.deletedAt == null).toList();
+
+  static int get favoritesCount => 
+    _photoBox.values.where((e) => e.favorite == true).length;
+
+  static int get videosCount => 
+    _photoBox.values.where((e) => e.mimetype?.startsWith('video/') == true && e.deletedAt == null).length;
+
+  static ValueListenable<Box<PhotoEntry>> get listenable => _photoBox.listenable();
 
   static List<PhotoEntry> getDeleted() =>
     _photoBox.values.where((e) => e.deletedAt != null).toList();

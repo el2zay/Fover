@@ -12,125 +12,6 @@ import 'package:local_auth/local_auth.dart';
 
 final LocalAuthentication auth = LocalAuthentication();
 
-final List<Map<String, dynamic>> _albums = [
-  {
-    'title': "Memes",
-    'preview': "assets/illustrations/rickroll.png"
-  },
-  {
-    'title': "Memories",
-    'preview': "assets/illustrations/pandas.jpg"
-  },
-  {
-    'title': "PS App",
-    'preview': "assets/illustrations/mirage.jpg"
-  },
-  {
-    'title': "Landscapes",
-    'preview': "assets/illustrations/lebanon.jpg"
-  }
-];
-
-final List<Map<String, dynamic>> _defaultAlbums = [
-  {
-    'key': 'videos',
-    'title': "Videos",
-    'count': 0,
-  },
-  {
-    'key': 'screenshots',
-    'title': "Screenshots",
-    'count': 0,
-  },
-  {
-    'key': 'favorites',
-    'title': "Favorites",
-    'count': 0,
-  },
-  {
-    'key': 'hidden',
-    'title': "Hidden",
-    'count': -1,
-  },
-  {
-    'key': 'recently_deleted',
-    'title': "Recently Deleted",
-    'count': -1,
-  },
-];
-
-IconData _iconFor(String key) {
-  switch (key) {
-    case 'videos':
-      return CupertinoIcons.video_camera;
-    case 'screenshots':
-      return CupertinoIcons.camera_viewfinder;
-    case 'favorites':
-      return CupertinoIcons.heart;
-    case 'hidden':
-      return CupertinoIcons.eye_slash;
-    case 'recently_deleted':
-      return CupertinoIcons.trash;
-    default:
-      return CupertinoIcons.folder;
-  }
-}
-
-VoidCallback _onTapFor(String key, BuildContext context) {
-  switch (key) {
-    case 'videos':
-      return () => log("Videos tapped");
-    case 'screenshots':
-      return () => log("Screenshots tapped");
-    case 'favorites':
-      return () => log("Favorites tapped");
-    case 'hidden':
-      return () async {
-        bool isAuthenticated = await auth.authenticate(
-          localizedReason: 'Please authenticate to access hidden photos',
-          biometricOnly: true,
-        );
-        if (isAuthenticated) {
-          log("Authenticated successfully.");
-        }
-    };
-    case 'recently_deleted':
-      return () => Navigator.push(
-        context, 
-        CupertinoPageRoute(builder: (_) => const LibraryPage(
-          trashMode: true,
-        ))
-      );
-    default:
-      return () {};
-  }
-}
-
-List<Map<String, dynamic>> _buildAlbums(List<Map<String, dynamic>> albums, BuildContext context) {
-  return albums.map((album) {
-    return {
-      'key': album['key'],
-      'icon': _iconFor(album['key']),
-      'title': album['title'],
-      'count': album['count'],
-      'onTap': _onTapFor(album['key'], context),
-    };
-  }).toList();
-}
-
-// Generated with AI
-
-List<Map<String, dynamic>> _loadAlbums(BuildContext context) {
-  final saved = (box.get("albumOrder") as List?)
-          ?.cast<Map>()
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList() ??
-      _defaultAlbums;
-  return _buildAlbums(saved, context);
-}
-
-// 
-
 class AlbumsPage extends StatefulWidget {
   const AlbumsPage({super.key});
 
@@ -143,10 +24,138 @@ class _AlbumsPageState extends State<AlbumsPage> {
   List<Map<String, dynamic>> albums = [];
   bool isUnfolded = true;
 
+
+
+  final List<Map<String, dynamic>> _albums = [
+    {
+      'title': "Memes",
+      'preview': "assets/illustrations/rickroll.png"
+    },
+    {
+      'title': "Memories",
+      'preview': "assets/illustrations/pandas.jpg"
+    },
+    {
+      'title': "PS App",
+      'preview': "assets/illustrations/mirage.jpg"
+    },
+    {
+      'title': "Landscapes",
+      'preview': "assets/illustrations/lebanon.jpg"
+    }
+  ];
+
+  static final List<Map<String, dynamic>> _defaultAlbums = [
+    {
+      'key': 'videos',
+      'title': "Videos",
+      'count': '',
+    },
+    {
+      'key': 'screenshots',
+      'title': "Screenshots",
+      'count': '',
+    },
+    {
+      'key': 'favorites',
+      'title': "Favorites",
+      'count': '',
+    },
+    {
+      'key': 'hidden',
+      'title': "Hidden",
+      'count': -1,
+    },
+    {
+      'key': 'recently_deleted',
+      'title': "Recently Deleted",
+      'count': -1,
+    },
+  ];
+
+  IconData _iconFor(String key) {
+    switch (key) {
+      case 'videos':
+        return CupertinoIcons.video_camera;
+      case 'screenshots':
+        return CupertinoIcons.camera_viewfinder;
+      case 'favorites':
+        return CupertinoIcons.heart;
+      case 'hidden':
+        return CupertinoIcons.eye_slash;
+      case 'recently_deleted':
+        return CupertinoIcons.trash;
+      default:
+        return CupertinoIcons.folder;
+    }
+  }
+
+  VoidCallback _onTapFor(String key, BuildContext context) {
+    switch (key) {
+      case 'videos':
+        return () => log("Videos tapped");
+      case 'screenshots':
+        return () => log("Screenshots tapped");
+      case 'favorites':
+        return () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => LibraryPage(favoriteMode: true)
+            )
+          );
+        };
+      case 'hidden':
+        return () async {
+          bool isAuthenticated = await auth.authenticate(
+            localizedReason: 'Please authenticate to access hidden photos',
+            biometricOnly: true,
+          );
+          if (isAuthenticated) {
+            log("Authenticated successfully.");
+          }
+      };
+      case 'recently_deleted':
+        return () => Navigator.push(
+          context, 
+          CupertinoPageRoute(
+            builder: (_) => const LibraryPage(trashMode: true)
+          )
+        );
+      default:
+        return () {};
+    }
+  }
+
+  List<Map<String, dynamic>> _buildAlbums(List<Map<String, dynamic>> albums, BuildContext context) {
+    return albums.map((album) {
+      return {
+        'key': album['key'],
+        'icon': _iconFor(album['key']),
+        'title': album['title'],
+        'count': album['count'],
+        'onTap': _onTapFor(album['key'], context),
+      };
+    }).toList();
+  }
+
+  // Generated with AI
+
+  List<Map<String, dynamic>> loadAlbums(BuildContext context) {
+    final saved = (box.get("albumOrder") as List?)
+            ?.cast<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList() ??
+        _defaultAlbums;
+    return _buildAlbums(saved, context);
+  }
+
+  // 
+
   @override
   void initState() {
     super.initState();
-    albums = _loadAlbums(context);
+    albums = loadAlbums(context);
   }
 
   @override
@@ -274,10 +283,13 @@ class _AlbumsPageState extends State<AlbumsPage> {
                           onPressed: () async {
                             await Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => ReorganisePage()),
+                              MaterialPageRoute(builder: (context) => ReorganisePage(
+                                load: loadAlbums(context),
+                                iconFor: _iconFor,
+                              )),
                           );
                           setState(() {
-                            albums = _loadAlbums(context);
+                            albums = loadAlbums(context);
                           });
                         }, 
                         )
@@ -295,10 +307,25 @@ class _AlbumsPageState extends State<AlbumsPage> {
                           spacing: 8,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                          albums[index]['count'] >= 0 ? Text(
-                              albums[index]['count'].toString(),
-                              style: TextStyle(fontSize: 16, color: Colors.white70),
-                            ) : const Icon(CupertinoIcons.lock_fill, size: 16, color: Colors.grey),
+                            if (albums[index]['count'] == -1)
+                              const Icon(CupertinoIcons.lock_fill, size: 16, color: Colors.grey)
+                            else if (albums[index]['count'] is String)
+                              ValueListenableBuilder(
+                                valueListenable: PhotoStore.listenable,
+                                builder: (context, box, _) => Text(
+                                  albums[index]['key'] == 'favorites' 
+                                    ? PhotoStore.favoritesCount.toString()
+                                    : albums[index]['key'] == 'videos' 
+                                      ?  PhotoStore.videosCount.toString()
+                                      : '0', // TODO je sais pas quoi mettre pour screenshots 
+                                  style: TextStyle(fontSize: 16, color: Colors.white70),
+                                ),
+                              )
+                            else
+                              Text(
+                                albums[index]['count'].toString(),
+                                style: TextStyle(fontSize: 16, color: Colors.white70),
+                              ),
                             Icon(CupertinoIcons.chevron_forward, size: 20, color: Colors.white38),
                           ],
                         ),
@@ -454,7 +481,9 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
 }
 
 class ReorganisePage extends StatefulWidget {
-  const ReorganisePage({super.key});
+  final List<Map<String, dynamic>> load;
+  final Function iconFor;
+  const ReorganisePage({super.key, required this.load, required this.iconFor});
 
   @override
   State<ReorganisePage> createState() => _ReorganiseState();
@@ -466,7 +495,7 @@ class _ReorganiseState extends State<ReorganisePage> {
   @override
   void initState() {
     super.initState();
-    albums = _loadAlbums(context);
+    albums = widget.load;
   }
   
   @override
@@ -498,7 +527,7 @@ class _ReorganiseState extends State<ReorganisePage> {
             final album = albums[index];
             return ListTile(
               key: ValueKey(album['key']),
-              leading: Icon(_iconFor(album['key']), size: 26, color: Colors.blue[600]),
+              leading: Icon(widget.iconFor(album['key']), size: 26, color: Colors.blue[600]),
               title: Text(album['title'], style: TextStyle(fontSize: 18, color: Colors.blue[600])),
               trailing: ReorderableDragStartListener(
                 index: index,

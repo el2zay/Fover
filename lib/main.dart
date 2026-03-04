@@ -35,12 +35,13 @@ late String model;
 
       await client?.authentificate();
       showTabBar.value = true;
+
       await PhotoStore.init();
       await PhotoStore.purgeExpired(client!);
+      await PhotoStore.existsOnServer();
 
       model = await getFreeboxModel();
       fetchPhotosDir();
-
     }
     runApp(Phoenix(child:const MainApp()));
   }
