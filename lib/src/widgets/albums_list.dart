@@ -47,12 +47,14 @@ class AlbumsList extends StatelessWidget {
         }
     
         return GridView.builder(
+          padding: EdgeInsets.symmetric(horizontal: spacing, vertical: spacing),
           shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
+          physics: isAlbumsPage ? const NeverScrollableScrollPhysics() : const AlwaysScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: spacing,
             mainAxisSpacing: spacing,
+            mainAxisExtent: isAlbumsPage ? 160 : null
           ),
           itemCount: albums.length,
           itemBuilder: (context, index) {
