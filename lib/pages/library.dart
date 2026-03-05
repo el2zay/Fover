@@ -27,7 +27,14 @@ class LibraryPage extends StatefulWidget {
   final bool favoriteMode;
   final String? albumName;
 
-  const LibraryPage({super.key, this.onlySelect = false, this.onSelectedChanged, this.trashMode = false, this.favoriteMode = false, this.albumName});
+  const LibraryPage({
+    super.key,
+    this.onlySelect = false, 
+    this.onSelectedChanged, 
+    this.trashMode = false,
+    this.favoriteMode = false, 
+    this.albumName,
+  });
 
   @override
   State<LibraryPage> createState() => _LibraryPageState();
@@ -39,7 +46,12 @@ class _GalleryData {
   final List<String> mimetypes;
   final List<String> encodedPaths;
 
-  const _GalleryData({required this.images, required this.thumbs, required this.mimetypes, required this.encodedPaths});
+  const _GalleryData({
+    required this.images, 
+    required this.thumbs, 
+    required this.mimetypes, 
+    required this.encodedPaths
+  });
 }
 
 class _MediaEntry {
@@ -47,7 +59,11 @@ class _MediaEntry {
   final String mimetype;
   final String encodedPath;
 
-  const _MediaEntry({required this.bytes, required this.mimetype, required this.encodedPath});
+  const _MediaEntry({
+    required this.bytes, 
+    required this.mimetype, 
+    required this.encodedPath
+  });
 }
 
 class _LibraryPageState extends State<LibraryPage> {
@@ -56,6 +72,7 @@ class _LibraryPageState extends State<LibraryPage> {
   bool _loading = true;
   List<int> selectedImages = [];
   int elements = 0;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -77,6 +94,11 @@ class _LibraryPageState extends State<LibraryPage> {
       );
       _loading = false;
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+    });
+
   }
 
 
@@ -180,7 +202,6 @@ class _LibraryPageState extends State<LibraryPage> {
       appBar: !widget.onlySelect ? BlurredAppBar(
         showLeading: widget.trashMode || widget.favoriteMode,
         title: widget.albumName != null ? "" : widget.trashMode ? "Trash" : widget.favoriteMode ? "Favorites" :  "Library",
-        albumsName: widget.albumName ?? "",
         subtitle: !widget.trashMode ? "$elements element${elements > 1 ? "s" : ""}" : null,
         actions: showButtons || !widget.onlySelect ? [
           // !widget.trashMode ?
@@ -279,7 +300,8 @@ class _LibraryPageState extends State<LibraryPage> {
               children: [
                 Expanded(
                   child: GridView.builder(
-                    reverse: true,
+                    controller: _scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
                       crossAxisSpacing: 2,
