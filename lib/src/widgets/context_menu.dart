@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fover/main.dart';
 import 'package:fover/src/widgets/adaptative_container.dart';
+import 'package:super_context_menu/super_context_menu.dart';
 
 class ContextMenu extends StatefulWidget {
   const ContextMenu({super.key});
@@ -21,7 +22,7 @@ class _ContextMenuState extends State<ContextMenu> {
           shape: CNGlassEffectShape.rect,
           effect: CNGlassEffect.regular,
           ),
-          padding: const EdgeInsets.all(0),
+        padding: const EdgeInsets.all(0),
         child: Padding(padding: const EdgeInsets.only(top: 15, bottom: 15, left: 20, right: 20), 
           child: Column(
             spacing: 12,
