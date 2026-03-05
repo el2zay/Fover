@@ -162,9 +162,9 @@ class PhotoStore {
   }) async {
     final entry = _photoBox.get(path);
     if (entry == null) return;
-    if (entry.albums!.contains(album)) return;
+    if ((entry.albums ?? []).contains(album)) return;
 
-    entry.albums = [...entry.albums!, album];
+    entry.albums = [...(entry.albums ?? []), album];
     await entry.save();
   }
 
@@ -175,7 +175,7 @@ class PhotoStore {
     final entry = _photoBox.get(path);
     if (entry == null) return;
 
-    entry.albums = entry.albums?.where((a) => a != album).toList();
+    entry.albums = (entry.albums ?? []).where((a) => a != album).toList();
   await entry.save();
   }
 
@@ -242,10 +242,10 @@ class PhotoStore {
     _photoBox.values.where((e) => e.deletedAt != null).toList();
 
   static List<PhotoEntry> getAlbum(String album) =>
-    _photoBox.values.where((e) => e.albums!.contains(album)).toList();
+    _photoBox.values.where((e) => (e.albums ?? []).contains(album)).toList();
 
   static List<String> getAllAlbums() =>
-    _photoBox.values.expand((e) => e.albums!).toSet().toList()..sort();
+    _photoBox.values.expand((e) => (e.albums ?? []).toSet()).toList()..sort();
 
   static AlbumEntry? getAlbumEntry(String name) => _albumBox.get(name);
 
