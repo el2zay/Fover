@@ -209,7 +209,14 @@ class _AlbumsPageState extends State<AlbumsPage> {
                         crossAxisCount: 2,
                         spacing: 10,
                         borderRadius: 20,
-                        onTap: (album) => log(album.name),
+                        onTap: (album) {
+                          Navigator.push(
+                            context, 
+                            CupertinoPageRoute(
+                              builder: (_) => LibraryPage(albumName: album.name)
+                            )
+                          );
+                        },
                         isAlbumsPage: true,
                       ) 
                     : SizedBox.shrink(key: const ValueKey('empty')),
@@ -335,9 +342,7 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
               );
 
               for (final path in selectedPaths.value) {
-                print(path);
-                print(albumNameController.text);
-                // PhotoStore.addToAlbum(path: path, album: albumNameController.text);
+                PhotoStore.addToAlbum(path: path, album: albumNameController.text);
               }
 
               Navigator.pop(context);
