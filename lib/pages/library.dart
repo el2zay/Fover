@@ -279,6 +279,7 @@ class _LibraryPageState extends State<LibraryPage> {
               children: [
                 Expanded(
                   child: GridView.builder(
+                    reverse: true,
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
                       crossAxisSpacing: 2,
