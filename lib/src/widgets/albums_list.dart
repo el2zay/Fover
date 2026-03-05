@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fover/src/models/album_entry.dart';
@@ -16,8 +14,8 @@ class AlbumsList extends StatelessWidget {
   const AlbumsList({
     super.key,
     this.crossAxisCount = 3,
-    this.spacing = 2,
-    this.borderRadius = 10,
+    this.spacing = 10,
+    this.borderRadius = 20,
     this.onTap,
     this.isAlbumsPage = false
   });
@@ -59,9 +57,11 @@ class AlbumsList extends StatelessWidget {
           itemCount: albums.length,
           itemBuilder: (context, index) {
             final album = albums[index];
-
             return GestureDetector(
-              onTap: () => onTap?.call(album),
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                onTap?.call(album);
+              },
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(borderRadius),

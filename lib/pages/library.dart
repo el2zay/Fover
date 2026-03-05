@@ -11,6 +11,7 @@ import 'package:fover/pages/settings.dart';
 import 'package:fover/pages/viewer.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/requests.dart';
+import 'package:fover/src/widgets/albums_list.dart';
 import 'package:fover/src/widgets/blurred_app_bar.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -21,10 +22,12 @@ final ValueNotifier<int> countSelected = ValueNotifier<int>(0);
 
 class LibraryPage extends StatefulWidget {
   final bool onlySelect;
+  final Function(List<String> paths, Uint8List? thumbBytes)? onSelectedChanged;
   final bool trashMode;
   final bool favoriteMode;
+  final String? albumName;
 
-  const LibraryPage({super.key, this.onlySelect = false, this.trashMode = false, this.favoriteMode = false});
+  const LibraryPage({super.key, this.onlySelect = false, this.onSelectedChanged, this.trashMode = false, this.favoriteMode = false, this.albumName});
 
   @override
   State<LibraryPage> createState() => _LibraryPageState();
@@ -112,9 +115,14 @@ class _LibraryPageState extends State<LibraryPage> {
     //     encodedPath: entries[e.key]['path'] as String,
     // )).toList();
 
+
   return results.asMap().entries
     .where((e) {
       final stored = PhotoStore.get(entries[e.key]['path'] as String);
+      if (widget.albumName != null) {
+        final stored = PhotoStore.get(entries[e.key]['path'] as String);
+        return stored?.albums?.contains(widget.albumName) == true;
+      }
       if (widget.favoriteMode) return stored?.favorite == true;
       return widget.trashMode 
         ? stored?.deletedAt != null
@@ -164,8 +172,6 @@ class _LibraryPageState extends State<LibraryPage> {
     });
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -173,7 +179,8 @@ class _LibraryPageState extends State<LibraryPage> {
       extendBodyBehindAppBar: true,
       appBar: !widget.onlySelect ? BlurredAppBar(
         showLeading: widget.trashMode || widget.favoriteMode,
-        title: widget.trashMode ? "Trash" : widget.favoriteMode ? "Favorites" :  "Library",
+        title: widget.albumName != null ? "" : widget.trashMode ? "Trash" : widget.favoriteMode ? "Favorites" :  "Library",
+        albumsName: widget.albumName ?? "",
         subtitle: !widget.trashMode ? "$elements element${elements > 1 ? "s" : ""}" : null,
         actions: showButtons || !widget.onlySelect ? [
           // !widget.trashMode ?
@@ -190,8 +197,8 @@ class _LibraryPageState extends State<LibraryPage> {
           //   ) : SizedBox(),
 
           SizedBox(width: 10),
-          !widget.trashMode && !widget.favoriteMode ?
-            Button.iconOnly(
+          !widget.trashMode && !widget.favoriteMode && widget.albumName == null 
+            ? Button.iconOnly(
               icon: const Icon(CupertinoIcons.settings, color: Colors.white),
               glassIcon: CNSymbol('gear', size: 17),
               tint: Colors.white.withAlpha(10),
@@ -296,6 +303,11 @@ class _LibraryPageState extends State<LibraryPage> {
                                     selectedImages.add(index);
                                   }
                                 });
+
+                                final paths = selectedImages.map((i) => data.encodedPaths[i]).toList();
+                                final thumbBytes = selectedImages.isNotEmpty ? data.thumbs[selectedImages.first] : null;
+                                widget.onSelectedChanged?.call(paths, thumbBytes);
+                                countSelected.value = selectedImages.length;
                                 countSelected.value =  selectedImages.length;
                               } else {
                                 Navigator.push(
@@ -363,7 +375,18 @@ class _LibraryPageState extends State<LibraryPage> {
                                     MenuAction(
                                       title: "Add to album", 
                                       image: MenuImage.icon(CupertinoIcons.plus_rectangle_on_rectangle), 
-                                      callback: () {}
+                                      callback: () {
+                                        showModalBottomSheet(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
+                                          builder: (context) {
+                                            return AddToAlbumSheet(
+                                              photoPath: data.encodedPaths[index],
+                                            );
+                                          }
+                                        );
+                                      }
                                     ),
                                     MenuAction(
                                       title: "Delete", 
@@ -558,6 +581,47 @@ class _LibraryPageState extends State<LibraryPage> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class AddToAlbumSheet extends StatefulWidget {
+  final String? photoPath;
+  const AddToAlbumSheet({super.key, required this.photoPath});
+
+  @override
+  State<AddToAlbumSheet> createState() => _AddToAlbumSheetState();
+}
+
+class _AddToAlbumSheetState extends State<AddToAlbumSheet> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        leading: Transform.scale(
+          scale: 0.8,
+          child: Button.iconOnly(
+            icon: Icon(Icons.close),
+            glassIcon: CNSymbol('xmark', size: 16),
+            backgroundColor: Colors.transparent,
+            onPressed: () => Navigator.pop(context)
+          ),
+        ),
+        title: Text("Add to album", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+      ),
+      body: Padding(
+        padding: EdgeInsetsGeometry.all(10),
+        child: AlbumsList(
+          onTap: (album) {
+            PhotoStore.addToAlbum(
+              path: widget.photoPath ?? "",
+              album: album.name,
+            );
+            Navigator.pop(context);
+          },
+        ),
       ),
     );
   }
