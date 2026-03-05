@@ -182,7 +182,7 @@ class PhotoStore {
   static Future<AlbumEntry?> createAlbum({
     required String name,
     String? description, 
-    String? coverPath,
+    Uint8List? coverBytes,
   }) async {
     if (_albumBox.containsKey(name)) return null;
 
@@ -190,7 +190,7 @@ class PhotoStore {
       name: name,
       createdAt: DateTime.now(), 
       description: description, 
-      coverPath: coverPath
+      coverBytes: coverBytes
     );
     await _albumBox.put(name, album);
     return album;
@@ -220,7 +220,7 @@ class PhotoStore {
     await createAlbum(
       name: newName,
       description: album.description,
-      coverPath: album.coverPath,
+      coverBytes: album.coverBytes,
     );
     await _albumBox.delete(oldName);
   }

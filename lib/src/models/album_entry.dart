@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:hive_ce/hive_ce.dart';
 
 part 'album_entry.g.dart';
@@ -13,8 +15,10 @@ class AlbumEntry extends HiveObject {
   @HiveField(2)
   String? description;
 
-  @HiveField(3)
-  String? coverPath;
+  // Obliger de sauter le 3 car on l'a déjà utilisé auparavent : risque de corruption
 
-  AlbumEntry({required this.name, required this.createdAt, this.description, this.coverPath});
+  @HiveField(4)
+  Uint8List? coverBytes;
+
+  AlbumEntry({required this.name, required this.createdAt, this.description, this.coverBytes});
 }
