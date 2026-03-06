@@ -416,14 +416,29 @@ class _LibraryPageState extends State<LibraryPage> {
                                       image: MenuImage.icon(CupertinoIcons.trash), 
                                       attributes: MenuActionAttributes(destructive: true), 
                                       callback: () {
-                                        PhotoStore.softDelete(data.encodedPaths[index]);
-                                        // Refresh local
-                                        setState(() {
-                                          _data!.images.removeAt(index);
-                                          _data!.thumbs.removeAt(index);
-                                          _data!.mimetypes.removeAt(index);
-                                          _data!.encodedPaths.removeAt(index);
-                                        });
+                                        showGeneralDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          pageBuilder: (context, animation, secondaryAnimation) {
+                                            return MyDialog(
+                                              content: "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
+                                              principalButton: TextButton(
+                                                child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
+                                                onPressed: () {
+                                                  PhotoStore.softDelete(data.encodedPaths[index]);
+                                                  // Refresh local
+                                                  setState(() {
+                                                    _data!.images.removeAt(index);
+                                                    _data!.thumbs.removeAt(index);
+                                                    _data!.mimetypes.removeAt(index);
+                                                    _data!.encodedPaths.removeAt(index);
+                                                  });
+                                                  Navigator.pop(context);
+                                                }
+                                              ),
+                                            );
+                                          }
+                                        );
                                       }
                                     ),
                                   ]
