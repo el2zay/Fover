@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fover/main.dart';
 import 'package:fover/pages/library.dart';
+import 'package:fover/src/models/album_entry.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/widgets/albums_list.dart';
 import 'package:fover/src/widgets/blurred_app_bar.dart';
@@ -155,7 +156,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
                 backgroundColor: Colors.black,
                 isScrollControlled: true,
                 context: context, builder: (context) {
-                  return NewAlbumSheet(oldName: "");
+                  return NewAlbumSheet();
                 }
               );
             },
@@ -296,8 +297,8 @@ class _AlbumsPageState extends State<AlbumsPage> {
 }
 
 class NewAlbumSheet extends StatefulWidget {
-  final String oldName;
-  const NewAlbumSheet({super.key, this.oldName = ""});
+  final AlbumEntry? oldAlbum;
+  const NewAlbumSheet({super.key, this.oldAlbum});
 
   @override
   State<NewAlbumSheet> createState() => _NewAlbumSheetState();
@@ -313,7 +314,7 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
   @override
   void initState() {
     super.initState();
-    albumNameController = TextEditingController(text: widget.oldName);
+    albumNameController = TextEditingController(text: widget.oldAlbum?.name);
   }
 
   @override
@@ -336,11 +337,11 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
             onPressed: () => Navigator.pop(context)
           ),
         ),
-        title: Text(widget.oldName.isNotEmpty ? "Edit album" : "New Album", style: TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(widget.oldAlbum != null ? "Edit album" : "New Album", style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           Button(
-            label: widget.oldName.isNotEmpty ? "Edit" : "Create",
-            enabled: (enableCreate && countSelected.value > 0) || widget.oldName.isNotEmpty && albumNameController.text.isNotEmpty,
+            label: widget.oldAlbum != null ? "Edit" : "Create",
+            enabled: (enableCreate && countSelected.value > 0) || widget.oldAlbum != null,
             glassConfig: CNButtonConfig(
               style: CNButtonStyle.prominentGlass,
             ),
@@ -348,9 +349,9 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
             tint: Colors.blue.withAlpha(230),
             backgroundColor: Colors.transparent,
             onPressed: () {
-              if (widget.oldName.isNotEmpty) {
+              if (widget.oldAlbum != null) {
                 PhotoStore.renameAlbum(
-                  oldName: widget.oldName,
+                  oldName: widget.oldAlbum!.name,
                   newName: albumNameController.text,
                 );
               } else {
@@ -386,12 +387,11 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
                   width: size.width * 0.5,
                   height: size.height * 0.2,
                   clipBehavior: Clip.antiAlias,
-                  child: countSelected.value == 0 || bytes == null
-                    ? Icon(CupertinoIcons.photo_fill, size: 30, color: const Color.fromARGB(60, 171, 158, 158)) 
-                    : Image.memory(
-                      bytes,
-                      fit: BoxFit.cover,
-                    )
+                  child: widget.oldAlbum?.coverBytes != null && countSelected.value == 0 
+                    ? Image.memory(widget.oldAlbum!.coverBytes!, fit: BoxFit.cover)
+                    : bytes != null 
+                      ? Image.memory(bytes, fit: BoxFit.cover)
+                      : Icon(CupertinoIcons.photo_fill, size: 40, color: Colors.white30),
                   );
                 }
               ),
