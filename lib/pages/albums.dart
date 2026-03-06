@@ -1,5 +1,4 @@
 import 'dart:developer';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:cupertino_native_better/cupertino_native_better.dart';
@@ -8,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:fover/main.dart';
 import 'package:fover/pages/library.dart';
 import 'package:fover/src/services/photo_store.dart';
-import 'package:fover/src/utils/requests.dart';
 import 'package:fover/src/widgets/albums_list.dart';
 import 'package:fover/src/widgets/blurred_app_bar.dart';
 import 'package:fover/src/widgets/button.dart';
@@ -157,8 +155,9 @@ class _AlbumsPageState extends State<AlbumsPage> {
                 backgroundColor: Colors.black,
                 isScrollControlled: true,
                 context: context, builder: (context) {
-                return NewAlbumSheet();
-            });
+                  return NewAlbumSheet(oldName: "");
+                }
+              );
             },
           )
         ],
@@ -297,7 +296,8 @@ class _AlbumsPageState extends State<AlbumsPage> {
 }
 
 class NewAlbumSheet extends StatefulWidget {
-  const NewAlbumSheet({super.key});
+  final String oldName;
+  const NewAlbumSheet({super.key, this.oldName = ""});
 
   @override
   State<NewAlbumSheet> createState() => _NewAlbumSheetState();
@@ -308,7 +308,19 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
   final ValueNotifier<List<String>> selectedPaths = ValueNotifier([]);
   final ValueNotifier<int> countSelected = ValueNotifier(0);
   final ValueNotifier<Uint8List?> coverThumb = ValueNotifier(null);
-  final TextEditingController albumNameController = TextEditingController();
+  late TextEditingController albumNameController;
+
+  @override
+  void initState() {
+    super.initState();
+    albumNameController = TextEditingController(text: widget.oldName);
+  }
+
+  @override
+  void dispose() {
+    albumNameController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -324,11 +336,11 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
             onPressed: () => Navigator.pop(context)
           ),
         ),
-        title: Text("New Album", style: TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(widget.oldName.isNotEmpty ? "Edit album" : "New Album", style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           Button(
-            label: "Create",
-            enabled: enableCreate && countSelected.value > 0,
+            label: widget.oldName.isNotEmpty ? "Edit" : "Create",
+            enabled: (enableCreate && countSelected.value > 0) || widget.oldName.isNotEmpty && albumNameController.text.isNotEmpty,
             glassConfig: CNButtonConfig(
               style: CNButtonStyle.prominentGlass,
             ),
@@ -336,10 +348,17 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
             tint: Colors.blue.withAlpha(230),
             backgroundColor: Colors.transparent,
             onPressed: () {
-              PhotoStore.createAlbum(
-                name: albumNameController.text,
-                coverBytes: coverThumb.value
-              );
+              if (widget.oldName.isNotEmpty) {
+                PhotoStore.renameAlbum(
+                  oldName: widget.oldName,
+                  newName: albumNameController.text,
+                );
+              } else {
+                PhotoStore.createAlbum(
+                  name: albumNameController.text,
+                  coverBytes: coverThumb.value
+                );
+              }
 
               for (final path in selectedPaths.value) {
                 PhotoStore.addToAlbum(path: path, album: albumNameController.text);
