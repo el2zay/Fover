@@ -11,6 +11,7 @@ import 'package:fover/src/services/photo_store.dart';
 import 'package:freebox/freebox.dart';
 import 'package:fover/src/utils/requests.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:media_kit/media_kit.dart'; 
 
 FreeboxClient? client;
@@ -23,6 +24,7 @@ late String model;
   void main() async {
     WidgetsFlutterBinding.ensureInitialized();
     MediaKit.ensureInitialized();
+    await initializeDateFormatting('en', null);
     await Hive.initFlutter();
     final box = await Hive.openBox('settings');
     if (box.get("appToken") != null) {
