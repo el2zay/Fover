@@ -93,6 +93,8 @@ class _LibraryPageState extends State<LibraryPage> {
         encodedPaths: images.map((e) => e.encodedPath).toList(),
       );
       _loading = false;
+      elements = images.length;
+      showButtons = images.isNotEmpty;
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -200,9 +202,10 @@ class _LibraryPageState extends State<LibraryPage> {
       backgroundColor: Colors.black,
       extendBodyBehindAppBar: true,
       appBar: !widget.onlySelect ? BlurredAppBar(
-        showLeading: widget.trashMode || widget.favoriteMode,
-        title: widget.albumName != null ? "" : widget.trashMode ? "Trash" : widget.favoriteMode ? "Favorites" :  "Library",
+        title: widget.albumName != null ? widget.albumName! : widget.trashMode ? "Trash" : widget.favoriteMode ? "Favorites" :  "Library",
         subtitle: !widget.trashMode ? "$elements element${elements > 1 ? "s" : ""}" : null,
+        isAlbum:  widget.trashMode || widget.favoriteMode || widget.albumName != null ,
+        onBack: () => Navigator.of(context).pop(),
         actions: showButtons || !widget.onlySelect ? [
           // !widget.trashMode ?
           //   Button.iconOnly(
@@ -273,14 +276,6 @@ class _LibraryPageState extends State<LibraryPage> {
             final images = data.images;
             final mimetypes = data.mimetypes;
             final thumbs = data.thumbs;
-
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            setState(() {
-              elements = images.length;
-              showButtons = images.isNotEmpty;
-            });
-          });
           
           if (images.isEmpty) {
             return Center(
