@@ -10,6 +10,7 @@ import 'package:fover/main.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/dialog.dart';
+import 'package:intl/intl.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:media_kit/media_kit.dart';
 
@@ -281,13 +282,13 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
               interactive: true,
               tint: Colors.white.withAlpha(4),
             ),
-            child: const Padding(
+            child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 30, vertical: 6),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    "8 August 2012",
+                    DateFormat('d MMMM yyyy', 'en').format(PhotoStore.get(widget.encodedPaths[currentIndex])!.date),
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -295,7 +296,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                     ),
                   ),
                   Text(
-                    "18:32",
+                    DateFormat("HH:mm").format(PhotoStore.get(widget.encodedPaths[currentIndex])!.date),
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -619,8 +620,8 @@ class CupertinoVideoControls extends StatelessWidget {
                           onPressed: () => playing ? player.pause() : player.play(),
                           child: Icon(
                             playing
-                                ? CupertinoIcons.pause_fill
-                                : CupertinoIcons.play_fill,
+                              ? CupertinoIcons.pause_fill
+                              : CupertinoIcons.play_fill,
                             color: Colors.white,
                             size: 26,
                           ),
