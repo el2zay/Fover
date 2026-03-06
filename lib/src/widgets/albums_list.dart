@@ -1,7 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fover/pages/albums.dart';
 import 'package:fover/src/models/album_entry.dart';
+import 'package:fover/src/services/photo_store.dart';
+import 'package:fover/src/widgets/dialog.dart';
 import 'package:hive_ce_flutter/adapters.dart';
+import 'package:super_context_menu/super_context_menu.dart';
 
 
 class AlbumsList extends StatelessWidget {
@@ -59,57 +63,104 @@ class AlbumsList extends StatelessWidget {
           itemCount: albums.length,
           itemBuilder: (context, index) {
             final album = albums[index];
-            return GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                onTap?.call(album);
+            return ContextMenuWidget(
+              contextMenuIsAllowed: (location) => isAlbumsPage,
+              menuProvider: (request) {
+                return Menu(
+                  children: [
+                    MenuAction(
+                      title: "Edit",
+                      image: MenuImage.icon(CupertinoIcons.pen),
+                      callback: () {
+                        showModalBottomSheet(
+                          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
+                          context: context, 
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) {
+                            return NewAlbumSheet(oldName: album.name);
+                          }
+                        );
+                      }
+                    ),
+                    MenuAction(
+                      title: "Delete album",
+                      image: MenuImage.icon(CupertinoIcons.trash),
+                      attributes: MenuActionAttributes(destructive: true),
+                      callback: () {
+                        showGeneralDialog(
+                          barrierDismissible: false,
+                          context: context,
+                          pageBuilder: (context, animation, secondaryAnimation) {
+                            return MyDialog(
+                              content: "This action cannot be undone. The album will also be deleted from your server.",
+                              principalButton: TextButton(
+                                child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
+                                onPressed: () async {
+                                  await PhotoStore.deleteAlbum(album.name);
+                                  if (context.mounted) Navigator.pop(context);
+                                }
+                              ),
+                            );
+                          }
+                        );
+                      }
+                    )
+                  ]
+                );
               },
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(borderRadius),
-                  color: Colors.grey[900]
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(borderRadius),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      album.coverBytes != null 
-                        ? Image.memory(
-                            album.coverBytes!,
-                            fit: BoxFit.cover,
-                          )
-                        : const Icon(CupertinoIcons.photo_fill, size: 40),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  onTap?.call(album);
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(borderRadius),
+                    color: Colors.grey[900]
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(borderRadius),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        album.coverBytes != null 
+                          ? Image.memory(
+                              album.coverBytes!,
+                              fit: BoxFit.cover,
+                            )
+                          : const Icon(CupertinoIcons.photo_fill, size: 40),
 
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.bottomCenter,
-                            end: Alignment.topCenter,
-                            stops: const [0.0, 0.6],
-                            colors: [
-                              Colors.black.withAlpha(190),
-                              Colors.transparent,
-                            ],
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              stops: const [0.0, 0.6],
+                              colors: [
+                                Colors.black.withAlpha(190),
+                                Colors.transparent,
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      Padding(
-                        padding: EdgeInsetsGeometry.only(top: 15, bottom: 15, left: 15, right: 30),
-                        child: Align(
-                          alignment: Alignment.bottomLeft,
-                          child: Text(
-                            album.name, 
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600
+                        Padding(
+                          padding: EdgeInsetsGeometry.only(top: 15, bottom: 15, left: 15, right: 30),
+                          child: Align(
+                            alignment: Alignment.bottomLeft,
+                            child: Text(
+                              album.name, 
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        )
-                      ),
-                    ],
+                          )
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
