@@ -82,11 +82,16 @@ class _AlbumsPageState extends State<AlbumsPage> {
         return () {
           Navigator.push(
             context,
-            MaterialPageRoute(
+            CupertinoPageRoute(
               builder: (_) => LibraryPage(favoriteMode: true)
             )
-          );
+          ).then((_) {
+            Future.delayed(const Duration(milliseconds: 350), () {
+              if (context.mounted) setState(() {});
+            });
+          });
         };
+
       case 'hidden':
         return () async {
           bool isAuthenticated = await auth.authenticate(
@@ -97,13 +102,19 @@ class _AlbumsPageState extends State<AlbumsPage> {
             log("Authenticated successfully.");
           }
       };
+
       case 'recently_deleted':
         return () => Navigator.push(
-          context, 
+          context,
           CupertinoPageRoute(
             builder: (_) => const LibraryPage(trashMode: true)
           )
-        );
+        ).then((_) {
+          Future.delayed(const Duration(milliseconds: 350), () {
+            if (context.mounted) setState(() {});
+          });
+        });
+
       default:
         return () {};
     }
@@ -146,9 +157,9 @@ class _AlbumsPageState extends State<AlbumsPage> {
       appBar: BlurredAppBar(
         title: ("Albums"),
         actions: [
-          IconButton(
+          Button.iconOnly(
             icon: Icon(CupertinoIcons.add), 
-            // glassIcon: CNSymbol('plus', size: 20),
+            glassIcon: CNSymbol('plus', size: 20),
             onPressed: () {
               log("Add Album Tapped");
               showModalBottomSheet(
@@ -158,7 +169,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
                 context: context, builder: (context) {
                   return NewAlbumSheet();
                 }
-              );
+              ).then((_) {});
             },
           )
         ],
@@ -310,12 +321,18 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
   final ValueNotifier<int> countSelected = ValueNotifier(0);
   final ValueNotifier<Uint8List?> coverThumb = ValueNotifier(null);
   late TextEditingController albumNameController;
+  final FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    albumNameController = TextEditingController(text: widget.oldAlbum?.name);
+    albumNameController = TextEditingController();
+    albumNameController.text = widget.oldAlbum?.name ?? ""; 
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        FocusScope.of(context).requestFocus(_focusNode);
+    });   
   }
+
 
   @override
   void dispose() {

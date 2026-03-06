@@ -27,7 +27,7 @@ class AlbumsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
-      valueListenable: Hive.box<AlbumEntry>("albums").listenable(), 
+      valueListenable: PhotoStore.albumListenable, 
       builder: (context, Box<AlbumEntry> box, _) {
         final albums = box.values.toList();
         if (albums.isEmpty) {

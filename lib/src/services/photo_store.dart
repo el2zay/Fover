@@ -236,7 +236,12 @@ class PhotoStore {
   static int get videosCount => 
     _photoBox.values.where((e) => e.mimetype?.startsWith('video/') == true && e.deletedAt == null).length;
 
-  static ValueListenable<Box<PhotoEntry>> get listenable => _photoBox.listenable();
+  static ValueListenable<Box<PhotoEntry>>? _listenable;
+
+  static ValueListenable<Box<PhotoEntry>> get listenable {
+    _listenable ??= _photoBox.listenable();
+    return _listenable!;
+  }
 
   static List<PhotoEntry> getDeleted() =>
     _photoBox.values.where((e) => e.deletedAt != null).toList();
@@ -251,4 +256,11 @@ class PhotoStore {
 
   static List<AlbumEntry> getAllAlbumEntries() =>
       _albumBox.values.toList()..sort((a, b) => a.name.compareTo(b.name));
+
+  static ValueListenable<Box<AlbumEntry>>? _albumListenable;
+
+  static ValueListenable<Box<AlbumEntry>> get albumListenable {
+      _albumListenable ??= _albumBox.listenable();
+      return _albumListenable!;
+  }
 }
