@@ -30,11 +30,28 @@ class PhotoStore {
     required DateTime date, 
     required int size,
     required String mimetype,
-    Map<String, String>? exif,
+    double? latitude,
+    double? longitude,
+    String? cameraBrand,
+    String? cameraModel
+
   }) async {
     if (_photoBox.containsKey(path)) return;
 
-    await _photoBox.put(path, PhotoEntry(path: path, name: name, date: date, size: size, mimetype: mimetype, exif: exif));
+    await _photoBox.put(
+      path, 
+      PhotoEntry(
+        path: path, 
+        name: name,
+        date: date, 
+        size: size, 
+        mimetype: mimetype, 
+        latitude: latitude,
+        longitude: longitude,
+        cameraBrand: cameraBrand,
+        cameraModel: cameraModel
+      )
+    );
   }
 
   static Future<void> duplicate({
@@ -71,7 +88,11 @@ class PhotoStore {
         name: newName, 
         date: entry.date, 
         size: entry.size, 
-        mimetype: entry.mimetype
+        mimetype: entry.mimetype,
+        latitude: entry.latitude,
+        longitude: entry.longitude,
+        cameraBrand: entry.cameraBrand,
+        cameraModel: entry.cameraModel
       )
     );
 
@@ -84,15 +105,12 @@ class PhotoStore {
     Map<String, String>? exif,
     String? detectedText,
     bool? hidden,
-    bool? favorite,
-    
-  }) async {
+    bool? favorite  
+    }) async {
     final entry = _photoBox.get(path);
     if (entry == null) return;
 
     if (description != null) entry.description = description;
-    if (localisation != null) entry.localisation = localisation;
-    if (exif != null) entry.exif = exif;
     if (detectedText != null) entry.detectedText = detectedText;
     if (hidden != null) entry.hidden = hidden;
     if (favorite != null) entry.favorite = favorite;

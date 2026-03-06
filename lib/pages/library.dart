@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:clipboard/clipboard.dart';
 import 'package:cupertino_native_better/cupertino_native.dart';
@@ -16,6 +17,8 @@ import 'package:fover/src/widgets/blurred_app_bar.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:fover/src/widgets/dialog.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:exif/exif.dart';
 import 'package:super_context_menu/super_context_menu.dart';
 
 final ValueNotifier<int> countSelected = ValueNotifier<int>(0);
@@ -78,6 +81,19 @@ class _LibraryPageState extends State<LibraryPage> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  Future pickImages() async {
+    final ImagePicker picker = ImagePicker();
+    // TODO passer passer à multiple media
+    final List<XFile> media = await picker.pickMultipleMedia(
+      imageQuality: 100
+    );
+    if (media.isNotEmpty) {
+      final files = media.map((xFile) => File(xFile.path)).toList();
+      await uploadLocalFiles(files);
+      await _refresh();
+    }
   }
 
   // Generated with AI
@@ -221,8 +237,8 @@ class _LibraryPageState extends State<LibraryPage> {
           //   ) : SizedBox(),
 
           SizedBox(width: 10),
-          !widget.trashMode && !widget.favoriteMode && widget.albumName == null 
-            ? Button.iconOnly(
+          if (!widget.trashMode && !widget.favoriteMode && widget.albumName == null)...[
+             Button.iconOnly(
               icon: const Icon(CupertinoIcons.settings, color: Colors.white),
               glassIcon: CNSymbol('gear', size: 17),
               tint: Colors.white.withAlpha(10),
@@ -240,7 +256,16 @@ class _LibraryPageState extends State<LibraryPage> {
                   }
                 );
               },
-            ) : SizedBox(),
+            ),
+            SizedBox(width: 10),
+            Button.iconOnly(
+              icon: Icon(CupertinoIcons.add, color: Colors.white),
+              glassIcon: CNSymbol('plus', size: 17),
+              onPressed: () async {
+                await pickImages();
+              }
+            )
+          ],
 
           const SizedBox(width: 10),
 

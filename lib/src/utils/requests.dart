@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:exif/exif.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/src/services/photo_store.dart';
+import 'package:fover/src/utils/common_utils.dart';
 
 import 'package:freebox/freebox.dart';
 import 'package:fover/main.dart';
@@ -94,12 +96,41 @@ Future<List<dynamic>> fetchPhotosDir() async {
   for (var entry in filesOnly) {
     if (PhotoStore.get(entry['path']) == null) {
       hasBeenEdited = true;
+      // await PhotoStore.addPhoto(
+      //   path: entry['path'],
+      //   name: entry['name'],
+      //   date: DateTime.fromMillisecondsSinceEpoch(entry['modification'] * 1000),
+      //   size: entry['size'] ?? 0,
+      //   mimetype: entry['mimetype']
+      // );
+
+      Map<String, IfdTag> exifData = {};
+      if (entry['mimetype'].contains('image/')) {
+        final imageResponse = await client?.fetch(
+          url: "v15/dl/${entry['path']}",
+          parseJson: false,
+          headers: {'Range': 'bytes=0-65536'}, 
+        );
+
+        if (imageResponse?.data is Uint8List) {
+          exifData = await readExifFromBytes(imageResponse!.data as Uint8List);
+        }
+      }
+
       await PhotoStore.addPhoto(
-        path: entry['path'],
-        name: entry['name'],
-        date: DateTime.fromMillisecondsSinceEpoch(entry['modification'] * 1000),
-        size: entry['size'] ?? 0,
-        mimetype: entry['mimetype']
+        path: entry['path'], 
+        name: entry['name'], 
+        date: parseExifDate(exifData['Image DateTime']?.printable) ?? DateTime.now(), 
+        size: entry['size'] ?? 0, 
+        mimetype: entry['mimetype'],
+        latitude: exifData['GPS GPSLatitude'] != null && exifData['GPS GPSLatitudeRef'] != null
+          ? parseGps(exifData['GPS GPSLatitude']!.printable, exifData['GPS GPSLatitudeRef']!.printable)
+          : null,
+        longitude: exifData['GPS GPSLongitude'] != null && exifData['GPS GPSLongitudeRef'] != null
+          ? parseGps(exifData['GPS GPSLongitude']!.printable, exifData['GPS GPSLongitudeRef']!.printable)
+          : null,
+        cameraBrand: exifData['Image Make']?.printable ?? "Unknown",
+        cameraModel: exifData['Image Model']?.printable
       );
     }
   }
