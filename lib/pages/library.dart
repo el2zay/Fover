@@ -18,7 +18,7 @@ import 'package:fover/src/widgets/button.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:fover/src/widgets/dialog.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:exif/exif.dart';
+
 import 'package:super_context_menu/super_context_menu.dart';
 
 final ValueNotifier<int> countSelected = ValueNotifier<int>(0);
@@ -113,9 +113,11 @@ class _LibraryPageState extends State<LibraryPage> {
       showButtons = images.isNotEmpty;
     });
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-    });
+    if (_data!.images.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      });
+    }
 
   }
 
@@ -156,22 +158,28 @@ class _LibraryPageState extends State<LibraryPage> {
     // )).toList();
 
 
-  return results.asMap().entries
-    .where((e) {
-      final stored = PhotoStore.get(entries[e.key]['path'] as String);
-      if (widget.albumName != null) {
-        final stored = PhotoStore.get(entries[e.key]['path'] as String);
-        return stored?.albums?.contains(widget.albumName) == true;
-      }
-      if (widget.favoriteMode) return stored?.favorite == true;
-      return widget.trashMode 
-        ? stored?.deletedAt != null
-        : stored?.deletedAt == null;
+  final filtered = results.asMap().entries.where((e) {
+    final stored = PhotoStore.get(entries[e.key]['path'] as String);
+    if (widget.albumName != null) {
+      return stored?.albums?.contains(widget.albumName) == true;
+    }
+    if (widget.favoriteMode) return stored?.favorite == true;
+    return widget.trashMode 
+      ? stored?.deletedAt != null
+      : stored?.deletedAt == null;
     }).map((e) => _MediaEntry(
       bytes: e.value,
       mimetype: entries[e.key]['mimetype'] as String,
       encodedPath: entries[e.key]['path'] as String,
     )).toList();
+
+    filtered.sort((a, b) {
+      final dateA = PhotoStore.get(a.encodedPath)?.date ?? DateTime(0);
+      final dateB = PhotoStore.get(b.encodedPath)?.date ?? DateTime(0);
+      return dateA.compareTo(dateB);
+    });
+
+    return filtered;
   }
 
 
@@ -210,6 +218,9 @@ class _LibraryPageState extends State<LibraryPage> {
         encodedPaths: images.map((e) => e.encodedPath).toList(),
       );
     });
+
+    elements = images.length;
+    showButtons = images.isNotEmpty;
   }
 
   @override
@@ -272,6 +283,7 @@ class _LibraryPageState extends State<LibraryPage> {
           ConstrainedBox(
             constraints : const BoxConstraints(maxWidth: 95),
             child: Button(
+              enabled: _data?.images.isNotEmpty ?? false,
               label: selectedMode ? "Cancel" : "Select",
               tint: Colors.white.withAlpha(10),
               glassConfig: const CNButtonConfig(
