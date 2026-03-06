@@ -78,7 +78,7 @@ class AlbumsList extends StatelessWidget {
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,
                           builder: (context) {
-                            return NewAlbumSheet(oldName: album.name);
+                            return NewAlbumSheet(oldAlbum: album);
                           }
                         );
                       }
