@@ -33,8 +33,14 @@ class PhotoStore {
     double? latitude,
     double? longitude,
     String? cameraBrand,
-    String? cameraModel
-
+    String? cameraModel,
+    int? height,
+    int? width,
+    int? iso,
+    int? focalLength,
+    int? exposureValue,
+    int? focus,
+    int? shutterSpeed
   }) async {
     if (_photoBox.containsKey(path)) return;
 
@@ -49,7 +55,14 @@ class PhotoStore {
         latitude: latitude,
         longitude: longitude,
         cameraBrand: cameraBrand,
-        cameraModel: cameraModel
+        cameraModel: cameraModel,
+        height: height,
+        width: width,
+        iso: iso,
+        focalLength: focalLength,
+        exposureValue: exposureValue,
+        focus: focus,
+        shutterSpeed: shutterSpeed
       )
     );
   }
@@ -92,7 +105,14 @@ class PhotoStore {
         latitude: entry.latitude,
         longitude: entry.longitude,
         cameraBrand: entry.cameraBrand,
-        cameraModel: entry.cameraModel
+        cameraModel: entry.cameraModel,
+        height: entry.height,
+        width: entry.width,
+        iso: entry.iso,
+        focalLength: entry.focalLength,
+        exposureValue: entry.exposureValue,
+        focus: entry.focus,
+        shutterSpeed: entry.shutterSpeed
       )
     );
 

@@ -55,6 +55,27 @@ class PhotoEntry extends HiveObject {
   @HiveField(17)
   String? cameraModel;
 
-  PhotoEntry({required this.path, required this.name, required this.date, required this.size, this.description, required this.mimetype, this.detectedText, this.albums, this.hidden, this.favorite, this.deletedAt, this.latitude, this.longitude, this.cameraBrand, this.cameraModel});
+  @HiveField(18)
+  int? height;
+
+  @HiveField(19)
+  int? width;
+
+  @HiveField(20)
+  int? iso;
+
+  @HiveField(21)
+  int? focalLength;
+
+  @HiveField(22)
+  int? exposureValue;
+
+  @HiveField(23)
+  int? focus;
+
+  @HiveField(24)
+  int? shutterSpeed;
+
+  PhotoEntry({required this.path, required this.name, required this.date, required this.size, this.description, required this.mimetype, this.detectedText, this.albums, this.hidden, this.favorite, this.deletedAt, this.latitude, this.longitude, this.cameraBrand, this.cameraModel, this.height, this.width, this.iso, this.focalLength, this.exposureValue, this.focus, this.shutterSpeed});
 
 }
