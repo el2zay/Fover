@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:fover/main.dart';
 import 'package:fover/src/models/album_entry.dart';
@@ -40,7 +41,8 @@ class PhotoStore {
     int? focalLength,
     int? exposureValue,
     int? focus,
-    int? shutterSpeed
+    int? shutterSpeed,
+    DateTime? displayDate
   }) async {
     if (_photoBox.containsKey(path)) return;
 
@@ -62,7 +64,8 @@ class PhotoStore {
         focalLength: focalLength,
         exposureValue: exposureValue,
         focus: focus,
-        shutterSpeed: shutterSpeed
+        shutterSpeed: shutterSpeed,
+        displayDate: displayDate
       )
     );
   }
@@ -112,7 +115,8 @@ class PhotoStore {
         focalLength: entry.focalLength,
         exposureValue: entry.exposureValue,
         focus: entry.focus,
-        shutterSpeed: entry.shutterSpeed
+        shutterSpeed: entry.shutterSpeed,
+        displayDate: entry.displayDate
       )
     );
 
@@ -125,16 +129,23 @@ class PhotoStore {
     Map<String, String>? exif,
     String? detectedText,
     bool? hidden,
-    bool? favorite  
+    bool? favorite,
+    DateTime? displayDate
     }) async {
-    final entry = _photoBox.get(path);
-    if (entry == null) return;
+      final entry = _photoBox.get(path);
+      if (entry == null) return;
 
-    if (description != null) entry.description = description;
-    if (detectedText != null) entry.detectedText = detectedText;
-    if (hidden != null) entry.hidden = hidden;
-    if (favorite != null) entry.favorite = favorite;
-    await entry.save();
+      if (description != null) entry.description = description;
+      if (detectedText != null) entry.detectedText = detectedText;
+      if (hidden != null) entry.hidden = hidden;
+      if (favorite != null) entry.favorite = favorite;
+      if (displayDate != null) entry.displayDate = displayDate;
+      await entry.save();
+  }
+
+  static DateTime getDate(String path) {
+    final entry = _photoBox.get(path);
+    return entry?.displayDate ?? entry?.date ?? DateTime(1970);
   }
 
   static Future<void> softDelete(String path) async {
