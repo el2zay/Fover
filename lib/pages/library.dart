@@ -583,6 +583,20 @@ class _LibraryPageState extends State<LibraryPage> {
                                       ),
                                     ),
                                   ],
+
+                                  Positioned(
+                                    bottom: 5,
+                                    left: 5,
+                                    child: PhotoStore.get(data.encodedPaths[index])?.favorite == true 
+                                      ? Icon(CupertinoIcons.heart_fill, size: 18) : SizedBox()
+                                  ),
+                                  
+                                  Positioned(
+                                    bottom: 5,
+                                    right: 5,
+                                    child: PhotoStore.get(data.encodedPaths[index])?.mimetype?.startsWith("video/") ?? false 
+                                      ? Icon(CupertinoIcons.play_circle_fill, size: 18) : SizedBox()
+                                  )
                                 ],
                               ),
                             ),
