@@ -21,32 +21,39 @@ final ValueNotifier<bool> showTabBar = ValueNotifier(false);
 late String model;
 
 
-  void main() async {
-    WidgetsFlutterBinding.ensureInitialized();
-    MediaKit.ensureInitialized();
-    await initializeDateFormatting('en', null);
-    await Hive.initFlutter();
-    final box = await Hive.openBox('settings');
-    if (box.get("appToken") != null) {
-      client = FreeboxClient(
-        appToken: box.get("appToken"),
-        appId: 'fbx.fover',
-        apiDomain: box.get("apiDomain"),
-        httpsPort: box.get("httpsPort"),
-      );
+Future<void> initApp() async {
+  await PhotoStore.init();
 
-      await client?.authentificate();
-      showTabBar.value = true;
+  if (box.get("appToken") != null) {
+    client = FreeboxClient(
+      appToken: box.get("appToken"),
+      appId: 'fbx.fover',
+      apiDomain: box.get("apiDomain"),
+      httpsPort: box.get("httpsPort"),
+    );
 
-      await PhotoStore.init();
-      await PhotoStore.purgeExpired(client!);
-      await PhotoStore.existsOnServer();
+    await client?.authentificate();
+    showTabBar.value = true;
 
-      model = await getFreeboxModel();
-      fetchPhotosDir();
-    }
-    runApp(Phoenix(child:const MainApp()));
+    await PhotoStore.purgeExpired(client!);
+    await PhotoStore.existsOnServer();
+
+    model = await getFreeboxModel();
+    fetchPhotosDir();
   }
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  MediaKit.ensureInitialized();
+  await initializeDateFormatting('en', null);
+  await Hive.initFlutter();
+  Hive.openBox('settings');
+
+  await initApp();
+  
+  runApp(Phoenix(child:const MainApp()));
+}
 
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
