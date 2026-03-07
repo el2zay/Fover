@@ -36,6 +36,7 @@ dependencies:
   image_picker: ^1.2.1
   exif: ^3.3.0
   intl: ^0.20.2
+  cupertino_calendar_picker: ^2.2.6
 
 dev_dependencies:
   hive_ce_generator: ^1.11.1
