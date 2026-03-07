@@ -1,4 +1,6 @@
 PODS:
+  - apple_maps_flutter (0.0.1):
+    - Flutter
   - clipboard (3.0.9):
     - Flutter
   - CocoaLumberjack (3.9.0):
@@ -65,6 +67,7 @@ PODS:
     - Flutter
 
 DEPENDENCIES:
+  - apple_maps_flutter (from `.symlinks/plugins/apple_maps_flutter/ios`)
   - clipboard (from `.symlinks/plugins/clipboard/ios`)
   - cupertino_native_better (from `.symlinks/plugins/cupertino_native_better/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
@@ -92,6 +95,8 @@ SPEC REPOS:
     - SVGKit
 
 EXTERNAL SOURCES:
+  apple_maps_flutter:
+    :path: ".symlinks/plugins/apple_maps_flutter/ios"
   clipboard:
     :path: ".symlinks/plugins/clipboard/ios"
   cupertino_native_better:
@@ -126,6 +131,7 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/wakelock_plus/ios"
 
 SPEC CHECKSUMS:
+  apple_maps_flutter: 2237d66a8e242082a2d88134af372f7b3375d7a6
   clipboard: 85f02e190f24debf05943aff98c26644b2a90245
   CocoaLumberjack: 5644158777912b7de7469fa881f8a3f259c2512a
   cupertino_native_better: 1548ee565186534a34a406bf56b7c49510485844
