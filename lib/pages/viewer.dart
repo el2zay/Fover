@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:clipboard/clipboard.dart';
+import 'package:cupertino_calendar_picker/cupertino_calendar_picker.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
@@ -14,6 +15,7 @@ import 'package:fover/src/widgets/dialog.dart';
 import 'package:intl/intl.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:media_kit/media_kit.dart';
+import 'dart:developer';
 
 bool focused = false;
 
@@ -54,6 +56,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   late final ExtendedPageController _pageController;
   bool showInfo = false;
   final _sheetController = DraggableScrollableController();
+  DateTime? newDate;
 
   @override
   void initState() {
@@ -67,10 +70,10 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     animationListener = () {};
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (widget.mimetype[currentIndex].startsWith('video/')) {
-      _loadVideo(currentIndex);
-    }
-  });
+      if (widget.mimetype[currentIndex].startsWith('video/')) {
+        _loadVideo(currentIndex);
+      }
+    });
   }
 
   @override
@@ -247,9 +250,10 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                 ),
               ],
             ),
+
             if (showInfo)
-            _buildInfoSheet(context, widget.images[currentIndex]),
-          ]
+              _buildInfoSheet(context, widget.images[currentIndex]),
+          ],
         ),
       ),
     );
@@ -297,7 +301,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    DateFormat('d MMMM yyyy', 'en').format(PhotoStore.get(widget.encodedPaths[currentIndex])!.date),
+                    DateFormat('d MMMM yyyy', 'en').format(PhotoStore.getDate(widget.encodedPaths[currentIndex])),
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -305,7 +309,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                     ),
                   ),
                   Text(
-                    DateFormat("HH:mm").format(PhotoStore.get(widget.encodedPaths[currentIndex])!.date),
+                    DateFormat("HH:mm").format(PhotoStore.getDate(widget.encodedPaths[currentIndex])),
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -534,7 +538,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
             ),
           ),
           CNButtonData.icon(
-            icon: CNSymbol(showInfo ? 'info.circle.fill' : 'info.circle', size: 22),
+            icon: CNSymbol('info.circle', size: 22),
 
             onPressed: () {
               setState(() {
@@ -599,19 +603,24 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   }
 
   DraggableScrollableSheet _buildInfoSheet(context, image) {
-    final photo = PhotoStore.get(widget.encodedPaths[currentIndex]);
-    final descriptionController = TextEditingController(text: photo?.description);
+    final photo = PhotoStore.get(widget.encodedPaths[currentIndex])! ;
+    final descriptionController = TextEditingController(text: photo.description);
     return DraggableScrollableSheet(
-      snap: true,
       initialChildSize: 0.3,
-      maxChildSize: 0.7,
-      snapAnimationDuration: Duration(milliseconds: 200),
+      minChildSize: 0,
+      maxChildSize: 0.9,
+      shouldCloseOnMinExtent: true,
       controller: _sheetController,
       builder: (context, scrollController) {
+        _sheetController.addListener(() {
+          if (_sheetController.size == 0) {
+            setState(() => showInfo = false);
+          }
+        });
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.black,
+            color: Theme.of(context).scaffoldBackgroundColor,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: ListView(
@@ -632,6 +641,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                 ],
               ),
               TextField(
+                keyboardType: TextInputType.text,
                 controller: descriptionController,
                 decoration: InputDecoration(
                   hintText: "Add a description",
@@ -642,18 +652,123 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   await PhotoStore.update(path: widget.encodedPaths[currentIndex], description: value);
                 },
                 style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
-                maxLines: null,
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    DateFormat('d MMMM yyyy — hh:mm', 'en').format(photo!.date),
+                    DateFormat('d MMMM yyyy — HH:mm', 'en').format(PhotoStore.getDate(widget.encodedPaths[currentIndex]).toLocal()),
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                   TextButton(
-                    onPressed: () {},
-                    child: Text("Adjust", style: TextStyle(fontSize: 16, color: Colors.blue)),
+                    onPressed: () {
+                      showModalBottomSheet(
+                        barrierColor: Colors.transparent,
+                        isScrollControlled: true,
+                        constraints: BoxConstraints(
+                          minHeight: MediaQuery.of(context).size.height * 0.92,
+                          maxHeight: MediaQuery.of(context).size.height * 0.92,
+                        ),
+                        context: context,
+                        
+                        builder: (context) {
+                          DateTime localNewDate = newDate ?? PhotoStore.getDate(widget.encodedPaths[currentIndex]);
+                          return StatefulBuilder( 
+                            builder: (context, setModalState) {
+                              return Scaffold(
+                                appBar: AppBar(
+                                  centerTitle: true,
+                                  leading: Transform.scale(
+                                    scale: 0.8,
+                                    child: Button.iconOnly(
+                                      icon: Icon(Icons.close),
+                                      glassIcon: CNSymbol('xmark', size: 16),
+                                      backgroundColor: Colors.transparent,
+                                      onPressed: () => Navigator.pop(context)
+                                    ),
+                                  ),
+                                  title: Text("Adjust the time and date", style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600)),
+                                  actions: [
+                                    Button(
+                                      label: "Adjust",
+                                      glassConfig: const CNButtonConfig(
+                                        style: CNButtonStyle.prominentGlass,
+                                      ),
+                                      textColor: Colors.blue,
+                                      tint: Colors.blue.withAlpha(230),
+                                      onPressed: () => Navigator.pop(context)
+                                    ),
+                                  ],
+                                ),
+                                body: ListView(
+                                  padding: EdgeInsets.all(10),
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withAlpha(20),
+                                        borderRadius: BorderRadius.circular(20)
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text("Original", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                                              Text(
+                                                DateFormat('d MMMM yyyy — hh:mm', 'en').format(photo.date),
+                                                style: TextStyle(fontSize: 14, color: Colors.white)
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(height: 10),
+                                          Divider(color: Colors.white12),
+                                          SizedBox(height: 10),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text("Adjusted", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                                              Text(
+                                                DateFormat('d MMMM yyyy — hh:mm', 'en').format(localNewDate),
+                                                style: TextStyle(fontSize: 14, color: Colors.white70)
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      )
+                                    ),
+                                    SizedBox(height: 20),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withAlpha(20),
+                                        borderRadius: BorderRadius.circular(20)
+                                      ),
+                                      padding: EdgeInsets.only(bottom: 10),
+                                      width: MediaQuery.of(context).size.width * 0.8,
+                                      child: CupertinoCalendar(
+                                        use24hFormat: true,
+                                        minimumDateTime: DateTime(0), 
+                                        maximumDateTime: DateTime(9999),
+                                        initialDateTime: PhotoStore.getDate(widget.encodedPaths[currentIndex]),
+                                        mainColor: CupertinoColors.activeBlue,
+                                        mode: CupertinoCalendarMode.dateTime,
+                                        timeLabel: "Time",
+                                        onDateTimeChanged: (date) {
+                                          setModalState(() => localNewDate = date);
+                                          setState(() => newDate = date);
+                                          PhotoStore.update(path: widget.encodedPaths[currentIndex], displayDate: date);
+                                        },
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              );
+                            }
+                          );
+                        },
+                      );
+                    },
+                    child: Text("Adjust", style: TextStyle(fontSize: 16, color: Colors.blue))
                   )
                 ],
               ),
@@ -662,7 +777,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                 margin: EdgeInsets.symmetric(vertical: 20),
                 padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(10),
+                  color: Colors.white.withAlpha(20),
                   borderRadius: BorderRadius.circular(10)
                 ),
                 child: Column(
