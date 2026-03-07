@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fover/main.dart';
 import 'package:fover/src/services/photo_store.dart';
+import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/dialog.dart';
 import 'package:intl/intl.dart';
@@ -51,6 +52,8 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   late final player = Player();
   late final controller = VideoController(player);
   late final ExtendedPageController _pageController;
+  bool showInfo = false;
+  final _sheetController = DraggableScrollableController();
 
   @override
   void initState() {
@@ -148,99 +151,105 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
             child: focused ? _buildHiddenAppBar() : _buildAppBar(),
           ),
         ),
-        body: Column(
-          children: [
-            Expanded(
-              child: Center(
-                child: ExtendedImageGesturePageView.builder(
-                  controller: _pageController,
-                  itemCount: widget.images.length,
-                  scrollDirection: Axis.horizontal,
-                  onPageChanged: (index) {
-                    setState(() {
-                      currentIndex = index;
-                      _videoOffset = Offset.zero;
-                      _videoScale = 1.0;
-                    });
-                    player.stop();
-                    if (widget.mimetype[index].startsWith("video/")) {
-                      _loadVideo(index);
-                    }
-                  },
+        body: Stack(
+          children: [ 
+            Column(
+              children: [
+                Expanded(
+                  child: Center(
+                    child: ExtendedImageGesturePageView.builder(
+                      controller: _pageController,
+                      itemCount: widget.images.length,
+                      scrollDirection: Axis.horizontal,
+                      onPageChanged: (index) {
+                        setState(() {
+                          currentIndex = index;
+                          _videoOffset = Offset.zero;
+                          _videoScale = 1.0;
+                        });
+                        player.stop();
+                        if (widget.mimetype[index].startsWith("video/")) {
+                          _loadVideo(index);
+                        }
+                      },
 
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: _toggleFocus,
-                      child: widget.mimetype[index].startsWith("video/")
-                        ? index == currentIndex
-                          ? GestureDetector(
-                              onTap: _toggleFocus,
-                              onVerticalDragUpdate: (details) {
-                                setState(() {
-                                  _videoOffset += Offset(0, details.delta.dy);
-                                  final progress = (_videoOffset.dy.abs() / 300).clamp(0.0, 1.0);
-                                  _videoScale = 1.0 - (progress * 0.3);
-                                });
-                              },
-                              onVerticalDragEnd: (details) {
-                                final velocity = details.primaryVelocity ?? 0;
-                                if (_videoOffset.dy.abs() > 100 || velocity.abs() > 500) {
-                                  Navigator.pop(context);
-                                } else {
-                                  setState(() {
-                                    _videoOffset = Offset.zero;
-                                    _videoScale = 1.0;
-                                  });
-                                }
-                              },
-                              child: Transform.scale(
-                                scale: _videoScale,
-                                child: Transform.translate(
-                                  offset: _videoOffset,
-                                  child: Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      Video(
-                                        controller: controller,
-                                        controls: (state) => const SizedBox.shrink(),
+                      itemBuilder: (context, index) {
+                        return GestureDetector(
+                          onTap: _toggleFocus,
+                          child: widget.mimetype[index].startsWith("video/")
+                            ? index == currentIndex
+                              ? GestureDetector(
+                                  onTap: _toggleFocus,
+                                  onVerticalDragUpdate: (details) {
+                                    setState(() {
+                                      _videoOffset += Offset(0, details.delta.dy);
+                                      final progress = (_videoOffset.dy.abs() / 300).clamp(0.0, 1.0);
+                                      _videoScale = 1.0 - (progress * 0.3);
+                                    });
+                                  },
+                                  onVerticalDragEnd: (details) {
+                                    final velocity = details.primaryVelocity ?? 0;
+                                    if (_videoOffset.dy.abs() > 100 || velocity.abs() > 500) {
+                                      Navigator.pop(context);
+                                    } else {
+                                      setState(() {
+                                        _videoOffset = Offset.zero;
+                                        _videoScale = 1.0;
+                                      });
+                                    }
+                                  },
+                                  child: Transform.scale(
+                                    scale: _videoScale,
+                                    child: Transform.translate(
+                                      offset: _videoOffset,
+                                      child: Stack(
+                                        fit: StackFit.expand,
+                                        children: [
+                                          Video(
+                                            controller: controller,
+                                            controls: (state) => const SizedBox.shrink(),
+                                          ),
+                                          Positioned(
+                                            left: 0, right: 0, bottom: 0,
+                                            child: CupertinoVideoControls(controller: controller),
+                                          ),
+                                        ],
                                       ),
-                                      Positioned(
-                                        left: 0, right: 0, bottom: 0,
-                                        child: CupertinoVideoControls(controller: controller),
-                                      ),
-                                    ],
+                                    ),
                                   ),
-                                ),
-                              ),
-                            )
-                          : const SizedBox()
-                        : widget.images[index] != null
-                          ? ExtendedImage.memory(
-                            widget.images[index]!,
-                            fit: BoxFit.contain,
-                            mode: ExtendedImageMode.gesture,
-                            enableSlideOutPage: true,
-                            onDoubleTap: _handleDoubleTap,
-                            heroBuilderForSlidingPage: (Widget result) {
-                              return Hero(
-                                tag: 'image_$index',
-                                child: result,
-                                flightShuttleBuilder:
-                                    (_, __, ___, ____, _____) => result,
-                              );
-                            },
-                          ) : Container(color: Colors.grey[900]
-                        ),
-                    );
-                  },
+                                )
+                              : const SizedBox()
+                            : widget.images[index] != null
+                              ? ExtendedImage.memory(
+                                widget.images[index]!,
+                                fit: BoxFit.contain,
+                                mode: ExtendedImageMode.gesture,
+                                enableSlideOutPage: true,
+                                onDoubleTap: _handleDoubleTap,
+                                heroBuilderForSlidingPage: (Widget result) {
+                                  return Hero(
+                                    tag: 'image_$index',
+                                    child: result,
+                                    flightShuttleBuilder:
+                                        (_, __, ___, ____, _____) => result,
+                                  );
+                                },
+                              ) : Container(color: Colors.grey[900]
+                            ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
-              ),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: focused ? _buildHiddenToolbar() : _buildBottomToolbar(),
+                ),
+              ],
             ),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: focused ? _buildHiddenToolbar() : _buildBottomToolbar(),
-            ),
-          ],
+            if (showInfo)
+            _buildInfoSheet(context, widget.images[currentIndex]),
+          ]
         ),
       ),
     );
@@ -525,8 +534,13 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
             ),
           ),
           CNButtonData.icon(
-            icon: const CNSymbol('info.circle', size: 22),
-            onPressed: () {},
+            icon: CNSymbol(showInfo ? 'info.circle.fill' : 'info.circle', size: 22),
+
+            onPressed: () {
+              setState(() {
+                showInfo = !showInfo;
+              });
+            },
             config: const CNButtonDataConfig(
               style: CNButtonStyle.prominentGlass,
               glassEffectUnionId: 'media-controls',
@@ -583,7 +597,116 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
       ),
     );
   }
+
+  DraggableScrollableSheet _buildInfoSheet(context, image) {
+    final photo = PhotoStore.get(widget.encodedPaths[currentIndex]);
+    final descriptionController = TextEditingController(text: photo?.description);
+    return DraggableScrollableSheet(
+      snap: true,
+      initialChildSize: 0.3,
+      maxChildSize: 0.7,
+      snapAnimationDuration: Duration(milliseconds: 200),
+      controller: _sheetController,
+      builder: (context, scrollController) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: ListView(
+            controller: scrollController,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    margin: EdgeInsets.symmetric(vertical: 10),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ],
+              ),
+              TextField(
+                controller: descriptionController,
+                decoration: InputDecoration(
+                  hintText: "Add a description",
+                  hintStyle: TextStyle(color: Colors.white38, fontSize: 16, fontWeight: FontWeight.w500),
+                  border: InputBorder.none,
+                ),
+                onSubmitted: (value) async {
+                  await PhotoStore.update(path: widget.encodedPaths[currentIndex], description: value);
+                },
+                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+                maxLines: null,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    DateFormat('d MMMM yyyy — hh:mm', 'en').format(photo!.date),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                  TextButton(
+                    onPressed: () {},
+                    child: Text("Adjust", style: TextStyle(fontSize: 16, color: Colors.blue)),
+                  )
+                ],
+              ),
+              Text(photo.name, style: TextStyle(color: Colors.grey)),
+              Container(
+                margin: EdgeInsets.symmetric(vertical: 20),
+                padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(10),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(photo.cameraModel ?? "Uknown", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                    SizedBox(height: 8),
+                    Text(
+                      "${getMP(photo)} MP • ${photo.width} x ${photo.height} • ${formatSize(photo.size)}",
+                      style: TextStyle(fontSize: 13, color: Colors.white70)
+                    ),
+                    SizedBox(height: 10),
+                    Divider(color: Colors.white24, height: 0),
+                    Row(
+                      children: [
+                        infoBox(photo.iso != null ? "ISO ${photo.iso}" : "—"),
+                        infoBox( photo.focalLength != null ? "${photo.focalLength} mm" : "—"),
+                        infoBox(photo.exposureValue != null ? "${photo.exposureValue} ev" : "—"),
+                        infoBox(photo.focus != null ? "ƒ${photo.focus}" : "—"),
+                      ],
+                    )
+                  ],
+                ),
+              )
+            ]
+          )
+        );
+      }
+    );
+  }
+  
+  Widget infoBox(String value) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Center(
+          child: Text(value, style: const TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.w600)),
+        ),
+      ),
+    );
+  }
 }
+
 
 class CupertinoVideoControls extends StatelessWidget {
   final VideoController controller;
