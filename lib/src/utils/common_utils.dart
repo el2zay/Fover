@@ -1,3 +1,5 @@
+import 'package:fover/src/models/photo_entry.dart';
+
 DateTime? parseExifDate(String? raw) {
   if (raw == null) return null;
   try {
@@ -30,5 +32,22 @@ double? parseGps(String value, String ref) {
     return decimal;
   } catch (_) {
     return null;
+  }
+}
+
+int getMP(PhotoEntry photo) {
+  int mp = ((photo.height ?? 0) * (photo.width ?? 0) / 1000000).toInt();
+  return mp;
+}
+
+String formatSize(int size) {
+  if (size < 1000) {
+    return "$size B";
+  } else if (size < 1000000) {
+    return "${(size / 1000).toStringAsFixed(1)} KB";
+  } else if (size < 1000000000) {
+    return "${(size / 1000000).toStringAsFixed(1)} MB";
+  } else {
+    return "${(size / 1000000000).toStringAsFixed(1)} GB";
   }
 }
