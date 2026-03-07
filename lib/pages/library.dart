@@ -85,13 +85,12 @@ class _LibraryPageState extends State<LibraryPage> {
 
   Future pickImages() async {
     final ImagePicker picker = ImagePicker();
-    // TODO passer passer à multiple media
     final List<XFile> media = await picker.pickMultipleMedia(
       imageQuality: 100
     );
     if (media.isNotEmpty) {
-      final files = media.map((xFile) => File(xFile.path)).toList();
-      await uploadLocalFiles(files);
+      final files = media;
+      await uploadLocalFiles(xfile: files);
       await _refresh();
     }
   }
