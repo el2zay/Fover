@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:exif/exif.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
@@ -54,17 +55,19 @@ Future<int> getStorageUsed() async {
   return 10;
 }
 
-Future uploadLocalFiles(List<File> file) async {
+Future uploadLocalFiles({List<File>? file, List<XFile>? xfile}) async {
+  List files = file ?? xfile?.map((x) => File(x.path)).toList() ?? [];
+
   final uploader = FreeboxUploader(
     apiDomain: client!.apiDomain,
     httpsPort: client!.httpsPort,
     sessionToken: client!.sessionToken!,
   );
 
-  for (int i = 0; i < file.length; i++) {
+  for (int i = 0; i < files.length; i++) {
     await uploader.uploadFile(
-      fileBytes: file[i].readAsBytesSync(),
-      filename: file[i].path.split('/').last,
+      fileBytes: await files[i].readAsBytes(),
+      filename: file != null ?  files[i].path.split('/').last : xfile![i].name,
       dirname: "L0ZyZWVib3gvVGVzdA==",
       onProgress: (uploaded, total) {
         final percent = (uploaded / total * 100).toStringAsFixed(1);
@@ -117,6 +120,43 @@ Future<List<dynamic>> fetchPhotosDir() async {
         }
       }
 
+      int parseExifDimension(Map<String, IfdTag> exifData, bool isHeight) {
+        final raw = isHeight
+            ? exifData['EXIF PixelYDimension']?.printable
+              ?? exifData['EXIF ExifImageHeight']?.printable
+              ?? exifData['Image ImageLength']?.printable
+              ?? exifData['EXIF ExifImageLength']?.printable
+            : exifData['EXIF PixelXDimension']?.printable
+              ?? exifData['EXIF ExifImageWidth']?.printable
+              ?? exifData['Image ImageWidth']?.printable;
+
+        if (raw == null) return 0;
+        if (raw.contains('/')) {
+          final parts = raw.split('/');
+          return (int.parse(parts[0]) / int.parse(parts[1])).round();
+        }
+        return int.tryParse(raw) ?? 0;
+      }
+
+      exifData.forEach((key, value) {
+        log('$key: ${value.printable}');
+      });
+
+      double? parseExifDouble(String? raw) {
+      if (raw == null) return null;
+      if (raw.contains('/')) {
+        final parts = raw.split('/');
+        final denominator = double.parse(parts[1]);
+        if (denominator == 0) return null;
+        return double.parse(parts[0]) / denominator;
+      }
+      return double.tryParse(raw);
+    }
+
+    exifData.forEach((key, value) {
+      log('$key: ${value.printable}');
+    });
+
       await PhotoStore.addPhoto(
         path: entry['path'], 
         name: entry['name'], 
@@ -130,13 +170,20 @@ Future<List<dynamic>> fetchPhotosDir() async {
           ? parseGps(exifData['GPS GPSLongitude']!.printable, exifData['GPS GPSLongitudeRef']!.printable)
           : null,
         cameraBrand: exifData['Image Make']?.printable ?? "Unknown",
-        cameraModel: exifData['Image Model']?.printable
+        cameraModel: exifData['Image Model']?.printable,
+        height: parseExifDimension(exifData, true),
+        width: parseExifDimension(exifData, false),
+        iso: int.tryParse(exifData['EXIF ISOSpeedRatings']?.printable ?? ""),
+        focalLength: parseExifDouble(exifData['EXIF FocalLengthIn35mmFilm']?.printable ?? exifData['EXIF FocalLength']?.printable)?.round(),
+        exposureValue: parseExifDouble(exifData['EXIF ExposureBiasValue']?.printable)?.round(),
+        focus: parseExifDouble(exifData['EXIF FNumber']?.printable.replaceAll('ƒ/', ''))?.round(),
       );
     }
   }
   
   if (hasBeenEdited) {
-    uploadLocalFiles([
+    uploadLocalFiles(
+      file: [
       File("${(await getApplicationDocumentsDirectory()).path}/photos.hive"),
       File("${(await getApplicationDocumentsDirectory()).path}/photos.lock"),
       File("${(await getApplicationDocumentsDirectory()).path}/albums.hive"),
