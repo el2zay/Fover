@@ -1,5 +1,4 @@
 import 'dart:developer';
-import 'dart:io';
 
 import 'package:clipboard/clipboard.dart';
 import 'package:cupertino_native_better/cupertino_native.dart';
@@ -173,8 +172,8 @@ class _LibraryPageState extends State<LibraryPage> {
     )).toList();
 
     filtered.sort((a, b) {
-      final dateA = PhotoStore.get(a.encodedPath)?.date ?? DateTime(0);
-      final dateB = PhotoStore.get(b.encodedPath)?.date ?? DateTime(0);
+      final dateA = PhotoStore.getDate(a.encodedPath);
+      final dateB = PhotoStore.getDate(b.encodedPath);
       return dateA.compareTo(dateB);
     });
 
