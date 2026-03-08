@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:ui';
 
 import 'package:clipboard/clipboard.dart';
 import 'package:cupertino_native_better/cupertino_native.dart';
@@ -224,6 +225,7 @@ class _LibraryPageState extends State<LibraryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       backgroundColor: Colors.black,
       extendBodyBehindAppBar: true,
       appBar: !widget.onlySelect ? BlurredAppBar(
@@ -324,11 +326,11 @@ class _LibraryPageState extends State<LibraryPage> {
               ),
             );
           }
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
-            child: Column(
-              children: [
-                Expanded(
+          return Stack(
+            children: [
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
                   child: GridView.builder(
                     controller: _scrollController,
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -606,26 +608,88 @@ class _LibraryPageState extends State<LibraryPage> {
                     },
                   ),
                 ),
-                if (widget.trashMode && selectedImages.isNotEmpty)
-                SafeArea(
+              ),
+              if (selectedImages.isNotEmpty)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: SafeArea(
+                  top: false,
                   child: Padding(
-                    padding: EdgeInsetsGeometry.symmetric(horizontal: 15),
+                    padding: EdgeInsetsGeometry.symmetric(horizontal: 15, vertical: 5),
                     child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Button.iconOnly(
-                            onPressed: () async {
-                              for (final i in selectedImages) {
-                                await PhotoStore.restore(data.encodedPaths[i]);
+                          widget.trashMode
+                            ? Button.iconOnly(
+                              onPressed: () async {
+                                for (final i in selectedImages) {
+                                  await PhotoStore.restore(data.encodedPaths[i]);
+                                }
+                                _removeLocally(selectedImages);
+                              },
+                              glassIcon: CNSymbol('arrow.up.bin', size: 20),
+                              icon: Icon(CupertinoIcons.arrow_up_bin, size: 20),
+                              tint: Theme.of(context).scaffoldBackgroundColor,
+                            ) :  CNPopupMenuButton.icon(
+                            size: 40,
+                            buttonIcon: CNSymbol('ellipsis', size: 15),
+                            preserveTopToBottomOrder: true,
+                            items: [
+                              CNPopupMenuItem(
+                                label: 'Download',
+                                icon: CNSymbol('arrow.down.circle', size: 18),
+                              ),
+                              CNPopupMenuItem(
+                                label: 'Share',
+                                icon: CNSymbol('square.and.arrow.up', size: 18),
+                              ),
+                              CNPopupMenuItem(
+                                label: "Add to favorites",
+                                icon: CNSymbol('heart', size: 18),
+                              ),
+                              CNPopupMenuItem(
+                                label: 'Hide',
+                                icon: CNSymbol('eye.slash', size: 18),
+                              ),
+                              CNPopupMenuItem(
+                                label: 'Add to album',
+                                icon: CNSymbol('plus.rectangle.on.rectangle', size: 18),
+                              ),
+                            ],
+                            onSelected: (item) async {
+                              if (item == 0) {
+                                // TODO download
+                              } 
+                              if (item == 1) {
+                                // TODO share
+                              } 
+                              if (item == 2) {
+                                for (final i in selectedImages) {
+                                  await PhotoStore.update(path: data.encodedPaths[i], favorite: true);
+                                }
                               }
-                              _removeLocally(selectedImages);
+                              if (item == 3) {
+                                for (final i in selectedImages) {
+                                  await PhotoStore.update(path: data.encodedPaths[i], hidden: true);
+                                }
+                                _removeLocally(selectedImages);
+                              }
+                              if (item == 4) {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
+                                  builder: (context) {
+                                    return AddToAlbumSheet(
+                                      photoPath: data.encodedPaths[selectedImages.first],
+                                    );
+                                  }
+                                );
+                              }
                             },
-                            glassIcon: CNSymbol('arrow.up.bin', size: 20),
-                            icon: Icon(CupertinoIcons.arrow_up_bin, size: 20),
-                            tint: Theme.of(context).scaffoldBackgroundColor,
-                            glassConfig: CNButtonConfig(
-                              style: CNButtonStyle.prominentGlass
-                          )),
+                          ),
 
                           Button.iconOnly(
                             onPressed: () async {
@@ -652,15 +716,13 @@ class _LibraryPageState extends State<LibraryPage> {
                             glassIcon: CNSymbol('trash', size: 20),
                             icon: Icon(CupertinoIcons.trash, size: 20),
                             tint: Theme.of(context).scaffoldBackgroundColor,
-                            glassConfig: CNButtonConfig(
-                              style: CNButtonStyle.prominentGlass
-                          )),
+                          ),
                         ],
                       ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           );
         },
       ),
