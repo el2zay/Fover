@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/pages/albums.dart';
 import 'package:fover/pages/first.dart';
@@ -55,7 +56,7 @@ void main() async {
   Hive.openBox('settings');
 
   connectedToInternet = await hasInternet();
-
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   await initApp();
   
   runApp(Phoenix(child:const MainApp()));
@@ -77,7 +78,7 @@ class _MainAppState extends State<MainApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Padding(
-        padding: Platform.isAndroid ? EdgeInsets.only(top: MediaQuery.of(context).padding.top - 5, left: 5, right: 5) : EdgeInsets.zero,
+        padding: Platform.isAndroid ? EdgeInsets.only(top: 15, left: 5, right: 5) : EdgeInsets.zero,
         child: Scaffold(
           extendBody: true,
           body: box.get("appToken") == null
