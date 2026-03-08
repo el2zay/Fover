@@ -116,7 +116,8 @@ class PhotoStore {
         exposureValue: entry.exposureValue,
         focus: entry.focus,
         shutterSpeed: entry.shutterSpeed,
-        displayDate: entry.displayDate
+        displayDate: entry.displayDate,
+        localPath: entry.localPath
       )
     );
 
@@ -130,7 +131,8 @@ class PhotoStore {
     String? detectedText,
     bool? hidden,
     bool? favorite,
-    DateTime? displayDate
+    DateTime? displayDate,
+    String? localPath
     }) async {
       final entry = _photoBox.get(path);
       if (entry == null) return;
@@ -140,6 +142,7 @@ class PhotoStore {
       if (hidden != null) entry.hidden = hidden;
       if (favorite != null) entry.favorite = favorite;
       if (displayDate != null) entry.displayDate = displayDate;
+      if (localPath != null) entry.localPath = localPath;
       await entry.save();
   }
 
