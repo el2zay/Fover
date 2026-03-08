@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
@@ -75,87 +76,90 @@ class _MainAppState extends State<MainApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        extendBody: true,
-        body: box.get("appToken") == null
-          ? const FirstPage()
-          : IndexedStack(
-          index: _currentIndex,
-          children: const [
-            LibraryPage(onlySelect: false),
-            AlbumsPage(),
-            Placeholder(),
-          ],
-        ),
-        bottomNavigationBar: (true) ?
-           Container(
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.transparent,
-                  spreadRadius: 2,
-                  blurRadius: 5,
-                  offset: Offset(0, 3),
-                )
-              ]
-            ),
-            child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-              child: BottomNavigationBar(
-                elevation: 0,
-                backgroundColor: Colors.transparent,
-                fixedColor: const Color.fromARGB(255, 52, 161, 250),
-                type: BottomNavigationBarType.fixed,
-                selectedFontSize: 13,
-                unselectedFontSize: 13,
-                currentIndex: _currentIndex,
-                onTap: (value) {
-                  setState(() {
-                    _currentIndex = value;
-                  });
-                },
-                items: [
-                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.photo), label: "Library"),
-                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.collections), label: "Albums"),
-                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: "Search"),
-                ]
-              ) 
-            ) 
-          ) : CNTabBar(
-            tint: Colors.blue,
-            iconSize: 18,
-            items: [
-              CNTabBarItem(
-                label: 'Library',
-                icon: CNSymbol('photo.fill.on.rectangle.fill'),
-              ),
-              CNTabBarItem(
-                label: 'Albums',
-                icon: CNSymbol('rectangle.stack.fill'),
-              ),
-              CNTabBarItem(
-                label: 'Search',
-                icon: CNSymbol('magnifyingglass'),
-              ),
+      home: Padding(
+        padding: Platform.isAndroid ? EdgeInsets.only(top: MediaQuery.of(context).padding.top - 5, left: 5, right: 5) : EdgeInsets.zero,
+        child: Scaffold(
+          extendBody: true,
+          body: box.get("appToken") == null
+            ? const FirstPage()
+            : IndexedStack(
+            index: _currentIndex,
+            children: const [
+              LibraryPage(onlySelect: false),
+              AlbumsPage(),
+              Placeholder(),
             ],
-            currentIndex: _currentIndex,
-            onTap: (i) => setState(() => _currentIndex = i),
-            // searchItem: CNTabBarSearchItem(
-            //   placeholder: 'Search',
-            //   automaticallyActivatesSearch: false,
-            //   onSearchChanged: (query) {
-            //   },
-            //   onSearchSubmit: (query) {
-            //   },
-            //   onSearchActiveChanged: (isActive) {
-            //   },
-            //   style: const CNTabBarSearchStyle(
-            //     iconSize: 20,
-            //     animationDuration: Duration(milliseconds: 400),
-            //   ),
-            // ),
-          )
+          ),
+          bottomNavigationBar: (true) ?
+            Container(
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.transparent,
+                    spreadRadius: 2,
+                    blurRadius: 5,
+                    offset: Offset(0, 3),
+                  )
+                ]
+              ),
+              child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                child: BottomNavigationBar(
+                  elevation: 0,
+                  backgroundColor: Colors.transparent,
+                  fixedColor: const Color.fromARGB(255, 52, 161, 250),
+                  type: BottomNavigationBarType.fixed,
+                  selectedFontSize: 13,
+                  unselectedFontSize: 13,
+                  currentIndex: _currentIndex,
+                  onTap: (value) {
+                    setState(() {
+                      _currentIndex = value;
+                    });
+                  },
+                  items: [
+                    BottomNavigationBarItem(icon: Icon(CupertinoIcons.photo), label: "Library"),
+                    BottomNavigationBarItem(icon: Icon(CupertinoIcons.collections), label: "Albums"),
+                    BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: "Search"),
+                  ]
+                ) 
+              ) 
+            ) : CNTabBar(
+              tint: Colors.blue,
+              iconSize: 18,
+              items: [
+                CNTabBarItem(
+                  label: 'Library',
+                  icon: CNSymbol('photo.fill.on.rectangle.fill'),
+                ),
+                CNTabBarItem(
+                  label: 'Albums',
+                  icon: CNSymbol('rectangle.stack.fill'),
+                ),
+                CNTabBarItem(
+                  label: 'Search',
+                  icon: CNSymbol('magnifyingglass'),
+                ),
+              ],
+              currentIndex: _currentIndex,
+              onTap: (i) => setState(() => _currentIndex = i),
+              // searchItem: CNTabBarSearchItem(
+              //   placeholder: 'Search',
+              //   automaticallyActivatesSearch: false,
+              //   onSearchChanged: (query) {
+              //   },
+              //   onSearchSubmit: (query) {
+              //   },
+              //   onSearchActiveChanged: (isActive) {
+              //   },
+              //   style: const CNTabBarSearchStyle(
+              //     iconSize: 20,
+              //     animationDuration: Duration(milliseconds: 400),
+              //   ),
+              // ),
+            )
         ),
+      ),
       theme: ThemeData(
         brightness: Brightness.dark,
         colorScheme: ColorScheme.dark(primary: Colors.white),
