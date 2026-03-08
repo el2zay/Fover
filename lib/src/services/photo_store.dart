@@ -19,11 +19,18 @@ class PhotoStore {
 
   static Future<void> init() async {
     await Hive.initFlutter();
-    Hive.registerAdapter(PhotoEntryAdapter());
-    Hive.registerAdapter(AlbumEntryAdapter());
+    
+    if (!Hive.isAdapterRegistered(0)) {
+      Hive.registerAdapter(PhotoEntryAdapter());
+    }
+    if (!Hive.isAdapterRegistered(1)) {
+      Hive.registerAdapter(AlbumEntryAdapter());
+    }
+
     _photoBox = await Hive.openBox(_photoBoxName);
     _albumBox = await Hive.openBox(_albumBoxName);
   }
+
 
   static Future<void> addPhoto ({
     required String path,
