@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:fover/src/models/photo_entry.dart';
 
 DateTime? parseExifDate(String? raw) {
@@ -49,5 +51,14 @@ String formatSize(int size) {
     return "${(size / 1000000).toStringAsFixed(1)} MB";
   } else {
     return "${(size / 1000000000).toStringAsFixed(1)} GB";
+  }
+}
+
+Future<bool> hasInternet() async {
+  try {
+    final result = await InternetAddress.lookup('example.com');
+    return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+  } on SocketException catch (_) {
+    return false;
   }
 }

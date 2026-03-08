@@ -8,6 +8,7 @@ import 'package:fover/pages/albums.dart';
 import 'package:fover/pages/first.dart';
 import 'package:fover/pages/library.dart';
 import 'package:fover/src/services/photo_store.dart';
+import 'package:fover/src/utils/common_utils.dart';
 import 'package:freebox/freebox.dart';
 import 'package:fover/src/utils/requests.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
@@ -18,8 +19,8 @@ FreeboxClient? client;
 bool is26OrNewer =  PlatformVersion.supportsLiquidGlass;
 final box = Hive.box('settings');
 final ValueNotifier<bool> showTabBar = ValueNotifier(false);
-late String model;
-
+late String? model;
+late bool connectedToInternet;
 
 Future<void> initApp() async {
   await PhotoStore.init();
@@ -35,11 +36,13 @@ Future<void> initApp() async {
     await client?.authentificate();
     showTabBar.value = true;
 
-    await PhotoStore.purgeExpired(client!);
-    await PhotoStore.existsOnServer();
-
-    model = await getFreeboxModel();
-    fetchPhotosDir();
+    if (connectedToInternet) {
+      await PhotoStore.purgeExpired(client!);
+      await PhotoStore.existsOnServer();
+      model = await getFreeboxModel();
+      fetchPhotosDir();
+    }
+    
   }
 }
 
@@ -49,6 +52,8 @@ void main() async {
   await initializeDateFormatting('en', null);
   await Hive.initFlutter();
   Hive.openBox('settings');
+
+  connectedToInternet = await hasInternet();
 
   await initApp();
   
