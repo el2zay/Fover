@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:clipboard/clipboard.dart';
@@ -10,7 +11,9 @@ import 'package:flutter/services.dart';
 import 'package:fover/main.dart';
 import 'package:fover/pages/settings.dart';
 import 'package:fover/pages/viewer.dart';
+import 'package:fover/src/services/download.dart';
 import 'package:fover/src/services/photo_store.dart';
+import 'package:fover/src/utils/common_utils.dart' as utils;
 import 'package:fover/src/utils/requests.dart';
 import 'package:fover/src/widgets/albums_list.dart';
 import 'package:fover/src/widgets/blurred_app_bar.dart';
@@ -137,40 +140,48 @@ class _LibraryPageState extends State<LibraryPage> {
 
 
   Future<List<_MediaEntry>> _loadImages() async {
-    final entries = await fetchPhotosDir();
+    List<Map<String, dynamic>> entries;
+
+    if (connectedToInternet) {
+      entries = (await fetchPhotosDir()).cast<Map<String, dynamic>>();
+    } else {
+      entries = PhotoStore.getAll()
+        .where((p) => p.localPath != null && File(p.localPath!).existsSync())
+        .map((p) => {
+          'path': p.path,
+          'mimetype': p.mimetype ?? 'image/jpeg',
+        })
+        .toList();
+    }
 
     final results = await Future.wait(
-      entries.map((entry) => fetchImageBytes(entry['path'], entry['mimetype'])),
+      entries.map((entry) async {
+        final photo = PhotoStore.get(entry['path'] as String);
+
+        if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
+          return await File(photo.localPath!).readAsBytes() as Uint8List?;
+        }
+
+        if (connectedToInternet == false) return null;
+        return fetchImageBytes(entry['path'], entry['mimetype']);
+      }),
     );
 
-    // return results.asMap().entries
-    //   .where((e) => e.value != null)
-    //   .where((e) {
-    //     final stored = PhotoStore.get(entries[e.key]['path'] as String);
-    //     return widget.trashMode 
-    //       ? stored?.deletedAt != null
-    //       : stored?.deletedAt == null;
-    //   }).map((e) => _MediaEntry(
-    //     bytes: e.value as Uint8List,
-    //     mimetype: entries[e.key]['mimetype'] as String,
-    //     encodedPath: entries[e.key]['path'] as String,
-    // )).toList();
-
-
-  final filtered = results.asMap().entries.where((e) {
-    final stored = PhotoStore.get(entries[e.key]['path'] as String);
-    if (widget.albumName != null) {
-      return stored?.albums?.contains(widget.albumName) == true;
-    }
-    if (widget.favoriteMode) return stored?.favorite == true;
-    return widget.trashMode 
-      ? stored?.deletedAt != null
-      : stored?.deletedAt == null;
-    }).map((e) => _MediaEntry(
-      bytes: e.value,
-      mimetype: entries[e.key]['mimetype'] as String,
-      encodedPath: entries[e.key]['path'] as String,
+    final filtered = results.asMap().entries.where((e) {
+      final stored = PhotoStore.get(entries[e.key]['path'] as String);
+      if (widget.albumName != null) {
+        return stored?.albums?.contains(widget.albumName) == true;
+      }
+      if (widget.favoriteMode) return stored?.favorite == true;
+      return widget.trashMode 
+        ? stored?.deletedAt != null
+        : stored?.deletedAt == null;
+      }).map((e) => _MediaEntry(
+        bytes: e.value,
+        mimetype: entries[e.key]['mimetype'] as String,
+        encodedPath: entries[e.key]['path'] as String,
     )).toList();
+
 
     filtered.sort((a, b) {
       final dateA = PhotoStore.getDate(a.encodedPath);
@@ -248,7 +259,7 @@ class _LibraryPageState extends State<LibraryPage> {
           //   ) : SizedBox(),
 
           SizedBox(width: 10),
-          if (!widget.trashMode && !widget.favoriteMode && widget.albumName == null)...[
+          if (!widget.trashMode && !widget.favoriteMode && widget.albumName == null && connectedToInternet)...[
              Button.iconOnly(
               icon: const Icon(CupertinoIcons.settings, color: Colors.white),
               glassIcon: CNSymbol('gear', size: 17),
@@ -401,11 +412,26 @@ class _LibraryPageState extends State<LibraryPage> {
                               menuProvider: (request) {
                                 return !widget.trashMode ? Menu(
                                   children:  [
-                                    // MenuAction(
-                                    //   title: "Download",
-                                    //   image: MenuImage.icon(CupertinoIcons.arrow_down_circle), 
-                                    //   callback: () {}
-                                    // ),
+                                    MenuAction(
+                                      title: DownloadService.isDownloaded(data.encodedPaths[index])
+                                        ? 'Remove download'
+                                        : 'Download',
+                                      image: MenuImage.icon(CupertinoIcons.arrow_down_circle), 
+                                      callback: () async {
+                                        final photo = PhotoStore.get(data.encodedPaths[index]);
+                                        if (!DownloadService.isDownloaded(data.encodedPaths[index])) {
+                                          final path = await DownloadService.download(
+                                            encodedPath: data.encodedPaths[index],
+                                            filename: photo?.name ?? data.encodedPaths[index],
+                                          );
+                                          log('Downloaded to: $path');
+                                        } else {
+                                          log("ici");
+                                          DownloadService.remove(data.encodedPaths[index]);
+                                          _refresh();
+                                        }
+                                      }
+                                    ),
                                     if (mimetypes[index].startsWith("image/"))
                                       MenuAction(
                                         title: "Copy", 
@@ -639,7 +665,7 @@ class _LibraryPageState extends State<LibraryPage> {
                             items: [
                               CNPopupMenuItem(
                                 label: 'Download',
-                                icon: CNSymbol('arrow.down.circle', size: 18),
+                                  icon: CNSymbol('arrow.down.circle', size: 18), 
                               ),
                               CNPopupMenuItem(
                                 label: 'Share',
@@ -660,8 +686,11 @@ class _LibraryPageState extends State<LibraryPage> {
                             ],
                             onSelected: (item) async {
                               if (item == 0) {
-                                // TODO download
-                              } 
+                                for (final i in selectedImages) {
+                                  final photo = PhotoStore.get(data.encodedPaths[i]);
+                                  DownloadService.download(encodedPath: data.encodedPaths[i], filename: photo!.name);
+                                }
+                              }
                               if (item == 1) {
                                 // TODO share
                               } 
