@@ -58,6 +58,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   bool showInfo = false;
   final _sheetController = DraggableScrollableController();
   DateTime? newDate;
+  bool hideAppbar = false;
 
   @override
   void initState() {
@@ -83,6 +84,8 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     _animationController.dispose();
     _pageController.dispose();
     player.dispose();
+    focused = false;
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
@@ -295,8 +298,8 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildAppBar() {
-    return AppBar(
+  Widget? _buildAppBar() {
+    return hideAppbar ? null :  AppBar(
       key: const ValueKey('toolbar'),
       centerTitle: true,
       backgroundColor: Colors.transparent,
@@ -566,7 +569,6 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
           ),
           CNButtonData.icon(
             icon: CNSymbol('info.circle', size: 22),
-
             onPressed: () {
               setState(() {
                 showInfo = !showInfo;
@@ -592,7 +594,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
         ],
       );
     }
-    // TODO voir ce que cela donne sans sur IOS < 26
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5),
       decoration: BoxDecoration(
@@ -602,8 +604,8 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
       child: Row(
         children: [
           Button.iconOnly(
-            icon: const Icon(CupertinoIcons.heart),
-            glassIcon: CNSymbol('heart', size: 18),
+            icon: Icon(isFavorite ? CupertinoIcons.heart_fill : CupertinoIcons.heart),
+            glassIcon: CNSymbol(isFavorite ? 'heart.fill' : 'heart', size: 18),
             backgroundColor: Colors.transparent,
             onPressed: () async {
               await PhotoStore.update(path: widget.encodedPaths[currentIndex], favorite: !isFavorite);
@@ -616,7 +618,11 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
             icon: const Icon(CupertinoIcons.info_circle),
             glassIcon: CNSymbol('info.circle', size: 18),
             backgroundColor: Colors.transparent,
-            onPressed: () {},
+            onPressed: () {
+              setState(() {
+                showInfo = !showInfo;
+              });
+            },
           ),
           Button.iconOnly(
             icon: const Icon(CupertinoIcons.slider_horizontal_3),
@@ -689,11 +695,14 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   ),
                   TextButton(
                     onPressed: () {
+                      setState(() {
+                        hideAppbar = true;
+                      });
                       showModalBottomSheet(
                         barrierColor: Colors.transparent,
                         isScrollControlled: true,
                         constraints: BoxConstraints(
-                          minHeight: MediaQuery.of(context).size.height * 0.92,
+                          minHeight: 0,
                           maxHeight: MediaQuery.of(context).size.height * 0.92,
                         ),
                         context: context,
@@ -793,7 +802,11 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                             }
                           );
                         },
-                      );
+                      ).then((_) {
+                        setState(() {
+                          hideAppbar = false;
+                        });
+                      });
                     },
                     child: Text("Adjust", style: TextStyle(fontSize: 16, color: Colors.blue))
                   )
