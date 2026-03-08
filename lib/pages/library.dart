@@ -13,7 +13,6 @@ import 'package:fover/pages/settings.dart';
 import 'package:fover/pages/viewer.dart';
 import 'package:fover/src/services/download.dart';
 import 'package:fover/src/services/photo_store.dart';
-import 'package:fover/src/utils/common_utils.dart' as utils;
 import 'package:fover/src/utils/requests.dart';
 import 'package:fover/src/widgets/albums_list.dart';
 import 'package:fover/src/widgets/blurred_app_bar.dart';
@@ -23,6 +22,7 @@ import 'package:fover/src/widgets/dialog.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:super_context_menu/super_context_menu.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 
 final ValueNotifier<int> countSelected = ValueNotifier<int>(0);
 
@@ -157,8 +157,17 @@ class _LibraryPageState extends State<LibraryPage> {
     final results = await Future.wait(
       entries.map((entry) async {
         final photo = PhotoStore.get(entry['path'] as String);
+        final isVideo = entry['mimetype'].startsWith('video/');
 
         if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
+          if (isVideo) {
+            return await VideoThumbnail.thumbnailData(
+              video: photo.localPath!,
+              imageFormat: ImageFormat.WEBP,
+              maxWidth: 300,
+              quality: 10,
+            );
+          }
           return await File(photo.localPath!).readAsBytes() as Uint8List?;
         }
 
