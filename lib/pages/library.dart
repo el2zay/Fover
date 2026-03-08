@@ -103,6 +103,8 @@ class _LibraryPageState extends State<LibraryPage> {
     final images = await _loadImages();
     final thumbs = await _compressImages(images.map((e) => e.bytes).toList());
 
+    if (!mounted) return;
+    
     setState(() {
       _data = _GalleryData(
         images: images.map((e) => e.bytes).toList(),
@@ -228,6 +230,9 @@ class _LibraryPageState extends State<LibraryPage> {
   Future<void> _refresh() async {
     final images = await _loadImages();
     final thumbs = await _compressImages(images.map((e) => e.bytes).toList());
+
+    if (!mounted) return;
+
     setState(() {
       _data = _GalleryData(
         images: images.map((e) => e.bytes).toList(),
