@@ -1,5 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:io';
+
 import 'package:clipboard/clipboard.dart';
 import 'package:cupertino_calendar_picker/cupertino_calendar_picker.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
@@ -15,7 +17,6 @@ import 'package:fover/src/widgets/dialog.dart';
 import 'package:intl/intl.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:media_kit/media_kit.dart';
-import 'dart:developer';
 
 bool focused = false;
 
@@ -87,15 +88,18 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
 
   void _loadVideo(int index) {
     final encodedPath = widget.encodedPaths[index];
-    player.open(
-      Media(
+    final photo = PhotoStore.get(widget.encodedPaths[index]);
+    final source = photo?.localPath != null
+      ? Media(photo!.localPath!)  
+      : Media(
         "https://${box.get('apiDomain')}:${box.get('httpsPort')}/api/v15/dl/$encodedPath",
         httpHeaders: {
           "X-Fbx-App-Auth": client!.sessionToken!,
         },
-      ),
-      play: false,
-    );
+      );
+
+    player.open(source, play: false);
+
   }
 
   void _toggleFocus() {
@@ -175,7 +179,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                           _loadVideo(index);
                         }
                       },
-
+                      
                       itemBuilder: (context, index) {
                         return GestureDetector(
                           onTap: _toggleFocus,
@@ -222,23 +226,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                                   ),
                                 )
                               : const SizedBox()
-                            : widget.images[index] != null
-                              ? ExtendedImage.memory(
-                                widget.images[index]!,
-                                fit: BoxFit.contain,
-                                mode: ExtendedImageMode.gesture,
-                                enableSlideOutPage: true,
-                                onDoubleTap: _handleDoubleTap,
-                                heroBuilderForSlidingPage: (Widget result) {
-                                  return Hero(
-                                    tag: 'image_$index',
-                                    child: result,
-                                    flightShuttleBuilder:
-                                        (_, __, ___, ____, _____) => result,
-                                  );
-                                },
-                              ) : Container(color: Colors.grey[900]
-                            ),
+                            : _buildImage(index)
                         );
                       },
                     ),
@@ -258,6 +246,45 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
       ),
     );
   }
+
+  Widget _buildImage(int index) {
+    final photo = PhotoStore.get(widget.encodedPaths[index]);
+
+    if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
+      return ExtendedImage.file(
+        File(photo.localPath!),
+        fit: BoxFit.contain,
+        mode: ExtendedImageMode.gesture,
+        enableSlideOutPage: true,
+        onDoubleTap: _handleDoubleTap,
+        heroBuilderForSlidingPage: (Widget result) {
+          return Hero(
+            tag: 'image_$index',
+            child: result,
+            flightShuttleBuilder: (_, __, ___, ____, _____) => result,
+          );
+        },
+      );
+    }
+
+    return widget.images[index] != null
+      ? ExtendedImage.memory(
+          widget.images[index]!,
+          fit: BoxFit.contain,
+          mode: ExtendedImageMode.gesture,
+          enableSlideOutPage: true,
+          onDoubleTap: _handleDoubleTap,
+          heroBuilderForSlidingPage: (Widget result) {
+            return Hero(
+              tag: 'image_$index',
+              child: result,
+              flightShuttleBuilder: (_, __, ___, ____, _____) => result,
+            );
+          },
+        )
+      : Container(color: Colors.grey[900]);
+  }
+
 
   Widget _buildHiddenAppBar() {
     return AppBar(
