@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:fover/main.dart';
@@ -22,6 +20,7 @@ enum PopMenuAction {
 }
 
 class PopMenu extends StatelessWidget {
+  final double scale;
   final bool showCopy;
   final bool isViewer;
   final bool isDownloaded;
@@ -30,6 +29,7 @@ class PopMenu extends StatelessWidget {
 
   const PopMenu({
     super.key, 
+    this.scale = 0.7,
     required this.showCopy, 
     required this.isViewer, 
     this.isDownloaded = false, 
@@ -183,7 +183,7 @@ class PopMenu extends StatelessWidget {
           onPressed: showMenu,
           padding: EdgeInsets.zero,
           child: Transform.scale(
-            scale: 0.7,
+            scale: scale,
             child: Button.iconOnly(icon: Icon(CupertinoIcons.ellipsis, color: CupertinoColors.white), onPressed: showMenu),
           ),
         ),
