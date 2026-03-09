@@ -20,7 +20,10 @@ class DownloadService {
 
     final localPath = '${downloadsDir.path}/$filename';
 
-    if (File(localPath).existsSync()) return localPath;
+    if (File(localPath).existsSync()) {
+      await PhotoStore.update(path: encodedPath, localPath: localPath); // ← ajoute ça
+      return localPath;
+    }
     final response = await client?.fetch(
       url: "v15/dl/$encodedPath",
       parseJson: false,
