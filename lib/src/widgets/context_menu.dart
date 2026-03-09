@@ -1,9 +1,7 @@
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:fover/main.dart';
 import 'package:fover/src/widgets/adaptative_container.dart';
-import 'package:super_context_menu/super_context_menu.dart';
 
 class ContextMenu extends StatefulWidget {
   const ContextMenu({super.key});
