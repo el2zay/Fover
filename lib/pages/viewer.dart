@@ -1,19 +1,24 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:clipboard/clipboard.dart';
-import 'package:cupertino_calendar_picker/cupertino_calendar_picker.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fover/main.dart';
+import 'package:fover/pages/library.dart';
+import 'package:fover/src/services/download.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
+import 'package:fover/src/widgets/adjust_date.dart';
+import 'package:fover/src/widgets/albums_list.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/dialog.dart';
+import 'package:fover/src/widgets/pop_menu.dart';
 import 'package:intl/intl.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:media_kit/media_kit.dart';
@@ -57,7 +62,6 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   late final ExtendedPageController _pageController;
   bool showInfo = false;
   final _sheetController = DraggableScrollableController();
-  DateTime? newDate;
   bool hideAppbar = false;
 
   @override
@@ -358,49 +362,92 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
           data: const CupertinoThemeData(brightness: Brightness.dark),
           child: Transform.scale(
             scale: 1.2,
-            child: CNPopupMenuButton.icon(
-              size: 40,
-              buttonIcon: CNSymbol('ellipsis', size: 15),
-              items: [
-                if (!widget.mimetype[currentIndex].startsWith('video/'))
-                  CNPopupMenuItem(
-                    label: 'Copy',
-                    icon: CNSymbol('doc.on.doc', size: 20),
-                  ),
-                CNPopupMenuItem(
-                  label: 'Duplicate',
-                  icon: CNSymbol('plus.square.on.square', size: 20),
-                ),
-                CNPopupMenuItem(
-                  label: 'Hide',
-                  icon: CNSymbol('eye.slash', size: 20),
-                ),
-                CNPopupMenuItem(
-                  label: 'Add to Album',
-                  icon: CNSymbol('plus.rectangle.on.rectangle', size: 20),
-                ),
-                CNPopupMenuDivider(),
-                CNPopupMenuItem(
-                  label: 'Adjust the date and time',
-                  icon: CNSymbol('calendar.badge.clock', size: 20),
-                ),
-                CNPopupMenuItem(
-                  label: 'Adjust the location',
-                  icon: CNSymbol('mappin.circle', size: 20),
-                )
-              ],
-              onSelected: (item) async {
-                int realItem = widget.mimetype[currentIndex].startsWith('video/') ? item + 1 : item;
-                if (realItem == 0) {
-                  final bytes = widget.images[currentIndex];
-                  if (bytes == null) return;
-                  await FlutterClipboard.copyImage(bytes);
-                } else if (realItem == 1) {
-                  await PhotoStore.duplicate(path: widget.encodedPaths[currentIndex]);
-                  widget.onRefresh?.call();
+            child: PopMenu(
+              showCopy: widget.mimetype[currentIndex].startsWith('image/'),
+              isViewer: true,
+              isDownloaded: DownloadService.isDownloaded(widget.encodedPaths[currentIndex]),
+              isFavorite: PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true,
+              onSelected: (action) async {
+                switch (action) {
+                  case PopMenuAction.download:
+                    final photo = PhotoStore.get(widget.encodedPaths[currentIndex]);
+                      if (!DownloadService.isDownloaded(widget.encodedPaths[currentIndex])) {
+                        final path = await DownloadService.download(
+                          encodedPath: widget.encodedPaths[currentIndex],
+                          filename: photo?.name ?? widget.encodedPaths[currentIndex],
+                        );
+                        if (!mounted) return;
+                        setState(() {});
+                        
+                        log('Downloaded to: $path');
+                      } else {
+                        log("ici");
+                        DownloadService.remove(widget.encodedPaths[currentIndex]);
+                      }
+                    break;
+                  case PopMenuAction.copy:
+                    final bytes = widget.images[currentIndex];
+                    if (bytes == null) return;
+                    await FlutterClipboard.copyImage(bytes);
+                    break;
+                  case PopMenuAction.share:
+                    break;
+                  case PopMenuAction.favorite:
+                    final isFavorite = PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true;
+                    await PhotoStore.update(path: widget.encodedPaths[currentIndex], favorite: !isFavorite);
+                    setState(() {});
+                    break;
+                  case PopMenuAction.duplicate:
+                    await PhotoStore.duplicate(path: widget.encodedPaths[currentIndex]);
+                    widget.onRefresh?.call();
+                    break;
+                  case PopMenuAction.hide:
+                    await PhotoStore.update(path: widget.encodedPaths[currentIndex], hidden: true);
+                    widget.onRefresh?.call();
+                    break;
+                  case PopMenuAction.addToAlbum:
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
+                      builder: (context) {
+                        return AddToAlbumSheet(
+                          photoPath: [widget.encodedPaths[currentIndex]],
+                        );
+                      }
+                    );
+                    break;
+                  case PopMenuAction.adjustDate:
+                    setState(() {
+                      hideAppbar = true;
+                    });
+                    showModalBottomSheet(
+                      barrierColor: Colors.transparent,
+                      isScrollControlled: true,
+                      constraints: BoxConstraints(
+                        minHeight: 0,
+                        maxHeight: MediaQuery.of(context).size.height * 0.92,
+                      ),
+                      context: context,
+                      
+                      builder: (context) {
+                        return AdjustDate(
+                          encodedPath: widget.encodedPaths[currentIndex],
+                          photo: PhotoStore.get(widget.encodedPaths[currentIndex])!,
+                          initialDate: PhotoStore.getDate(widget.encodedPaths[currentIndex]),
+                        );
+                      },
+                    ).then((_) {
+                      setState(() {
+                        hideAppbar = false;
+                      });
+                    });
+                    break;
+                  case PopMenuAction.adjustLocation:
+                    break;
                 }
               },
-            ),
+            )
           ),
         ),
       ],
@@ -708,98 +755,10 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                         context: context,
                         
                         builder: (context) {
-                          DateTime localNewDate = newDate ?? PhotoStore.getDate(widget.encodedPaths[currentIndex]);
-                          return StatefulBuilder( 
-                            builder: (context, setModalState) {
-                              return Scaffold(
-                                appBar: AppBar(
-                                  centerTitle: true,
-                                  leading: Transform.scale(
-                                    scale: 0.8,
-                                    child: Button.iconOnly(
-                                      icon: Icon(Icons.close),
-                                      glassIcon: CNSymbol('xmark', size: 16),
-                                      backgroundColor: Colors.transparent,
-                                      onPressed: () => Navigator.pop(context)
-                                    ),
-                                  ),
-                                  title: Text("Adjust the time and date", style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600)),
-                                  actions: [
-                                    Button(
-                                      label: "Adjust",
-                                      glassConfig: const CNButtonConfig(
-                                        style: CNButtonStyle.prominentGlass,
-                                      ),
-                                      textColor: Colors.blue,
-                                      tint: Colors.blue.withAlpha(230),
-                                      onPressed: () => Navigator.pop(context)
-                                    ),
-                                  ],
-                                ),
-                                body: ListView(
-                                  padding: EdgeInsets.all(10),
-                                  children: [
-                                    Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 15, vertical: 20),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withAlpha(20),
-                                        borderRadius: BorderRadius.circular(20)
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text("Original", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                                              Text(
-                                                DateFormat('d MMMM yyyy — hh:mm', 'en').format(photo.date),
-                                                style: TextStyle(fontSize: 14, color: Colors.white)
-                                              ),
-                                            ],
-                                          ),
-                                          SizedBox(height: 10),
-                                          Divider(color: Colors.white12),
-                                          SizedBox(height: 10),
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text("Adjusted", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                                              Text(
-                                                DateFormat('d MMMM yyyy — hh:mm', 'en').format(localNewDate),
-                                                style: TextStyle(fontSize: 14, color: Colors.white70)
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      )
-                                    ),
-                                    SizedBox(height: 20),
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withAlpha(20),
-                                        borderRadius: BorderRadius.circular(20)
-                                      ),
-                                      padding: EdgeInsets.only(bottom: 10),
-                                      width: MediaQuery.of(context).size.width * 0.8,
-                                      child: CupertinoCalendar(
-                                        use24hFormat: true,
-                                        minimumDateTime: DateTime(0), 
-                                        maximumDateTime: DateTime(9999),
-                                        initialDateTime: PhotoStore.getDate(widget.encodedPaths[currentIndex]),
-                                        mainColor: CupertinoColors.activeBlue,
-                                        mode: CupertinoCalendarMode.dateTime,
-                                        timeLabel: "Time",
-                                        onDateTimeChanged: (date) {
-                                          setModalState(() => localNewDate = date);
-                                          setState(() => newDate = date);
-                                          PhotoStore.update(path: widget.encodedPaths[currentIndex], displayDate: date);
-                                        },
-                                      ),
-                                    )
-                                  ],
-                                ),
-                              );
-                            }
+                          return AdjustDate(
+                            encodedPath: widget.encodedPaths[currentIndex],
+                            photo: photo,
+                            initialDate: PhotoStore.getDate(widget.encodedPaths[currentIndex]),
                           );
                         },
                       ).then((_) {
