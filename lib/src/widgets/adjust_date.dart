@@ -32,7 +32,10 @@ class _AdjustDateState extends State<AdjustDate> {
             icon: Icon(Icons.close),
             glassIcon: CNSymbol('xmark', size: 16),
             backgroundColor: Colors.transparent,
-            onPressed: () => Navigator.pop(context)
+            onPressed: () {
+              PhotoStore.update(path: widget.encodedPath, displayDate: widget.initialDate);
+              Navigator.pop(context);
+            }
           ),
         ),
         title: Text("Adjust the time and date", style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600)),
