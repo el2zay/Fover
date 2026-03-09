@@ -15,7 +15,8 @@ import 'package:freebox/freebox.dart';
 import 'package:fover/src/utils/requests.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:media_kit/media_kit.dart'; 
+import 'package:media_kit/media_kit.dart';
+import 'package:pull_down_button/pull_down_button.dart'; 
 
 FreeboxClient? client;
 bool is26OrNewer =  PlatformVersion.supportsLiquidGlass;
@@ -190,7 +191,18 @@ class _MainAppState extends State<MainApp> {
           style: ButtonStyle(
             overlayColor: WidgetStatePropertyAll(Colors.transparent)
           )
-        )
+        ),
+        extensions: [
+          PullDownButtonTheme(
+            itemTheme: PullDownMenuItemTheme(
+              destructiveColor: CupertinoColors.destructiveRed,
+            ),
+            dividerTheme: PullDownMenuDividerTheme(
+              dividerColor: Colors.white.withAlpha(30), 
+              largeDividerColor: Colors.white.withAlpha(15),
+            ),
+          ),
+        ]
       ),
     );
   }
