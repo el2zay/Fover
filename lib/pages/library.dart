@@ -8,6 +8,7 @@ import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:fover/main.dart';
 import 'package:fover/pages/settings.dart';
 import 'package:fover/pages/viewer.dart';
@@ -118,6 +119,8 @@ class _LibraryPageState extends State<LibraryPage> {
       elements = images.length;
       showButtons = images.isNotEmpty;
     });
+
+     FlutterNativeSplash.remove();
 
     if (_data!.images.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {

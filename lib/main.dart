@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/pages/albums.dart';
 import 'package:fover/pages/first.dart';
@@ -51,6 +52,7 @@ Future<void> initApp() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
   MediaKit.ensureInitialized();
   await initializeDateFormatting('en', null);
   await Hive.initFlutter();
