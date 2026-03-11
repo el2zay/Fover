@@ -57,5 +57,5 @@ flutter:
   
 flutter_native_splash:
   color: '#000000'
-  image: assets/icon.png
+  image: assets/dart_icon.png
   branding: assets/footer.png
