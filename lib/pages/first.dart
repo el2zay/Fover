@@ -1,82 +1,100 @@
-
-
-/*
-Première page : "Comment souhaitez-vous vous connecter ?"
-
-2 gros boutons circulaires centrés :
-- Bouton 1 : Freebox (avec une icone Freebox à l'interieur)
-- Bouton 2 : Serveur NAS (avec une icone NAS à l'interieur)
-
-Lorsque bouton 1 sélectionné : faire comme Call Notifier
-Lorsque bouton 2 sélectionné : Popup pour demander adresse IP du NAS et identifiants (voir comment d'autres applis font ça)
-*/
+import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:fover/pages/login.dart';
 
-class FirstPage extends StatefulWidget {
+class FirstPage extends StatelessWidget {
   const FirstPage({super.key});
 
   @override
-  State<FirstPage> createState() => _FirstPageState();
-}
-
-class _FirstPageState extends State<FirstPage> {
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 38, 38, 38),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-           Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                // ElevatedButton(
-                //   onPressed: () {
-                //   },
-                //   style: ElevatedButton.styleFrom(
-                //     shape: const CircleBorder(),
-                //     padding: const EdgeInsets.all(40),
-                //     backgroundColor: Colors.transparent,
-                //     side: const BorderSide(color: Colors.white, width: 1),
-                //   ),
-                //   child: const Icon(Icons.router, size: 50),
-                // ),
-                CNButton.icon(onPressed: () {
-                  Navigator.push(context, CupertinoPageRoute(builder: (context) => const LoginPage()));
-                },
-                imageAsset: CNImageAsset('assets/icons/freebox_icon.png', color: Color.fromARGB(255, 188, 48, 42)),
-
-                ),
-                // ElevatedButton(
-                //   onPressed: () {
-
-                //   },
-
-                //   style: ElevatedButton.styleFrom(
-                //     shape: const CircleBorder(),
-                //     padding: const EdgeInsets.all(40),
-                //     backgroundColor: Colors.transparent,
-                //     side: const BorderSide(color: Colors.white, width: 1),
-                //   ),
-                //   child: const Icon(Icons.router, size: 50),
-                // ),
-
-              CNButton.icon(
-                config: const CNButtonConfig(
-                  // padding: EdgeInsets.all(40),
-                  imagePlacement: CNImagePlacement.trailing,
-                ),
-                onPressed: () {},
-                
-                imageAsset: CNImageAsset('assets/icons/server.png', color: Colors.white, size: 30),
-                ),
-              ],
-            ),
-        ],
+    final height = MediaQuery.of(context).size.height;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.black,
+            Colors.pinkAccent.shade700.withAlpha(200),
+            Colors.blue[800]!.withAlpha(100),
+          ],
+        )
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Center(
+          child: Column(
+            children: [
+              Spacer(),
+              const Text(
+                "Fover",
+                style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 15),
+              const Text(
+                "Free up your phone. Keep your photos.",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white10,
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: Colors.white30)
+                  ),
+                  margin: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.12, bottom: 30, left: 20, right: 20), // TODO repsonsive
+                  padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.075),
+                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      const Text(
+                        "Fover connects to your home server and turns it into your personal cloud, without the monthly bill",
+                        style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w500, color: Colors.white70),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ), 
+                        child: const Text(
+                          "Start with Copyparty",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                        onPressed: () {}
+                      ),
+                      SizedBox(height: 10),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ), 
+                        child: const Text(
+                          "Start with Freebox",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                        onPressed: () {
+                          Navigator.push(
+                            context, 
+                            CupertinoPageRoute(builder: (_) => LoginPage())
+                          );
+                        }
+                      ),
+                      SizedBox(height: height * 0.02),
+                    ]
+                  )
+                )
+              )
+            ]
+          )
+        )
       ),
     );
   }
