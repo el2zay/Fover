@@ -30,6 +30,7 @@ Future<void> initApp() async {
   await PhotoStore.init();
 
   if (box.get("appToken") != null) {
+    FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
     client = FreeboxClient(
       appToken: box.get("appToken"),
       appId: 'fbx.fover',
@@ -52,7 +53,6 @@ Future<void> initApp() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
   MediaKit.ensureInitialized();
   await initializeDateFormatting('en', null);
   await Hive.initFlutter();
@@ -82,6 +82,7 @@ class _MainAppState extends State<MainApp> {
       debugShowCheckedModeBanner: false,
       home: Padding(
         padding: Platform.isAndroid ? EdgeInsets.only(top: 15, left: 5, right: 5) : EdgeInsets.zero,
+        // ignore: sort_child_properties_last
         child: Scaffold(
           extendBody: true,
           body: box.get("appToken") == null
@@ -94,74 +95,75 @@ class _MainAppState extends State<MainApp> {
               Placeholder(),
             ],
           ),
-          bottomNavigationBar: (true) ?
-            Container(
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.transparent,
-                    spreadRadius: 2,
-                    blurRadius: 5,
-                    offset: Offset(0, 3),
-                  )
+          bottomNavigationBar: box.get("appToken") != null
+          ? Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.transparent,
+                  spreadRadius: 2,
+                  blurRadius: 5,
+                  offset: Offset(0, 3),
+                )
+              ]
+            ),
+            child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+              child: BottomNavigationBar(
+                elevation: 0,
+                backgroundColor: Colors.transparent,
+                fixedColor: const Color.fromARGB(255, 52, 161, 250),
+                type: BottomNavigationBarType.fixed,
+                selectedFontSize: 13,
+                unselectedFontSize: 13,
+                currentIndex: _currentIndex,
+                onTap: (value) {
+                  setState(() {
+                    _currentIndex = value;
+                  });
+                },
+                items: [
+                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.photo), label: "Library"),
+                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.collections), label: "Albums"),
+                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: "Search"),
                 ]
-              ),
-              child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                child: BottomNavigationBar(
-                  elevation: 0,
-                  backgroundColor: Colors.transparent,
-                  fixedColor: const Color.fromARGB(255, 52, 161, 250),
-                  type: BottomNavigationBarType.fixed,
-                  selectedFontSize: 13,
-                  unselectedFontSize: 13,
-                  currentIndex: _currentIndex,
-                  onTap: (value) {
-                    setState(() {
-                      _currentIndex = value;
-                    });
-                  },
-                  items: [
-                    BottomNavigationBarItem(icon: Icon(CupertinoIcons.photo), label: "Library"),
-                    BottomNavigationBarItem(icon: Icon(CupertinoIcons.collections), label: "Albums"),
-                    BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: "Search"),
-                  ]
-                ) 
               ) 
-            ) : CNTabBar(
-              tint: Colors.blue,
-              iconSize: 18,
-              items: [
-                CNTabBarItem(
-                  label: 'Library',
-                  icon: CNSymbol('photo.fill.on.rectangle.fill'),
-                ),
-                CNTabBarItem(
-                  label: 'Albums',
-                  icon: CNSymbol('rectangle.stack.fill'),
-                ),
-                CNTabBarItem(
-                  label: 'Search',
-                  icon: CNSymbol('magnifyingglass'),
-                ),
-              ],
-              currentIndex: _currentIndex,
-              onTap: (i) => setState(() => _currentIndex = i),
-              // searchItem: CNTabBarSearchItem(
-              //   placeholder: 'Search',
-              //   automaticallyActivatesSearch: false,
-              //   onSearchChanged: (query) {
-              //   },
-              //   onSearchSubmit: (query) {
-              //   },
-              //   onSearchActiveChanged: (isActive) {
-              //   },
-              //   style: const CNTabBarSearchStyle(
-              //     iconSize: 20,
-              //     animationDuration: Duration(milliseconds: 400),
-              //   ),
-              // ),
-            )
+            ) 
+          ) : null
+          // CNTabBar(
+          //   tint: Colors.blue,
+          //   iconSize: 18,
+          //   items: [
+          //     CNTabBarItem(
+          //       label: 'Library',
+          //       icon: CNSymbol('photo.fill.on.rectangle.fill'),
+          //     ),
+          //     CNTabBarItem(
+          //       label: 'Albums',
+          //       icon: CNSymbol('rectangle.stack.fill'),
+          //     ),
+          //     CNTabBarItem(
+          //       label: 'Search',
+          //       icon: CNSymbol('magnifyingglass'),
+          //     ),
+          //   ],
+          //   currentIndex: _currentIndex,
+          //   onTap: (i) => setState(() => _currentIndex = i),
+          //   searchItem: CNTabBarSearchItem(
+          //     placeholder: 'Search',
+          //     automaticallyActivatesSearch: false,
+          //     onSearchChanged: (query) {
+          //     },
+          //     onSearchSubmit: (query) {
+          //     },
+          //     onSearchActiveChanged: (isActive) {
+          //     },
+          //     style: const CNTabBarSearchStyle(
+          //       iconSize: 20,
+          //       animationDuration: Duration(milliseconds: 400),
+          //     ),
+          //   ),
+          // ),
         ),
       ),
       theme: ThemeData(
