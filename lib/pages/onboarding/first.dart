@@ -1,8 +1,7 @@
-import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:fover/pages/login.dart';
+import 'package:fover/pages/onboarding/copyparty/login.dart';
+import 'package:fover/pages/onboarding/freebox/login.dart';
 
 class FirstPage extends StatelessWidget {
   const FirstPage({super.key});
@@ -43,7 +42,7 @@ class FirstPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(30),
                     border: Border.all(color: Colors.white30)
                   ),
-                  margin: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.12, bottom: 30, left: 20, right: 20), // TODO repsonsive
+                  margin: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.12, bottom: 30, left: 20, right: 20),      
                   padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.075),
                    child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -66,7 +65,14 @@ class FirstPage extends StatelessWidget {
                         child: const Text(
                           "Start with Copyparty",
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                        onPressed: () {}
+                        onPressed: () {
+                          Navigator.push(
+                            context, 
+                            CupertinoPageRoute(
+                              builder: (_) => CopypartyLoginPage()
+                            )
+                          );
+                        }
                       ),
                       SizedBox(height: 10),
                       ElevatedButton(
@@ -79,11 +85,12 @@ class FirstPage extends StatelessWidget {
                         ), 
                         child: const Text(
                           "Start with Freebox",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)
+                        ),
                         onPressed: () {
                           Navigator.push(
                             context, 
-                            CupertinoPageRoute(builder: (_) => LoginPage())
+                            CupertinoPageRoute(builder: (_) => FreeboxLoginPage())
                           );
                         }
                       ),

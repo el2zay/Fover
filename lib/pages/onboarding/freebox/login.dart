@@ -1,15 +1,15 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:fover/pages/connection.dart';
+import 'package:fover/pages/onboarding/freebox/connection.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class FreeboxLoginPage extends StatefulWidget {
+  const FreeboxLoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<FreeboxLoginPage> createState() => _FreeboxLoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _FreeboxLoginPageState extends State<FreeboxLoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,7 +41,7 @@ class _LoginPageState extends State<LoginPage> {
                   Navigator.push(
                     context,
                     CupertinoPageRoute(
-                      builder: (context) => const ConnectionPage(),
+                      builder: (context) => const FreeboxConnectionPage(),
                     ),
                   );
                 },

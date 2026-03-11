@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:cupertino_native_better/style/sf_symbol.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +13,17 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  double storageUsed = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration(milliseconds: 50), () {
+    setState(() {
+      storageUsed = 0.519;
+    });
+  });
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,11 +45,13 @@ class _SettingsPageState extends State<SettingsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(height: 20),
-          Center(
-            child: Image.asset("assets/illustrations/freebox/${model.toLowerCase()}.png", height: 45)
-          ),
-          SizedBox(height: 15),
-          Center(child: Text("Freebox Server $model", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
+          if (model != null)...[
+            Center(
+              child: Image.asset("assets/illustrations/freebox/${model!.toLowerCase()}.png", height: 45)
+            ),
+            SizedBox(height: 15),
+            Center(child: Text("Freebox Server $model", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
+          ],
           Card(
             color: Colors.white10,
             child: Padding(padding: EdgeInsetsGeometry.symmetric(horizontal: 20, vertical: 10),
@@ -56,7 +67,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       Colors.orange,
                       Colors.red[500]!,
                       Colors.red[700]!,
-                    ], 0.6),
+                    ], storageUsed),
                 ],
               ),
             )
@@ -81,6 +92,12 @@ class _SettingsPageState extends State<SettingsPage> {
             leading: Icon(CupertinoIcons.globe),
             title: Text("Language"),
             trailing: Icon(CupertinoIcons.chevron_forward),
+          ),
+          ListTile(
+            leading: Icon(CupertinoIcons.ellipsis_circle),
+            title: Text("Peronalize the context menu"),
+            trailing: Icon(CupertinoIcons.chevron_forward),
+            onTap: () {},
           ),
           ListTile(
             leading: Icon(Icons.logout),

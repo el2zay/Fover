@@ -3,14 +3,14 @@ import 'dart:async';
 import 'package:fover/src/utils/requests.dart';
 import 'package:flutter/material.dart';
 
-class ConnectionPage extends StatefulWidget {
-  const ConnectionPage({super.key});
+class FreeboxConnectionPage extends StatefulWidget {
+  const FreeboxConnectionPage({super.key});
 
   @override
-  State<ConnectionPage> createState() => _ConnectionPageState();
+  State<FreeboxConnectionPage> createState() => _FreeboxConnectionPageState();
 }
 
-class _ConnectionPageState extends State<ConnectionPage> {
+class _FreeboxConnectionPageState extends State<FreeboxConnectionPage> {
   late Future<dynamic> infos;
   Timer? _timer;
   final ValueNotifier<int> _elapsedTimeNotifier = ValueNotifier<int>(0);
