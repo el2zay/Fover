@@ -1,8 +1,13 @@
+import 'dart:async';
+
+import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:cupertino_native_better/style/sf_symbol.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/widgets/button.dart';
+import 'package:fover/src/widgets/dialog.dart';
 
 class CopypartyLoginPage extends StatefulWidget {
   const CopypartyLoginPage({super.key});
@@ -12,6 +17,11 @@ class CopypartyLoginPage extends StatefulWidget {
 }
 
 class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
+  TextEditingController urlController = TextEditingController();
+  TextEditingController userController = TextEditingController();
+  TextEditingController passController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,7 +91,7 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
                       }
                     ),
                     TextSpan(
-                      text: " to see the instructions.\nIt will take you no more than 5 minutes !",
+                      text: " to see the instructions.\nIt will take you no more than 10 minutes !",
                     )
                   ]
                 )
@@ -94,19 +104,22 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
                   borderRadius: BorderRadius.circular(20)
                 ),
                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 25),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: 20,
-                  children: [
-                    Text(
-                      "Login", 
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
-                      textAlign: TextAlign.start
-                    ),
-                    _buildTextField(hint: "IP Address"),
-                    _buildTextField(hint: "Login"),
-                    _buildTextField(hint: "Password", isPassword: true)
-                  ],
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    spacing: 20,
+                    children: [
+                      Text(
+                        "Login", 
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
+                        textAlign: TextAlign.start
+                      ),
+                      _buildTextField(controller: urlController, hint: "IP Address"),
+                      _buildTextField(controller: userController, hint: "Username"),
+                      _buildTextField(controller: passController, hint: "Password", isPassword: true)
+                    ],
+                  ),
                 ),
               ),
               SizedBox(height: 10),
@@ -119,7 +132,44 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  onPressed: () {},
+                  onPressed: () async {
+                    if (!_formKey.currentState!.validate()) return;
+                    try {
+                      await CopypartyService.connect(
+                        url: urlController.text.trim(),
+                        username: userController.text.trim(),
+                        password: passController.text.trim()
+                      );
+                      print("Connected to Copyparty");
+                    } on TimeoutException {
+                      if (!mounted) return;
+                      showGeneralDialog(
+                        barrierDismissible: false,
+                        // ignore: use_build_context_synchronously
+                        context: context,
+                        pageBuilder: (context, animation, secondaryAnimation) {
+                          return MyDialog(
+                            content: "Connection timed out. Please check your URL and your Internet connection.",
+                            secondLabel: "OK",
+                          );
+                        }
+                      );
+                    } catch (e) {
+                      print(e);
+                      if (!mounted) return;
+                      showGeneralDialog(
+                        barrierDismissible: false,
+                        // ignore: use_build_context_synchronously
+                        context: context,
+                        pageBuilder: (context, animation, secondaryAnimation) {
+                          return MyDialog(
+                            content: e.toString().replaceAll("Exception: ", ""),
+                            secondLabel: "OK",
+                          );
+                        }
+                      );
+                    }
+                  },
                   child: Text("Continue", style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
                 )
               )
@@ -130,8 +180,9 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
     );
   }
 
-  Widget _buildTextField({String hint = "", bool isPassword=false}) {
-    return TextField(
+  Widget _buildTextField({TextEditingController? controller,  String hint = "", bool isPassword=false}) {
+    return TextFormField(
+      controller: controller,
       decoration: InputDecoration(
         hint: Text(hint, style: TextStyle(fontSize: 15)),
         fillColor: Colors.grey.withAlpha(10),
@@ -145,6 +196,12 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
           borderRadius: BorderRadius.circular(10),
         ),
       ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter the $hint';
+        }
+        return null;
+      },
       obscureText: isPassword,
     );
   }
