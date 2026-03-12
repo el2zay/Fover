@@ -8,8 +8,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/pages/albums.dart';
-import 'package:fover/pages/first.dart';
+import 'package:fover/pages/onboarding/first.dart';
 import 'package:fover/pages/library.dart';
+import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:freebox/freebox.dart';
@@ -61,6 +62,7 @@ void main() async {
   connectedToInternet = await hasInternet();
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   await initApp();
+  CopypartyService.init();
   
   runApp(Phoenix(child:const MainApp()));
 }
