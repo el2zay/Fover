@@ -75,7 +75,7 @@ You can now log in to the app by entering http://your-public-ip:3923 in the IP A
 ### Option 2 : Cloudflare tunnel
 If your ISP blocks port forwarding, Cloudflare Tunnel is an alternative that requires no open ports.
 
-    > ⚠️ **Privacy notice**: Unlike port forwarding, your photos will transit through **Cloudflare's servers**. Cloudflare states they do not analyze your content, but they technically have access to your data. Use this option only if port forwarding is not possible.
+> ⚠️ **Privacy notice**: Unlike port forwarding, your photos will transit through **Cloudflare's servers**. Cloudflare states they do not analyze your content, but they technically have access to your data. Use this option only if port forwarding is not possible.
 
 #### Quick tunnel (no domain required)
 Download [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/) and run:
