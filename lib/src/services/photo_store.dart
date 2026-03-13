@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:fover/main.dart';
 import 'package:fover/src/models/album_entry.dart';
+import 'package:fover/src/services/copyparty_service.dart';
+import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/utils/requests.dart';
-import 'package:freebox/freebox.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:fover/src/models/photo_entry.dart';
 
@@ -80,6 +80,9 @@ class PhotoStore {
   static Future<void> duplicate({
     required String path
   }) async {
+    // TODO apparemment il n'est pas possible de dupliquer des fichiers avec copyparty
+    // A vérifier !
+    if (detectBackend() != ServerBackend.freebox) return; 
 
     final entry = _photoBox.get(path);
     if (entry == null) return;
@@ -168,7 +171,14 @@ class PhotoStore {
   }
 
   static Future<void> hardDelete(String path) async {
-    deleteLocalFile(path);
+    switch (detectBackend()) {
+      case ServerBackend.freebox:
+        deleteLocalFile(path);
+      case ServerBackend.copyparty:
+        await CopypartyService.deleteFile(path);
+      default:
+        break;
+    }
     await _photoBox.delete(path);
   }
 
@@ -179,40 +189,59 @@ class PhotoStore {
     await entry.save();
   }
 
-  static Future<void> purgeExpired(FreeboxClient client) async {
+  static Future<void> purgeExpired() async {
     final now = DateTime.now();
     final expired = _photoBox.values.where((e) =>
       e.deletedAt != null &&
       now.difference(e.deletedAt!) > _deletionDelay,
     ).toList();
 
+    if (expired.isEmpty) return;
+
+    switch (detectBackend()) {
+      case ServerBackend.freebox:
+        await client?.fetch(
+          url: 'v6/fs/rm/',
+          method: 'POST',
+          body: {'files': expired.map((e) => e.path).toList()},
+        );
+
+      case ServerBackend.copyparty:
+        for (final photo in expired) {
+          await CopypartyService.deleteFile(photo.path);
+        }
+
+      case ServerBackend.none:
+        break;
+    }
+
     for (final photo in expired) {
-      // Supprime sur la Freebox
-      await client.fetch(
-        url: 'v6/fs/rm/',
-        method: 'POST',
-        body: {'files': [photo.path]},
-      );
-      // Supprime de Hive
       await photo.delete();
     }
   }
 
-  static Future<void> existsOnServer() async {
-    final response = await client?.fetch(
-      url: 'v15/fs/ls/L0ZyZWVib3gvVGVzdA=='
-    );
 
-    final serverFiles = (response?.data?['result']?['entries'] as List<dynamic>?)
-      ?.map((e) => e['path'] as String).toSet() ?? {};
+  static Future<void> existsOnServer() async {
+    Set<String> serverFiles = {};
+    switch (detectBackend()) {
+      case ServerBackend.freebox:
+        final response = await client?.fetch(url: 'v15/fs/ls/L0ZyZWVib3gvVGVzdA==');
+        serverFiles = (response?.data?['result']?['entries'] as List<dynamic>?)
+          ?.map((e) => e['path'] as String).toSet() ?? {};
+
+      case ServerBackend.copyparty:
+        serverFiles = await CopypartyService.listAllFiles();
+
+      case ServerBackend.none:
+        return;
+    }
 
     final toDelete = _photoBox.keys.where((key) => !serverFiles.contains(key)).toList();
-  
+
     for (final key in toDelete) {
       log('File ${_photoBox.get(key)?.name} does not exist on server, deleting locally');
       await _photoBox.delete(key);
     }
-
   }
 
   static Future<void> addToAlbum({
