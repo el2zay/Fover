@@ -1,9 +1,11 @@
+import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:exif/exif.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
+import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
 
@@ -29,6 +31,7 @@ Future signUp(context) async {
     box.put("apiDomain", register["apiDomain"]);
     box.put("httpsPort", register["httpsPort"]);
 
+    await initApp();
     Phoenix.rebirth(context);
   }
 
@@ -56,25 +59,36 @@ Future<int> getStorageUsed() async {
 }
 
 Future uploadLocalFiles({List<File>? file, List<XFile>? xfile}) async {
-  List files = file ?? xfile?.map((x) => File(x.path)).toList() ?? [];
+  switch (detectBackend()) {
+    case ServerBackend.freebox:
+      List files = file ?? xfile?.map((x) => File(x.path)).toList() ?? [];
+      final uploader = FreeboxUploader(
+        apiDomain: client!.apiDomain,
+        httpsPort: client!.httpsPort,
+        sessionToken: client!.sessionToken!,
+      );
+      for (int i = 0; i < files.length; i++) {
+        await uploader.uploadFile(
+          fileBytes: await files[i].readAsBytes(),
+          filename: file != null ? files[i].path.split('/').last : xfile![i].name,
+          dirname: "L0ZyZWVib3gvVGVzdA==",
+          onProgress: (uploaded, total) {
+            final percent = (uploaded / total * 100).toStringAsFixed(1);
+            log('$percent% — $uploaded / $total bytes');
+          },
+        );
+      }
+      break;
 
-  final uploader = FreeboxUploader(
-    apiDomain: client!.apiDomain,
-    httpsPort: client!.httpsPort,
-    sessionToken: client!.sessionToken!,
-  );
+    case ServerBackend.copyparty:
+      await CopypartyService.upload(
+        files: file,
+        xfiles: xfile,
+      );
+      break;
 
-  for (int i = 0; i < files.length; i++) {
-    await uploader.uploadFile(
-      fileBytes: await files[i].readAsBytes(),
-      filename: file != null ?  files[i].path.split('/').last : xfile![i].name,
-      dirname: "L0ZyZWVib3gvVGVzdA==",
-      onProgress: (uploaded, total) {
-        final percent = (uploaded / total * 100).toStringAsFixed(1);
-        log('$percent% — $uploaded / $total bytes');
-        // setState(() => _progress = uploaded / total); // pour une ProgressBar
-      },
-    );
+    default:
+      break;
   }
 }
 
@@ -87,8 +101,20 @@ Future fetchDir() async {
 
 
 Future<List<dynamic>> fetchPhotosDir() async {
-  var directories = await client?.fetch(url: "v15/fs/ls/L0ZyZWVib3gvVGVzdA=="); // TODO changer par le vrai dossier
-  List<dynamic> entries = directories?['result']?['entries'] ?? [];
+  List<dynamic> entries = [];
+
+  switch (detectBackend()) {
+    case ServerBackend.copyparty:
+      entries = await CopypartyService.listFiles();
+      break;
+    case ServerBackend.freebox:
+      var directories = await client?.fetch(url: "v15/fs/ls/L0ZyZWVib3gvVGVzdA==");
+      entries = directories?['result']?['entries'] ?? [];
+      break;
+    default:
+      break;
+  }
+
   bool hasBeenEdited = false;
   var filesOnly = entries.where((e) =>
       e['name'] != '.' &&
@@ -109,14 +135,23 @@ Future<List<dynamic>> fetchPhotosDir() async {
 
       Map<String, IfdTag> exifData = {};
       if (entry['mimetype'].contains('image/')) {
-        final imageResponse = await client?.fetch(
-          url: "v15/dl/${entry['path']}",
-          parseJson: false,
-          headers: {'Range': 'bytes=0-65536'}, 
-        );
+        Uint8List? imageBytes;
 
-        if (imageResponse?.data is Uint8List) {
-          exifData = await readExifFromBytes(imageResponse!.data as Uint8List);
+        if (detectBackend() == ServerBackend.copyparty) {
+          imageBytes = await CopypartyService.fetchFileRange(entry['path']);
+        } else {
+          final imageResponse = await client?.fetch(
+            url: "v15/dl/${entry['path']}",
+            parseJson: false,
+            headers: {'Range': 'bytes=0-65536'},
+          );
+          if (imageResponse?.data is Uint8List) {
+            imageBytes = imageResponse!.data as Uint8List;
+          }
+        }
+
+        if (imageBytes != null) {
+          exifData = await readExifFromBytes(imageBytes);
         }
       }
 
@@ -182,16 +217,38 @@ Future<List<dynamic>> fetchPhotosDir() async {
   }
   
   if (hasBeenEdited) {
-    uploadLocalFiles(
-      file: [
-      File("${(await getApplicationDocumentsDirectory()).path}/photos.hive"),
-      File("${(await getApplicationDocumentsDirectory()).path}/photos.lock"),
-      File("${(await getApplicationDocumentsDirectory()).path}/albums.hive"),
-      File("${(await getApplicationDocumentsDirectory()).path}/albums.lock")
-    ]);
+    uploadHive();
   }
-
   return filesOnly.toList();
+}
+
+Future<void> uploadHive() async {
+  final appDir = (await getApplicationDocumentsDirectory()).path;
+  final files = [
+    File("$appDir/photos.hive"),
+    File("$appDir/photos.lock"),
+    File("$appDir/albums.hive"),
+    File("$appDir/albums.lock")
+  ];
+
+  switch (detectBackend()) {
+    case ServerBackend.freebox:
+      await uploadLocalFiles(file: files);
+      break;
+
+    case ServerBackend.copyparty:
+      for (final file in files) {
+        final filename = file.path.split('/').last;
+        try {
+          await CopypartyService.deleteFile(filename);
+        } catch (_) {}
+        await CopypartyService.upload(files: [file]);
+      }
+      break;
+
+    default:
+      break;
+  }
 }
 
 Future<void> deleteLocalFile(String path) async {
@@ -203,14 +260,19 @@ Future<void> deleteLocalFile(String path) async {
 }
 
 
+
 Future<Uint8List?> fetchImageBytes(String path, String mimetype) async {
   final isVideo = mimetype.startsWith('video/');
+
+    if (detectBackend() == ServerBackend.copyparty) {
+      print(path);
+      return await CopypartyService.getThumbnail(path);
+    }
 
     if (isVideo) {
       final response = await client?.fetch(
         url: "v15/dl/$path",
         parseJson: false,
-        headers: {'Range': 'bytes=0-10000000'},
       );
 
       if (response?.data is! Uint8List) return null;
@@ -236,6 +298,8 @@ Future<Uint8List?> fetchImageBytes(String path, String mimetype) async {
     url: "v15/dl/$path",
     parseJson: false,
   );
+
+  print(response?.data);
 
   return response?.data is Uint8List ? response!.data : null;
 }
