@@ -12,8 +12,8 @@ import 'package:mime/mime.dart';
 
 
 class CopypartyService {
-  static late String _baseUrl;
-  static late String _credentials;
+  static String baseUrl = "";
+  static String credentials = "";
   static Box box = Hive.box('settings');
   static final _client = _buildClient();
 
@@ -24,10 +24,10 @@ class CopypartyService {
   }
 
   static void init() {
-    _baseUrl = box.get('copypartyUrl') ?? '';
+    baseUrl = box.get('copypartyUrl') ?? '';
     final user = box.get('copypartyUser') ?? '';
     final pass = box.get('copypartyPass') ?? '';
-    _credentials = base64Encode(utf8.encode('$user:$pass'));
+    credentials = base64Encode(utf8.encode('$user:$pass'));
   }
 
   static String _normalizeUrl(String url) {
@@ -49,7 +49,7 @@ class CopypartyService {
         throw Exception('Invalid URL');
       }
 
-    final credentials = base64Encode(utf8.encode('$username:$password'));
+    final newCredentials = base64Encode(utf8.encode('$username:$password'));
 
     final response = await _client.get(
       uri.replace(path: '/', queryParameters: {'ls': ''}),
@@ -70,16 +70,16 @@ class CopypartyService {
     await box.put("copypartyUser", username);
     await box.put('copypartyPass', password);
 
-    _baseUrl = url;
-    _credentials = credentials;
+    baseUrl = url;
+    credentials = newCredentials;
   }
 
   static Map<String, String> get _headers => {
-    'Authorization': 'Basic $_credentials',
+    'Authorization': 'Basic $credentials',
   };
 
   static Future<List<Map<String, dynamic>>> listFiles() async {
-    final uri = Uri.parse('$_baseUrl/photos?ls');
+    final uri = Uri.parse('$baseUrl/photos?ls');
     final response = await _client.get(uri, headers: _headers);
 
     if (response.statusCode != 200) {
@@ -109,13 +109,13 @@ class CopypartyService {
   }
 
   static Future<List<int>> fetchFile(String encodedPath) async {
-    final response = await _client.get(Uri.parse('$_baseUrl/$encodedPath'), headers: _headers);
+    final response = await _client.get(Uri.parse('$baseUrl/$encodedPath'), headers: _headers);
     if (response.statusCode != 200) throw Exception('Failed to fetch file');
     return response.bodyBytes;
   }
 
   static Future<Uint8List?> getThumbnail(String path, {bool webp = true}) async {
-    final uri = Uri.parse('$_baseUrl/photos/$path')
+    final uri = Uri.parse('$baseUrl/photos/$path')
         .replace(queryParameters: {'th': webp ? 'w' : 'j'});
 
     print("l'uri de la requete " + uri.toString());
@@ -129,7 +129,7 @@ class CopypartyService {
 
   static Future<void> deleteFile(String encodedPath) async {
     final response = await _client.delete(
-      Uri.parse("$_baseUrl/$encodedPath"),
+      Uri.parse("$baseUrl/$encodedPath"),
       headers: _headers
     );
     if (response.statusCode != 200) throw Exception("Failed to delete file");
@@ -137,7 +137,7 @@ class CopypartyService {
 
 //   static Future<void> deleteFile(String encodedPath) async {
 //   final response = await _client.post(
-//     Uri.parse('$_baseUrl/?delete'),
+//     Uri.parse('$baseUrl/?delete'),
 //     headers: _headers,
 //     body: jsonEncode({'paths': [encodedPath]}),
 //   );
@@ -147,7 +147,7 @@ class CopypartyService {
 // }
   static Future<Set<String>> listAllFiles({String path = ''}) async {
     final response = await _client.get(
-      Uri.parse('$_baseUrl/photos?ls'),
+      Uri.parse('$baseUrl/photos?ls'),
       headers: _headers,
     );
     final body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -177,7 +177,7 @@ class CopypartyService {
           ? xfiles[i].mimeType!
           : _mimetypeFromFilename(filename);
 
-      final uri = Uri.parse('$_baseUrl/photos?bup');
+      final uri = Uri.parse('$baseUrl/photos?bup');
 
       final request = http.MultipartRequest('POST', uri);
       request.headers.addAll(_headers);
@@ -206,13 +206,13 @@ class CopypartyService {
 
 
 
-  bool get isConnected => _baseUrl.isNotEmpty;
+  bool get isConnected => baseUrl.isNotEmpty;
 
   static void disconnect() {
     box.delete('copypartyUrl');
     box.delete('copypartyUser');
     box.delete('copypartyPass');
-    _baseUrl = "";
-    _credentials = "";
+    baseUrl = "";
+    credentials = "";
   }
 }

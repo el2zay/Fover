@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fover/main.dart';
 import 'package:fover/pages/library.dart';
+import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/download.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
@@ -95,18 +96,29 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
 
   void _loadVideo(int index) {
     final encodedPath = widget.encodedPaths[index];
-    final photo = PhotoStore.get(widget.encodedPaths[index]);
-    final source = photo?.localPath != null
-      ? Media(photo!.localPath!)  
-      : Media(
+    final photo = PhotoStore.get(encodedPath);
+
+    final Media source;
+
+    if (photo?.localPath != null) {
+      source = Media(photo!.localPath!);
+    } else if (detectBackend() == ServerBackend.copyparty) {
+      final url = "${CopypartyService.baseUrl}/photos/$encodedPath";
+      source = Media(
+        url,
+        httpHeaders: {
+           'Authorization': 'Basic ${CopypartyService.credentials}',
+        }
+      );
+    } else {
+      source = Media(
         "https://${box.get('apiDomain')}:${box.get('httpsPort')}/api/v15/dl/$encodedPath",
         httpHeaders: {
           "X-Fbx-App-Auth": client!.sessionToken!,
         },
       );
-
+    }
     player.open(source, play: false);
-
   }
 
   void _toggleFocus() {
