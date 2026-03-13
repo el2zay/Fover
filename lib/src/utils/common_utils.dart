@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fover/main.dart';
 import 'package:fover/src/models/photo_entry.dart';
 
 DateTime? parseExifDate(String? raw) {
@@ -61,4 +62,16 @@ Future<bool> hasInternet() async {
   } on SocketException catch (_) {
     return false;
   }
+}
+
+enum ServerBackend {
+  freebox,
+  copyparty,
+  none
+}
+
+ServerBackend detectBackend() {
+  if (box.get("appToken") != null) return ServerBackend.freebox;
+  if (box.get("copypartyUrl") != null) return ServerBackend.copyparty;
+  return ServerBackend.none;
 }
