@@ -114,6 +114,17 @@ class CopypartyService {
     return response.bodyBytes;
   }
 
+  static Future<Uint8List?> fetchFileRange(String fileName) async {
+    final response = await _client.get(
+      Uri.parse("$baseUrl/photos/$fileName"),
+      headers: {
+        ..._headers,
+        'Range': 'bytes=0-65536'
+      }
+    );
+    if (response.statusCode != 200 && response.statusCode != 206) return null;
+    return response.bodyBytes;
+  } 
   static Future<Uint8List?> getThumbnail(String path, {bool webp = true}) async {
     final uri = Uri.parse('$baseUrl/photos/$path')
         .replace(queryParameters: {'th': webp ? 'w' : 'j'});

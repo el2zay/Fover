@@ -795,7 +795,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(photo.cameraModel ?? "Uknown", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                    Text(photo.cameraModel ?? "Unknown", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                     SizedBox(height: 8),
                     Text(
                       "${getMP(photo)} MP • ${photo.width} x ${photo.height} • ${formatSize(photo.size)}",
