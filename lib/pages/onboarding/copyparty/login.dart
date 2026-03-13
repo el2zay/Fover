@@ -5,6 +5,7 @@ import 'package:cupertino_native_better/style/sf_symbol.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:fover/main.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/dialog.dart';
@@ -133,6 +134,8 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: () async {
+                    //? Pour éviter le warning
+                    final navigator = Navigator.of(context);
                     if (!_formKey.currentState!.validate()) return;
                     try {
                       await CopypartyService.connect(
@@ -140,7 +143,14 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
                         username: userController.text.trim(),
                         password: passController.text.trim()
                       );
-                      print("Connected to Copyparty");
+                      
+                      await initApp();
+
+                      if (!mounted) return;
+                      navigator.pushAndRemoveUntil(
+                        CupertinoPageRoute(builder: (_) => const MainApp()),
+                        (_) => false,
+                      );
                     } on TimeoutException {
                       if (!mounted) return;
                       showGeneralDialog(
@@ -184,7 +194,7 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
     return TextFormField(
       controller: controller,
       decoration: InputDecoration(
-        hint: Text(hint, style: TextStyle(fontSize: 15)),
+        hint: Text(hint, style: TextStyle(fontSize: 15, color: Colors.white70)),
         fillColor: Colors.grey.withAlpha(10),
         filled: true,
         enabledBorder: OutlineInputBorder(
