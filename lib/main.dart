@@ -30,22 +30,33 @@ late bool connectedToInternet;
 Future<void> initApp() async {
   await PhotoStore.init();
 
-  if (box.get("appToken") != null) {
-    FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
-    client = FreeboxClient(
-      appToken: box.get("appToken"),
-      appId: 'fbx.fover',
-      apiDomain: box.get("apiDomain"),
-      httpsPort: box.get("httpsPort"),
-    );
+  if (box.get("appToken") != null || box.get("copypartyUrl") != null) {
 
-    await client?.authentificate();
+    // FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
+    
+    if (box.get("appToken") != null) {
+      client = FreeboxClient(
+        appToken: box.get("appToken"),
+        appId: 'fbx.fover',
+        apiDomain: box.get("apiDomain"),
+        httpsPort: box.get("httpsPort"),
+      );
+
+      await client?.authentificate();
+
+
+    }
+
+    if (box.get("copypartyUrl") != null) {
+      CopypartyService.init();
+    }
+
     showTabBar.value = true;
 
     if (connectedToInternet) {
-      await PhotoStore.purgeExpired(client!);
+      await PhotoStore.purgeExpired();
       await PhotoStore.existsOnServer();
-      model = await getFreeboxModel();
+      if (box.get("appToken") != null ) model = await getFreeboxModel();
       fetchPhotosDir();
     }
     
@@ -57,13 +68,12 @@ void main() async {
   MediaKit.ensureInitialized();
   await initializeDateFormatting('en', null);
   await Hive.initFlutter();
-  Hive.openBox('settings');
+  await Hive.openBox('settings');
 
   connectedToInternet = await hasInternet();
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   await initApp();
-  CopypartyService.init();
-  
+
   runApp(Phoenix(child:const MainApp()));
 }
 
@@ -87,7 +97,7 @@ class _MainAppState extends State<MainApp> {
         // ignore: sort_child_properties_last
         child: Scaffold(
           extendBody: true,
-          body: box.get("appToken") == null
+          body: box.get("appToken") == null && box.get("copypartyUrl") == null
             ? const FirstPage()
             : IndexedStack(
             index: _currentIndex,
@@ -97,7 +107,7 @@ class _MainAppState extends State<MainApp> {
               Placeholder(),
             ],
           ),
-          bottomNavigationBar: box.get("appToken") != null
+          bottomNavigationBar: box.get("appToken") != null || box.get("copypartyUrl") != null
           ? Container(
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
