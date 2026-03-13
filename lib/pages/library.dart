@@ -1,6 +1,5 @@
 import 'dart:developer';
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:clipboard/clipboard.dart';
 import 'package:cupertino_native_better/cupertino_native.dart';
@@ -12,10 +11,11 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:fover/main.dart';
 import 'package:fover/pages/settings.dart';
 import 'package:fover/pages/viewer.dart';
+import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/download.dart';
 import 'package:fover/src/services/photo_store.dart';
+import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/utils/requests.dart';
-import 'package:fover/src/widgets/adjust_date.dart';
 import 'package:fover/src/widgets/albums_list.dart';
 import 'package:fover/src/widgets/blurred_app_bar.dart';
 import 'package:fover/src/widgets/button.dart';
@@ -92,11 +92,20 @@ class _LibraryPageState extends State<LibraryPage> {
   Future pickImages() async {
     final ImagePicker picker = ImagePicker();
     final List<XFile> media = await picker.pickMultipleMedia(
-      imageQuality: 100
+      imageQuality: 100,
+      requestFullMetadata: true
     );
     if (media.isNotEmpty) {
       final files = media;
-      await uploadLocalFiles(xfile: files);
+
+      switch (detectBackend()) {
+        case ServerBackend.freebox:
+          await uploadLocalFiles(xfile: files);
+        case ServerBackend.copyparty:
+          await CopypartyService.upload(xfiles: files);
+        default:
+          break;
+      }
       await _refresh();
     }
   }
