@@ -151,6 +151,7 @@ class _LibraryPageState extends State<LibraryPage> {
       }
       selectedImages.clear();
     });
+      elements = _data!.images.length;
   }
   //
 
@@ -522,6 +523,7 @@ class _LibraryPageState extends State<LibraryPage> {
                                                     _data!.thumbs.removeAt(index);
                                                     _data!.mimetypes.removeAt(index);
                                                     _data!.encodedPaths.removeAt(index);
+                                                    elements = _data!.images.length;
                                                   });
                                                   Navigator.pop(context);
                                                 }
@@ -568,6 +570,7 @@ class _LibraryPageState extends State<LibraryPage> {
                                                     _data!.thumbs.removeAt(index);
                                                     _data!.mimetypes.removeAt(index);
                                                     _data!.encodedPaths.removeAt(index);
+                                                    elements = _data!.images.length;
                                                   });
                                                 }
                                               ),
@@ -760,7 +763,7 @@ class _LibraryPageState extends State<LibraryPage> {
                                   final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
                                   final sortedIndices = selectedImages.toList()..sort((a, b) => b.compareTo(a));
                                   return MyDialog(
-                                    content: "This photo will be deleted from all your devices...",
+                                    content: "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
                                     principalButton: TextButton(
                                       child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
                                       onPressed: () {
@@ -775,6 +778,7 @@ class _LibraryPageState extends State<LibraryPage> {
                                             _data!.encodedPaths.removeAt(i);
                                           }
                                           selectedImages.clear();
+                                          elements = _data!.images.length;
                                         });
                                         Navigator.pop(context);
                                       },
