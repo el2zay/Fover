@@ -682,8 +682,9 @@ class _LibraryPageState extends State<LibraryPage> {
                           widget.trashMode
                             ? Button.iconOnly(
                               onPressed: () async {
-                                for (final i in selectedImages) {
-                                  await PhotoStore.restore(data.encodedPaths[i]);
+                                final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
+                                for (final path in selectedPaths) {
+                                  await PhotoStore.restore(path);
                                 }
                                 _removeLocally(selectedImages);
                               },
@@ -694,17 +695,18 @@ class _LibraryPageState extends State<LibraryPage> {
                               scale: 0.85,
                               showCopy: false,
                               isViewer: false,
-                              isDownloaded: selectedImages.every((i) => DownloadService.isDownloaded(data.encodedPaths[i])),
+                              isDownloaded: selectedImages.map((i) => data.encodedPaths[i]).every((p) => DownloadService.isDownloaded(p)),
                               isFavorite: false,
                               onSelected: (action) async {
+                                final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
                                 switch (action) {
                                   case PopMenuAction.download:
-                                    for (final i in selectedImages) {
-                                      final photo = PhotoStore.get(data.encodedPaths[i]);
-                                      if (DownloadService.isDownloaded(data.encodedPaths[i])) {
-                                        DownloadService.remove(data.encodedPaths[i]);
+                                    for (final path in selectedPaths) {
+                                      final photo = PhotoStore.get(path);
+                                      if (DownloadService.isDownloaded(path)) {
+                                        DownloadService.remove(path);
                                       } else {
-                                        DownloadService.download(encodedPath: data.encodedPaths[i], filename: photo!.name);
+                                        DownloadService.download(encodedPath: path, filename: photo!.name);
                                       }
                                     }
                                   break;
@@ -750,26 +752,32 @@ class _LibraryPageState extends State<LibraryPage> {
                               },
                             ),
                           Button.iconOnly(
-                            onPressed: () async {
+                            onPressed: () {
                               showGeneralDialog(
                                 barrierDismissible: false,
                                 context: context,
                                 pageBuilder: (context, animation, secondaryAnimation) {
+                                  final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
+                                  final sortedIndices = selectedImages.toList()..sort((a, b) => b.compareTo(a));
                                   return MyDialog(
-                                    content: "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
+                                    content: "This photo will be deleted from all your devices...",
                                     principalButton: TextButton(
                                       child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
                                       onPressed: () {
-                                        for (final i in selectedImages) {
-                                          PhotoStore.softDelete(data.encodedPaths[i]);
-                                          setState(() {
+                                        for (final path in selectedPaths) {
+                                          PhotoStore.softDelete(path);
+                                        }
+                                        setState(() {
+                                          for (final i in sortedIndices) {
                                             _data!.images.removeAt(i);
                                             _data!.thumbs.removeAt(i);
                                             _data!.mimetypes.removeAt(i);
                                             _data!.encodedPaths.removeAt(i);
-                                          });
-                                        }
-                                      }
+                                          }
+                                          selectedImages.clear();
+                                        });
+                                        Navigator.pop(context);
+                                      },
                                     ),
                                   );
                                 }
