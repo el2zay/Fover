@@ -173,10 +173,6 @@ Future<List<dynamic>> fetchPhotosDir() async {
         return int.tryParse(raw) ?? 0;
       }
 
-      exifData.forEach((key, value) {
-        log('$key: ${value.printable}');
-      });
-
       double? parseExifDouble(String? raw) {
       if (raw == null) return null;
       if (raw.contains('/')) {
@@ -188,9 +184,9 @@ Future<List<dynamic>> fetchPhotosDir() async {
       return double.tryParse(raw);
     }
 
-    exifData.forEach((key, value) {
-      log('$key: ${value.printable}');
-    });
+      exifData.forEach((key, value) {
+        log('$key: ${value.printable}');
+      });
 
       await PhotoStore.addPhoto(
         path: entry['path'], 
