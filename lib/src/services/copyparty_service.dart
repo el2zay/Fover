@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
@@ -53,13 +54,13 @@ class CopypartyService {
 
     final response = await _client.get(
       uri.replace(path: '/', queryParameters: {'ls': ''}),
-      headers: {'Authorization': 'Basic $credentials'},
+      headers: {'Authorization': 'Basic $newCredentials'},
     ).timeout(const Duration(seconds: 15));
 
     if (response.statusCode == 401) throw Exception("Invalid credentials");
     if (response.statusCode != 200){ 
       log("Copyparty connection error: ${response.statusCode} ${response.reasonPhrase}");
-      throw Exception("Serveur error : ${response.statusCode}:${response.reasonPhrase}");
+      throw Exception("Serveur error : ${response.statusCode}:${response.reasonPhrase}\nMake sure you've specified the port correctly?");
     }
 
     final body = jsonDecode(response.body);
@@ -125,25 +126,35 @@ class CopypartyService {
     if (response.statusCode != 200 && response.statusCode != 206) return null;
     return response.bodyBytes;
   } 
+
   static Future<Uint8List?> getThumbnail(String path, {bool webp = true}) async {
     final uri = Uri.parse('$baseUrl/photos/$path')
         .replace(queryParameters: {'th': webp ? 'w' : 'j'});
 
-    print("l'uri de la requete " + uri.toString());
-
     final response = await _client.get(uri, headers: _headers);
     if (response.statusCode != 200) return null;
+
+    if (response.headers['content-type'] == "image/svg+xml") {
+      return null;
+    }
     return response.bodyBytes;
   }
 
 
 
-  static Future<void> deleteFile(String encodedPath) async {
+  static Future<void> deleteFile(String filename) async {
+    final uri = Uri.parse('$baseUrl/photos/$filename');
+    
     final response = await _client.delete(
-      Uri.parse("$baseUrl/$encodedPath"),
-      headers: _headers
+      uri,
+      headers: _headers,
     );
-    if (response.statusCode != 200) throw Exception("Failed to delete file");
+
+    log('Delete response: ${response.statusCode} ${response.body}');
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('Failed to delete: ${response.statusCode} ${response.body}');
+    }
   }
 
 //   static Future<void> deleteFile(String encodedPath) async {
@@ -180,27 +191,47 @@ class CopypartyService {
     final List<File> toUpload = files ?? xfiles?.map((x) => File(x.path)).toList() ?? [];
 
     for (int i = 0; i < toUpload.length; i++) {
-      final filename = files != null
-          ? toUpload[i].path.split('/').last
-          : xfiles![i].name;
-      final bytes = await toUpload[i].readAsBytes();
+      final file = toUpload[i];
+      final filename = files != null ? file.path.split('/').last : xfiles![i].name;
+
+      final totalBytes = await file.length();
+
       final mimetype = (xfiles != null && xfiles[i].mimeType != null && xfiles[i].mimeType!.isNotEmpty)
           ? xfiles[i].mimeType!
           : _mimetypeFromFilename(filename);
 
       final uri = Uri.parse('$baseUrl/photos?bup');
 
+      // On crée un stream qui permet de suivre la lecture
+      final stream = file.openRead();
+
+      int sentBytes = 0;
+      final monitoredStream = stream.transform<List<int>>(
+        StreamTransformer.fromHandlers(
+          handleData: (chunk, sink) {
+            sentBytes += chunk.length;
+            final progress = (sentBytes / totalBytes * 100).toStringAsFixed(1);
+            // Log console pour ce fichier
+            log('Uploading $filename: $progress% ($sentBytes / $totalBytes bytes)');
+            // Callback externe si besoin
+            onProgress?.call(sentBytes, totalBytes);
+            sink.add(chunk);
+          },
+        ),
+      );
+
+      final multipartFile = http.MultipartFile(
+        'f',
+        monitoredStream,
+        totalBytes,
+        filename: filename,
+        contentType: MediaType.parse(mimetype),
+      );
+
       final request = http.MultipartRequest('POST', uri);
       request.headers.addAll(_headers);
       request.fields['act'] = 'bput';
-      request.files.add(http.MultipartFile.fromBytes(
-        'f',
-        bytes,
-        filename: filename,
-        contentType: MediaType.parse(mimetype),
-      ));
-
-      onProgress?.call(0, bytes.length);
+      request.files.add(multipartFile);
 
       final streamedResponse = await _client.send(request);
       await streamedResponse.stream.drain();
@@ -212,6 +243,7 @@ class CopypartyService {
       log('✅ Uploaded $filename');
     }
   }
+
 
   //
 
