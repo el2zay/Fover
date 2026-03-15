@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 class MyDialog extends StatelessWidget {
   final String content;
-  final TextButton principalButton;
+  final TextButton? principalButton;
   const MyDialog({super.key, required this.content, required this.principalButton});
 
   @override
@@ -39,7 +39,7 @@ class MyDialog extends StatelessWidget {
                 ),
                 Divider(thickness: 0.5, height: 1, color: Colors.white24),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  mainAxisAlignment: principalButton != null ? MainAxisAlignment.spaceAround : MainAxisAlignment.center,
                   children: [
                     TextButton(
                       child: Text("Cancel", style: TextStyle(fontSize: 16, color: CupertinoColors.activeBlue)),
@@ -47,7 +47,7 @@ class MyDialog extends StatelessWidget {
                         Navigator.pop(context);
                       }
                     ),
-                    principalButton
+                    principalButton ?? SizedBox(width: 0)
                   ],
                 )
               ]
