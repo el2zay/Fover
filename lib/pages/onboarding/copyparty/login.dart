@@ -30,11 +30,9 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
         title: Text("Connect with Copyparty", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
       ),
       body: Padding(
-        padding: EdgeInsets.only(top: 10, left: 5),
+        padding: EdgeInsets.all(10),
         child: SingleChildScrollView(
-          physics: BouncingScrollPhysics(),
-          child: 
-          Column(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
@@ -160,12 +158,11 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
                         pageBuilder: (context, animation, secondaryAnimation) {
                           return MyDialog(
                             content: "Connection timed out. Please check your URL and your Internet connection.",
-                            secondLabel: "OK",
+                            principalButton: TextButton(onPressed: () {}, child: SizedBox()),
                           );
                         }
                       );
                     } catch (e) {
-                      print(e);
                       if (!mounted) return;
                       showGeneralDialog(
                         barrierDismissible: false,
@@ -174,7 +171,7 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
                         pageBuilder: (context, animation, secondaryAnimation) {
                           return MyDialog(
                             content: e.toString().replaceAll("Exception: ", ""),
-                            secondLabel: "OK",
+                            principalButton: null
                           );
                         }
                       );
