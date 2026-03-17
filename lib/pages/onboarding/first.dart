@@ -42,7 +42,7 @@ class FirstPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(30),
                     border: Border.all(color: Colors.white30)
                   ),
-                  margin: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.12, bottom: 30, left: 20, right: 20),      
+                  margin: EdgeInsets.only(top: 90, bottom: 30, left: 20, right: 20),      
                   padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.075),
                    child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -52,7 +52,7 @@ class FirstPage extends StatelessWidget {
                         style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w500, color: Colors.white70),
                         textAlign: TextAlign.center,
                       ),
-                      SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+                      SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
@@ -63,7 +63,7 @@ class FirstPage extends StatelessWidget {
                           ),
                         ), 
                         child: const Text(
-                          "Start with Copyparty",
+                          "Start with your server",
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                         onPressed: () {
                           Navigator.push(
