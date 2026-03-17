@@ -276,12 +276,27 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
         mode: ExtendedImageMode.gesture,
         enableSlideOutPage: true,
         onDoubleTap: _handleDoubleTap,
-        heroBuilderForSlidingPage: (Widget result) {
-          return Hero(
-            tag: 'image_$index',
-            child: result,
-            flightShuttleBuilder: (_, __, ___, ____, _____) => result,
-          );
+      );
+    }
+
+    if (detectBackend() == ServerBackend.copyparty) {
+      final url = "${CopypartyService.baseUrl}/photos/${widget.encodedPaths[index]}";
+      return ExtendedImage.network(
+        url,
+        fit: BoxFit.contain,
+        mode: ExtendedImageMode.gesture,
+        enableSlideOutPage: true,
+        onDoubleTap: _handleDoubleTap,
+        headers: {'Authorization': 'Basic ${CopypartyService.credentials}'},
+        loadStateChanged: (state) {
+          if (state.extendedImageLoadState == LoadState.loading) {
+            final thumb = widget.images[index];
+            if (thumb != null) {
+              return Image.memory(thumb);
+            }
+            return const Center(child: CupertinoActivityIndicator());
+          }
+          return null;
         },
       );
     }
@@ -293,16 +308,10 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
           mode: ExtendedImageMode.gesture,
           enableSlideOutPage: true,
           onDoubleTap: _handleDoubleTap,
-          heroBuilderForSlidingPage: (Widget result) {
-            return Hero(
-              tag: 'image_$index',
-              child: result,
-              flightShuttleBuilder: (_, __, ___, ____, _____) => result,
-            );
-          },
         )
       : Container(color: Colors.grey[900]);
   }
+
 
 
   Widget _buildHiddenAppBar() {
@@ -798,7 +807,10 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                     Text(photo.cameraModel ?? "Unknown", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                     SizedBox(height: 8),
                     Text(
-                      "${getMP(photo)} MP • ${photo.width} x ${photo.height} • ${formatSize(photo.size)}",
+                      // Si c'est une vidéo
+                      widget.mimetype[currentIndex].startsWith('video/')
+                        ? formatSize(photo.size)
+                        : "${getMP(photo)} MP • ${photo.width} x ${photo.height} • ${formatSize(photo.size)}",
                       style: TextStyle(fontSize: 13, color: Colors.white70)
                     ),
                     SizedBox(height: 10),
