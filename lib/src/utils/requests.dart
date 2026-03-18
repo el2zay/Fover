@@ -56,17 +56,17 @@ Future<int> getStorageUsed() async {
   return 10;
 }
 
-Future uploadLocalFiles({required List<File> files}) async {
+Future uploadLocalFiles({required List<File> files, List<String>? filenames}) async {
   final uploader = FreeboxUploader(
     apiDomain: client!.apiDomain,
     httpsPort: client!.httpsPort,
     sessionToken: client!.sessionToken!,
   );
 
-  for (final file in files) {
+  for (int i = 0; i < files.length; i++) {
     await uploader.uploadFile(
-      fileBytes: await file.readAsBytes(),
-      filename: file.path.split('/').last,
+      fileBytes: await files[i].readAsBytes(),
+      filename: filenames?[i] ?? files[i].path.split('/').last,
       dirname: "L0ZyZWVib3gvVGVzdA==",
       onProgress: (uploaded, total) {
         final percent = (uploaded / total * 100).toStringAsFixed(1);
@@ -75,6 +75,7 @@ Future uploadLocalFiles({required List<File> files}) async {
     );
   }
 }
+
 
 
 // Permet d'afficher tous les dossiers
@@ -246,7 +247,6 @@ Future<Uint8List?> fetchImageBytes(String path, String mimetype) async {
   final isVideo = mimetype.startsWith('video/');
 
     if (detectBackend() == ServerBackend.copyparty) {
-      print(path);
       return await CopypartyService.getThumbnail(path);
     }
 
@@ -279,8 +279,6 @@ Future<Uint8List?> fetchImageBytes(String path, String mimetype) async {
     url: "v15/dl/$path",
     parseJson: false,
   );
-
-  print(response?.data);
 
   return response?.data is Uint8List ? response!.data : null;
 }

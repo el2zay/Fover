@@ -104,22 +104,32 @@ class _LibraryPageState extends State<LibraryPage> {
     final List<String> fileNames = [];
     for (final asset in assets) {
       final file = await asset.originFile;
+
       if (file != null) {
           files.add(file);
-          fileNames.add(asset.title ?? file.path.split('/').last);
+          fileNames.add(_realFileName(file.path, asset.title));
         }
     }
 
     switch (detectBackend()) {
       case ServerBackend.freebox:
-        await uploadLocalFiles(files: files);
+        await uploadLocalFiles(files: files, filenames: fileNames);
       case ServerBackend.copyparty:
-        await CopypartyService.upload(files: files);
+        await CopypartyService.upload(files: files, filenames: fileNames);
       default:
         break;
     }
     await _refresh();
 
+  }
+
+  String _realFileName(String path, String? title) {
+    if (title != null && title.isNotEmpty) return title;
+
+    final match = RegExp(r'_o_(.+)$').firstMatch(path);
+    if (match != null) return match.group(1)!;
+
+    return path.split('/').last;
   }
 
   // Generated with AI
