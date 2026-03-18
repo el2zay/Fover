@@ -22,8 +22,7 @@ import 'package:fover/src/widgets/button.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:fover/src/widgets/dialog.dart';
 import 'package:fover/src/widgets/pop_menu.dart';
-import 'package:image_picker/image_picker.dart';
-
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:super_context_menu/super_context_menu.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
@@ -92,24 +91,35 @@ class _LibraryPageState extends State<LibraryPage> {
   }
 
   Future pickImages() async {
-    final ImagePicker picker = ImagePicker();
-    final List<XFile> media = await picker.pickMultipleMedia(
-      imageQuality: 100,
-      requestFullMetadata: true
-    );
-    if (media.isNotEmpty) {
-      final files = media;
+    final List<AssetEntity>? assets = await AssetPicker.pickAssets(
+      context,
+      pickerConfig: AssetPickerConfig(
+        requestType: RequestType.common,
+      )
+    ); 
 
-      switch (detectBackend()) {
-        case ServerBackend.freebox:
-          await uploadLocalFiles(xfile: files);
-        case ServerBackend.copyparty:
-          await CopypartyService.upload(xfiles: files);
-        default:
-          break;
-      }
-      await _refresh();
+    if (assets == null || assets.isEmpty) return;
+
+    List<File> files = [];
+    final List<String> fileNames = [];
+    for (final asset in assets) {
+      final file = await asset.originFile;
+      if (file != null) {
+          files.add(file);
+          fileNames.add(asset.title ?? file.path.split('/').last);
+        }
     }
+
+    switch (detectBackend()) {
+      case ServerBackend.freebox:
+        await uploadLocalFiles(files: files);
+      case ServerBackend.copyparty:
+        await CopypartyService.upload(files: files);
+      default:
+        break;
+    }
+    await _refresh();
+
   }
 
   // Generated with AI
