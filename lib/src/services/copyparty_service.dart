@@ -8,8 +8,8 @@ import 'package:hive_ce/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'package:http_parser/http_parser.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 
 class CopypartyService {
@@ -184,54 +184,27 @@ class CopypartyService {
 
   // AI Generated
   static Future<void> upload({
-    List<File>? files,
-    List<XFile>? xfiles,
+    required List<File> files,
+    List<String>? filenames,
     void Function(int uploaded, int total)? onProgress,
   }) async {
-    final List<File> toUpload = files ?? xfiles?.map((x) => File(x.path)).toList() ?? [];
-
-    for (int i = 0; i < toUpload.length; i++) {
-      final file = toUpload[i];
-      final filename = files != null ? file.path.split('/').last : xfiles![i].name;
-
-      final totalBytes = await file.length();
-
-      final mimetype = (xfiles != null && xfiles[i].mimeType != null && xfiles[i].mimeType!.isNotEmpty)
-          ? xfiles[i].mimeType!
-          : _mimetypeFromFilename(filename);
+    for (int i = 0; i < files.length; i++) {
+      final filename = filenames?[i] ?? files[i].path.split('/').last;
+      final bytes = await files[i].readAsBytes();
+      final mimetype = _mimetypeFromFilename(filename);
 
       final uri = Uri.parse('$baseUrl/photos?bup');
-
-      // On crée un stream qui permet de suivre la lecture
-      final stream = file.openRead();
-
-      int sentBytes = 0;
-      final monitoredStream = stream.transform<List<int>>(
-        StreamTransformer.fromHandlers(
-          handleData: (chunk, sink) {
-            sentBytes += chunk.length;
-            final progress = (sentBytes / totalBytes * 100).toStringAsFixed(1);
-            // Log console pour ce fichier
-            log('Uploading $filename: $progress% ($sentBytes / $totalBytes bytes)');
-            // Callback externe si besoin
-            onProgress?.call(sentBytes, totalBytes);
-            sink.add(chunk);
-          },
-        ),
-      );
-
-      final multipartFile = http.MultipartFile(
-        'f',
-        monitoredStream,
-        totalBytes,
-        filename: filename,
-        contentType: MediaType.parse(mimetype),
-      );
-
       final request = http.MultipartRequest('POST', uri);
       request.headers.addAll(_headers);
       request.fields['act'] = 'bput';
-      request.files.add(multipartFile);
+      request.files.add(http.MultipartFile.fromBytes(
+        'f',
+        bytes,
+        filename: filename,
+        contentType: MediaType.parse(mimetype),
+      ));
+
+      onProgress?.call(0, bytes.length);
 
       final streamedResponse = await _client.send(request);
       await streamedResponse.stream.drain();
@@ -243,8 +216,6 @@ class CopypartyService {
       log('✅ Uploaded $filename');
     }
   }
-
-
   //
 
 

@@ -1,9 +1,7 @@
-import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:exif/exif.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/photo_store.dart';
@@ -58,39 +56,26 @@ Future<int> getStorageUsed() async {
   return 10;
 }
 
-Future uploadLocalFiles({List<File>? file, List<XFile>? xfile}) async {
-  switch (detectBackend()) {
-    case ServerBackend.freebox:
-      List files = file ?? xfile?.map((x) => File(x.path)).toList() ?? [];
-      final uploader = FreeboxUploader(
-        apiDomain: client!.apiDomain,
-        httpsPort: client!.httpsPort,
-        sessionToken: client!.sessionToken!,
-      );
-      for (int i = 0; i < files.length; i++) {
-        await uploader.uploadFile(
-          fileBytes: await files[i].readAsBytes(),
-          filename: file != null ? files[i].path.split('/').last : xfile![i].name,
-          dirname: "L0ZyZWVib3gvVGVzdA==",
-          onProgress: (uploaded, total) {
-            final percent = (uploaded / total * 100).toStringAsFixed(1);
-            log('$percent% — $uploaded / $total bytes');
-          },
-        );
-      }
-      break;
+Future uploadLocalFiles({required List<File> files}) async {
+  final uploader = FreeboxUploader(
+    apiDomain: client!.apiDomain,
+    httpsPort: client!.httpsPort,
+    sessionToken: client!.sessionToken!,
+  );
 
-    case ServerBackend.copyparty:
-      await CopypartyService.upload(
-        files: file,
-        xfiles: xfile,
-      );
-      break;
-
-    default:
-      break;
+  for (final file in files) {
+    await uploader.uploadFile(
+      fileBytes: await file.readAsBytes(),
+      filename: file.path.split('/').last,
+      dirname: "L0ZyZWVib3gvVGVzdA==",
+      onProgress: (uploaded, total) {
+        final percent = (uploaded / total * 100).toStringAsFixed(1);
+        log('$percent% — $uploaded / $total bytes');
+      },
+    );
   }
 }
+
 
 // Permet d'afficher tous les dossiers
 Future fetchDir() async {
@@ -229,7 +214,7 @@ Future<void> uploadHive() async {
 
   switch (detectBackend()) {
     case ServerBackend.freebox:
-      await uploadLocalFiles(file: files);
+      await uploadLocalFiles(files: files);
       break;
 
     case ServerBackend.copyparty:
