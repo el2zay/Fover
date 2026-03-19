@@ -327,6 +327,9 @@ class PhotoStore {
   static int get videosCount => 
     _photoBox.values.where((e) => e.mimetype?.startsWith('video/') == true && e.deletedAt == null).length;
 
+  static int get screenshotsCount => 
+    _photoBox.values.where((e) => e.isScreenshot == true && e.deletedAt == null).length;
+
   static ValueListenable<Box<PhotoEntry>>? _listenable;
 
   static ValueListenable<Box<PhotoEntry>> get listenable {
