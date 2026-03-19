@@ -85,16 +85,12 @@ class _SettingsPageState extends State<SettingsPage> {
             )
           ),
           SizedBox(height: 5),
-          ListTile(
-            leading: Icon(CupertinoIcons.folder),
-            title: Text("Change the photo folder"),
-            trailing: Icon(CupertinoIcons.chevron_forward),
-          ),
-          ListTile(
-            leading: Icon(CupertinoIcons.exclamationmark_triangle),
-            title: Text("Report a bug"),
-            trailing: Icon(CupertinoIcons.chevron_forward),
-          ),
+          if (detectBackend() == ServerBackend.freebox)
+            ListTile(
+              leading: Icon(CupertinoIcons.folder),
+              title: Text("Change the photo folder"),
+              trailing: Icon(CupertinoIcons.chevron_forward),
+            ),
           ListTile(
             leading: Icon(CupertinoIcons.bell),
             title: Text("Notifications"),
@@ -110,6 +106,11 @@ class _SettingsPageState extends State<SettingsPage> {
             title: Text("Peronalize the context menu"),
             trailing: Icon(CupertinoIcons.chevron_forward),
             onTap: () {},
+          ),
+          ListTile(
+            leading: Icon(CupertinoIcons.exclamationmark_triangle),
+            title: Text("Report a bug"),
+            trailing: Icon(CupertinoIcons.chevron_forward),
           ),
           ListTile(
             leading: Icon(Icons.logout, color: Colors.red[600]),
