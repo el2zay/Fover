@@ -174,6 +174,14 @@ Future<List<dynamic>> fetchPhotosDir() async {
         log('$key: ${value.printable}');
       });
 
+      bool isScreenshot(Map<String, IfdTag> exifData) {
+        final hasCamera = exifData.containsKey('Image Make') ||
+          exifData.containsKey('EXIF ExposureTime') ||
+          exifData.containsKey('EXIF ISOSpeedRatings') ||
+          exifData.containsKey('EXIF FocalLength');
+        return !hasCamera;
+      }
+
       await PhotoStore.addPhoto(
         path: entry['path'], 
         name: entry['name'], 
@@ -194,6 +202,7 @@ Future<List<dynamic>> fetchPhotosDir() async {
         focalLength: parseExifDouble(exifData['EXIF FocalLengthIn35mmFilm']?.printable ?? exifData['EXIF FocalLength']?.printable)?.round(),
         exposureValue: parseExifDouble(exifData['EXIF ExposureBiasValue']?.printable)?.round(),
         focus: parseExifDouble(exifData['EXIF FNumber']?.printable.replaceAll('ƒ/', ''))?.round(),
+        isScreenshot: isScreenshot(exifData)
       );
     }
   }
