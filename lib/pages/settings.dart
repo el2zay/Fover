@@ -2,6 +2,8 @@ import 'package:cupertino_native_better/style/sf_symbol.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fover/main.dart';
+import 'package:fover/src/services/copyparty_service.dart';
+import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:gradient_progress_bar/gradient_progress_bar.dart';
 
@@ -13,16 +15,20 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  int freeStorage = 0;
+  int totalStorage = 0;
   double storageUsed = 0;
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration(milliseconds: 50), () {
-    setState(() {
-      storageUsed = 0.519;
+    CopypartyService.getDiskUsage().then((usage) {
+      setState(() {
+        freeStorage = usage?["free"] ?? 0;
+        totalStorage = usage?["total"] ?? 0;
+        storageUsed = freeStorage / totalStorage;
+      });
     });
-  });
   }
   @override
   Widget build(BuildContext context) {
@@ -59,7 +65,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text("519 Go used out of 1To", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white70)),
+                  Text(
+                    "${formatSize(totalStorage - freeStorage)} used out of ${formatSize(totalStorage)}",
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white70
+                   )
+                  ),
                   SizedBox(height: 10),
                   GradientProgressIndicator([
                       Colors.green,
