@@ -13,6 +13,7 @@ import 'package:fover/pages/settings.dart';
 import 'package:fover/pages/viewer.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/download.dart';
+import 'package:fover/src/services/fover_picker_delegate.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/utils/requests.dart';
@@ -51,7 +52,7 @@ class LibraryPage extends StatefulWidget {
 class _GalleryData {
   final List<Uint8List?> images;
   final List<Uint8List?> thumbs;
- final List<Future<Uint8List?>?> thumbFutures;
+  final List<Future<Uint8List?>?> thumbFutures;
   final List<String> mimetypes;
   final List<String> encodedPaths;
 
@@ -91,12 +92,30 @@ class _LibraryPageState extends State<LibraryPage> {
   }
 
   Future pickImages() async {
-    final List<AssetEntity>? assets = await AssetPicker.pickAssets(
+    final provider = DefaultAssetPickerProvider(
+      maxAssets: 100,
+      requestType: RequestType.common,
+    );
+
+    final delegate = FoverPickerDelegate(
+      provider: provider, 
+      initialPermission: await AssetPicker.permissionCheck(),
+    );
+    
+
+    // Generated with AI
+    final List<AssetEntity>? assets = await AssetPicker.pickAssetsWithDelegate<
+      AssetEntity,
+      AssetPathEntity,
+      DefaultAssetPickerProvider,
+      FoverPickerDelegate
+    >(
       context,
-      pickerConfig: AssetPickerConfig(
-        requestType: RequestType.common,
-      )
-    ); 
+      delegate: delegate,
+      useRootNavigator: false,
+    );
+    //
+
 
     if (assets == null || assets.isEmpty) return;
 
@@ -123,7 +142,7 @@ class _LibraryPageState extends State<LibraryPage> {
 
   }
 
-  String _realFileName(String path, String? title) {
+  static String _realFileName(String path, String? title) {
     if (title != null && title.isNotEmpty) return title;
 
     final match = RegExp(r'_o_(.+)$').firstMatch(path);
@@ -139,13 +158,13 @@ class _LibraryPageState extends State<LibraryPage> {
     List<Future<Uint8List?>?> thumbFutures;
 
     if (detectBackend() == ServerBackend.copyparty) {
-      thumbs = List.filled(images.length, null);
+      thumbs = List.filled(images.length, null, growable: true);
       thumbFutures = images
         .map((e) => CopypartyService.getThumbnail(e.encodedPath))
         .toList();
     } else {
       thumbs = await _compressImages(images.map((e) => e.bytes).toList());
-      thumbFutures = List.filled(images.length, null);
+      thumbFutures = List.filled(images.length, null, growable: true);
     }
 
     if (!mounted) return;
@@ -283,13 +302,13 @@ class _LibraryPageState extends State<LibraryPage> {
 
 
     if (detectBackend() == ServerBackend.copyparty) {
-      thumbs = List.filled(images.length, null);
+      thumbs = List.filled(images.length, null, growable: true);
       thumbFutures = images
         .map((e) => CopypartyService.getThumbnail(e.encodedPath))
         .toList();
     } else {
       thumbs = await _compressImages(images.map((e) => e.bytes).toList());
-      thumbFutures = List.filled(images.length, null);
+      thumbFutures = List.filled(images.length, null, growable: true);
   }
 
     if (!mounted) return;
@@ -397,9 +416,7 @@ class _LibraryPageState extends State<LibraryPage> {
 
             final data = _data!;
             final images = data.images;
-            final mimetypes = data.mimetypes;
-            final thumbs = data.thumbs;
-          
+            final mimetypes = data.mimetypes;          
           if (images.isEmpty) {
             return Center(
               child: Column(
@@ -425,7 +442,7 @@ class _LibraryPageState extends State<LibraryPage> {
                       crossAxisSpacing: 2,
                       mainAxisSpacing: 2,
                     ),
-                    itemCount: thumbs.length,
+                    itemCount: data.encodedPaths.length,
                     itemBuilder: (context, index) {
                       final photo = PhotoStore.get(data.encodedPaths[index]);
 
@@ -568,6 +585,7 @@ class _LibraryPageState extends State<LibraryPage> {
                                             setState(() {
                                               _data!.images.removeAt(index);
                                               _data!.thumbs.removeAt(index);
+                                              _data!.thumbFutures.removeAt(index);
                                               _data!.mimetypes.removeAt(index);
                                               _data!.encodedPaths.removeAt(index);
                                               elements = _data!.images.length;
@@ -591,6 +609,7 @@ class _LibraryPageState extends State<LibraryPage> {
                                   setState(() {
                                     _data!.images.removeAt(index);
                                     _data!.thumbs.removeAt(index);
+                                    _data!.thumbFutures.removeAt(index);
                                     _data!.mimetypes.removeAt(index);
                                     _data!.encodedPaths.removeAt(index);
                                   });
@@ -615,6 +634,7 @@ class _LibraryPageState extends State<LibraryPage> {
                                             setState(() {
                                               _data!.images.removeAt(index);
                                               _data!.thumbs.removeAt(index);
+                                              _data!.thumbFutures.removeAt(index);
                                               _data!.mimetypes.removeAt(index);
                                               _data!.encodedPaths.removeAt(index);
                                               elements = _data!.images.length;
