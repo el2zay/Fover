@@ -77,7 +77,18 @@ class _AlbumsPageState extends State<AlbumsPage> {
       case 'videos':
         return () => log("Videos tapped");
       case 'screenshots':
-        return () => log("Screenshots tapped");
+        return () {
+          Navigator.push(
+            context,
+            CupertinoPageRoute(
+              builder: (_) => LibraryPage(showScreenshots: true)
+            )
+          ).then((_) {
+            Future.delayed(const Duration(milliseconds: 350), () {
+              if (context.mounted) setState(() {});
+            });
+          });
+        };
       case 'favorites':
         return () {
           Navigator.push(
@@ -283,7 +294,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
                                     ? PhotoStore.favoritesCount.toString()
                                     : albums[index]['key'] == 'videos' 
                                       ?  PhotoStore.videosCount.toString()
-                                      : '0', // TODO je sais pas quoi mettre pour screenshots 
+                                      : PhotoStore.screenshotsCount.toString(),
                                   style: TextStyle(fontSize: 16, color: Colors.white70),
                                 ),
                               )
