@@ -146,7 +146,7 @@ class FoverPickerDelegate extends DefaultAssetPickerBuilderDelegate<DefaultAsset
                 style: CNButtonStyle.prominentGlass
               ),
               onPressed: () {
-                if (provider.selectedAssets.isNotEmpty) {
+                if (provider.selectedAssets.isEmpty) {
                   return;
                 } else {
                   Navigator.pop(context, provider.selectedAssets);
