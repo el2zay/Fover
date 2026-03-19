@@ -11,7 +11,6 @@ class MyDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        height: 160,
         margin: const EdgeInsets.symmetric(horizontal: 40),
         decoration: BoxDecoration(
           color: Colors.transparent,
@@ -23,6 +22,7 @@ class MyDialog extends StatelessWidget {
             cornerRadius: 20,
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
