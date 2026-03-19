@@ -457,7 +457,7 @@ class _LibraryPageState extends State<LibraryPage> {
                         daysLeft: photo?.deletedAt != null
                           ? (30 - DateTime.now().difference(photo!.deletedAt!).inDays).clamp(0, 30)
                           : null,
-                        onTap: () {
+                        onTap: () async {
                           if (selectedMode || widget.onlySelect) {
                             setState(() {
                               if (selectedImages.contains(index)) {
@@ -468,7 +468,11 @@ class _LibraryPageState extends State<LibraryPage> {
                             });
 
                             final paths = selectedImages.map((i) => data.encodedPaths[i]).toList();
-                            final thumbBytes = selectedImages.isNotEmpty ? data.thumbs[selectedImages.first] : null;
+                            final thumbBytes = selectedImages.isNotEmpty 
+                                ? (data.thumbs[selectedImages.first] ?? await data.thumbFutures[selectedImages.first])
+                                : null;
+                              widget.onSelectedChanged?.call(paths, thumbBytes);
+
                             widget.onSelectedChanged?.call(paths, thumbBytes);
                             countSelected.value = selectedImages.length;
                             countSelected.value = selectedImages.length;
