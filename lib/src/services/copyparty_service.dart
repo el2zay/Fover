@@ -218,6 +218,40 @@ class CopypartyService {
   }
   //
 
+  static Future<Map<String, dynamic>?> getDiskUsage() async {
+      final response = await _client.get(
+        Uri.parse("$baseUrl/photos?ls"),
+        headers: _headers
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final srvinf = data['srvinf'];
+
+        // AI Notice : Thank you Claude for the regex
+        final match = RegExp(r'([\d.]+)\s*(\w+)\s*free of\s*([\d.]+)\s*(\w+)').firstMatch(srvinf);
+        if (match != null ) {
+          final freeVal = double.parse(match.group(1) ?? "");
+          final freeUnit = match.group(2) ?? "";
+          final totalVal = double.parse(match.group(3) ?? "");
+          final totalUnit = match.group(4) ?? "";
+
+          return {
+            "free" : _toBytes(freeVal, freeUnit),
+            "total": _toBytes(totalVal, totalUnit)
+          };
+        }
+        return data;
+      } else {
+        log("Failed to get disk usage: ${response.statusCode} ${response.body}");
+        return null;
+      }
+  }
+
+    static int _toBytes(double value, String unit) {
+      const units = {'KiB': 1024, 'MiB': 1048576, 'GiB': 1073741824, 'TiB': 1099511627776};
+      return (value * (units[unit] ?? 1)).round();
+    }
 
 
   bool get isConnected => baseUrl.isNotEmpty;
