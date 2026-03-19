@@ -1,10 +1,12 @@
 import 'package:cupertino_native_better/style/sf_symbol.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/main.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/widgets/button.dart';
+import 'package:fover/src/widgets/dialog.dart';
 import 'package:gradient_progress_bar/gradient_progress_bar.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -110,9 +112,27 @@ class _SettingsPageState extends State<SettingsPage> {
             onTap: () {},
           ),
           ListTile(
-            leading: Icon(Icons.logout),
-            title: Text("Disconnect"),
-            trailing: Icon(CupertinoIcons.chevron_forward),
+            leading: Icon(Icons.logout, color: Colors.red[600]),
+            title: Text("Log out", style: TextStyle(color: Colors.red)),
+            onTap: () {
+              // TODO freebox
+              showGeneralDialog(
+                context: context, 
+                 pageBuilder: (context, animation, secondaryAnimation) {
+                  return MyDialog(
+                    content: "Are you sure you want to log out?",
+                    principalButton: TextButton(
+                      child: Text("Log out", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        CopypartyService.disconnect();
+                        Phoenix.rebirth(context);
+                      }
+                    ),
+                  );
+                }
+              );
+            },
           ),
         ]
       ),
