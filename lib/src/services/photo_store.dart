@@ -49,7 +49,8 @@ class PhotoStore {
     int? exposureValue,
     int? focus,
     int? shutterSpeed,
-    DateTime? displayDate
+    DateTime? displayDate,
+    bool? isScreenshot
   }) async {
     if (_photoBox.containsKey(path)) return;
 
@@ -72,7 +73,8 @@ class PhotoStore {
         exposureValue: exposureValue,
         focus: focus,
         shutterSpeed: shutterSpeed,
-        displayDate: displayDate
+        displayDate: displayDate,
+        isScreenshot: isScreenshot
       )
     );
   }
@@ -127,7 +129,8 @@ class PhotoStore {
         focus: entry.focus,
         shutterSpeed: entry.shutterSpeed,
         displayDate: entry.displayDate,
-        localPath: entry.localPath
+        localPath: entry.localPath,
+        isScreenshot: entry.isScreenshot
       )
     );
 
