@@ -362,12 +362,9 @@ class _LibraryPageState extends State<LibraryPage> {
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               ),
               onPressed: () {
-                  showModalBottomSheet(
-                    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
-                    backgroundColor: Colors.black,
-                    isScrollControlled: true,
-                    // showDragHandle: true,
-                    context: context, builder: (context) {
+                  showCupertinoSheet(
+                    context: context, 
+                    builder: (context) {
                     return SettingsPage();
                   }
                 );
