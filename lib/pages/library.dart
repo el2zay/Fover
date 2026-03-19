@@ -34,6 +34,7 @@ class LibraryPage extends StatefulWidget {
   final Function(List<String> paths, Uint8List? thumbBytes)? onSelectedChanged;
   final bool trashMode;
   final bool favoriteMode;
+  final bool showScreenshots;
   final String? albumName;
 
   const LibraryPage({
@@ -42,6 +43,7 @@ class LibraryPage extends StatefulWidget {
     this.onSelectedChanged, 
     this.trashMode = false,
     this.favoriteMode = false, 
+    this.showScreenshots = false,
     this.albumName,
   });
 
@@ -252,6 +254,7 @@ class _LibraryPageState extends State<LibraryPage> {
         return stored?.albums?.contains(widget.albumName) == true;
       }
       if (widget.favoriteMode) return stored?.favorite == true;
+      if (widget.showScreenshots) return stored?.isScreenshot == true;
       return widget.trashMode 
         ? stored?.deletedAt != null
         : stored?.deletedAt == null;
@@ -334,9 +337,9 @@ class _LibraryPageState extends State<LibraryPage> {
       backgroundColor: Colors.black,
       extendBodyBehindAppBar: true,
       appBar: !widget.onlySelect ? BlurredAppBar(
-        title: widget.albumName != null ? widget.albumName! : widget.trashMode ? "Trash" : widget.favoriteMode ? "Favorites" :  "Library",
+        title: widget.albumName != null ? widget.albumName! : widget.trashMode ? "Trash" : widget.favoriteMode ? "Favorites" : widget.showScreenshots ? "Screenshots" : "Library",
         subtitle: !widget.trashMode ? "$elements element${elements > 1 ? "s" : ""}" : null,
-        isAlbum:  widget.trashMode || widget.favoriteMode || widget.albumName != null ,
+        isAlbum:  widget.trashMode || widget.favoriteMode || widget.showScreenshots || widget.albumName != null ,
         onBack: () => Navigator.of(context).pop(),
         actions: showButtons || !widget.onlySelect ? [
           // !widget.trashMode ?
@@ -353,7 +356,7 @@ class _LibraryPageState extends State<LibraryPage> {
           //   ) : SizedBox(),
 
           SizedBox(width: 10),
-          if (!widget.trashMode && !widget.favoriteMode && widget.albumName == null && connectedToInternet)...[
+          if (!widget.trashMode && !widget.favoriteMode && !widget.showScreenshots && widget.albumName == null && connectedToInternet)...[
              Button.iconOnly(
               icon: const Icon(CupertinoIcons.settings, color: Colors.white),
               glassIcon: CNSymbol('gear', size: 17),
