@@ -290,11 +290,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
         headers: {'Authorization': 'Basic ${CopypartyService.credentials}'},
         loadStateChanged: (state) {
           if (state.extendedImageLoadState == LoadState.loading) {
-            final thumb = widget.images[index];
-            if (thumb != null) {
-              return Image.memory(thumb);
-            }
-            return const Center(child: CupertinoActivityIndicator());
+            return Container(color: Colors.transparent);
           }
           return null;
         },
