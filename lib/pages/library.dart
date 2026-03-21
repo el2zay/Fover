@@ -356,29 +356,90 @@ class _LibraryPageState extends State<LibraryPage> {
           //   ) : SizedBox(),
 
           SizedBox(width: 10),
-          if (!widget.trashMode && !widget.favoriteMode && !widget.showScreenshots && widget.albumName == null && connectedToInternet)...[
-             Button.iconOnly(
-              icon: const Icon(CupertinoIcons.settings, color: Colors.white),
-              glassIcon: CNSymbol('gear', size: 17),
-              tint: Colors.white.withAlpha(10),
-              glassConfig: const CNButtonConfig(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              ),
-              onPressed: () {
-                  showCupertinoSheet(
-                    context: context, 
-                    builder: (context) {
-                    return SettingsPage();
-                  }
-                );
-              },
-            ),
+          if (!widget.trashMode && !widget.favoriteMode && !widget.showScreenshots && connectedToInternet)...[
+             widget.albumName == null ?
+              Button.iconOnly(
+                icon: const Icon(CupertinoIcons.settings, color: Colors.white),
+                glassIcon: CNSymbol('gear', size: 17),
+                tint: Colors.white.withAlpha(10),
+                glassConfig: const CNButtonConfig(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                ),
+                onPressed: () {
+                    showCupertinoSheet(
+                      context: context, 
+                      builder: (context) {
+                      return SettingsPage();
+                    }
+                  );
+                },
+              ) : SizedBox(),
+          
             SizedBox(width: 10),
             Button.iconOnly(
               icon: Icon(CupertinoIcons.add, color: Colors.white),
               glassIcon: CNSymbol('plus', size: 17),
               onPressed: () async {
-                await pickImages();
+                if (widget.albumName == null) {
+                  await pickImages();
+                } else {
+                  // TODO : add to existing album
+                  showModalBottomSheet(
+                    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
+                    backgroundColor: Colors.black,
+                    isScrollControlled: true,
+                    context: context, 
+                    builder: (context) {
+                      return Scaffold(
+                        appBar: AppBar(
+                          leading: 
+                          Transform.scale(
+                            scale: 0.9,
+                            child: Button.iconOnly(
+                                icon: Icon(Icons.close, size: 16),
+                                glassIcon: CNSymbol('xmark', size: 16),
+                                backgroundColor: Colors.transparent,
+                                onPressed: () => Navigator.pop(context)
+                            ),
+                          ),
+                          title: Text("Select photos", style: TextStyle(fontWeight: FontWeight.w500)),
+                          actionsPadding: EdgeInsets.only(left: 10),
+                          actions: [
+                            ValueListenableBuilder<int>(
+                              valueListenable: countSelected,
+                              builder: (context, value, _) {
+                                return Button.iconOnly(
+                                  enabled: value > 0,
+                            
+                                  onPressed: () => Navigator.pop(context),
+                                  icon: Icon(CupertinoIcons.check_mark, size: 14),
+                                  glassIcon: CNSymbol('checkmark', size: 14),
+                                  tint: Colors.blue,
+                                  glassConfig: CNButtonConfig(
+                                    style: CNButtonStyle.prominentGlass,
+
+                                  ),
+                                  backgroundColor: Colors.blue
+                            
+                                );
+                              }
+                            ),
+                          ]
+                        ),
+                        body: LibraryPage(
+                          onlySelect: true,
+                          onSelectedChanged: (paths, thumbBytes) {
+                            for (final path in paths) {
+                              PhotoStore.addToAlbum(path: path, album: widget.albumName!);
+                            }
+                            _refresh();
+                            countSelected.value = paths.length;
+                          },
+                        ),
+                      );
+                    }
+                  );
+                }
               }
             )
           ],
@@ -555,22 +616,38 @@ class _LibraryPageState extends State<LibraryPage> {
                                 image: MenuImage.icon(CupertinoIcons.eye_slash),
                                 callback: () => PhotoStore.update(path: data.encodedPaths[index], hidden: true)
                               ),
-                              MenuAction(
-                                title: "Add to album",
-                                image: MenuImage.icon(CupertinoIcons.plus_rectangle_on_rectangle),
-                                callback: () {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
-                                    builder: (context) {
-                                      return AddToAlbumSheet(
-                                        photoPath: [data.encodedPaths[index]],
-                                      );
-                                    }
-                                  );
-                                }
-                              ),
+                              widget.albumName == null 
+                                ? MenuAction(
+                                  title: "Add to album",
+                                  image: MenuImage.icon(CupertinoIcons.plus_rectangle_on_rectangle),
+                                  callback: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
+                                      builder: (context) {
+                                        return AddToAlbumSheet(
+                                          photoPath: [data.encodedPaths[index]],
+                                        );
+                                      }
+                                    );
+                                  }
+                                ) 
+                                : MenuAction(
+                                  title: "Remove from album",
+                                  image: MenuImage.icon(CupertinoIcons.xmark),
+                                  callback: () {
+                                    PhotoStore.removeFromAlbum(path: data.encodedPaths[index], album: widget.albumName!);
+                                    setState(() {
+                                      _data!.images.removeAt(index);
+                                      _data!.thumbs.removeAt(index);
+                                      _data!.thumbFutures.removeAt(index);
+                                      _data!.mimetypes.removeAt(index);
+                                      _data!.encodedPaths.removeAt(index);
+                                      elements = _data!.images.length;
+                                    });
+                                  }
+                                ),
                               MenuAction(
                                 title: "Delete",
                                 image: MenuImage.icon(CupertinoIcons.trash),
