@@ -8,7 +8,6 @@ class FirstPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.of(context).size.height;
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
