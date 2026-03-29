@@ -81,7 +81,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
           Navigator.push(
             context,
             CupertinoPageRoute(
-              builder: (_) => LibraryPage(showScreenshots: true)
+              builder: (_) => LibraryPage(album: Album.screenshots)
             )
           ).then((_) {
             Future.delayed(const Duration(milliseconds: 350), () {
@@ -94,7 +94,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
           Navigator.push(
             context,
             CupertinoPageRoute(
-              builder: (_) => LibraryPage(favoriteMode: true)
+              builder: (_) => LibraryPage(album: Album.favorites)
             )
           ).then((_) {
             Future.delayed(const Duration(milliseconds: 350), () {
@@ -107,7 +107,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
         return () async {
           bool isAuthenticated = await auth.authenticate(
             localizedReason: 'Please authenticate to access hidden photos',
-            biometricOnly: true,
+            biometricOnly: false,
           );
           if (isAuthenticated) {
             log("Authenticated successfully.");
@@ -115,19 +115,28 @@ class _AlbumsPageState extends State<AlbumsPage> {
       };
 
       case 'recently_deleted':
-        return () => Navigator.push(
-          context,
-          CupertinoPageRoute(
-            builder: (_) => const LibraryPage(trashMode: true)
-          )
-        ).then((_) {
-          Future.delayed(const Duration(milliseconds: 350), () {
-            if (context.mounted) setState(() {});
-          });
-        });
-
-      default:
-        return () {};
+        return () async {
+          bool isAuthenticated = await auth.authenticate(
+            localizedReason: 'Please authenticate to access hidden photos',
+            biometricOnly: false,
+          );
+          if (isAuthenticated) {
+            if (context.mounted) {
+              final navigator = Navigator.of(context);
+              navigator.push(
+                CupertinoPageRoute(
+                  builder: (_) => const LibraryPage(album: Album.trash)
+                )
+              ).then((_) {
+                Future.delayed(const Duration(milliseconds: 350), () {
+                  if (context.mounted) setState(() {});
+              });
+            });
+          }
+        }
+      };
+    default:
+      return () => log("Tapped on $key");
     }
   }
 
