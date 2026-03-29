@@ -29,22 +29,29 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 
 final ValueNotifier<int> countSelected = ValueNotifier<int>(0);
 
+enum Album {
+  none,
+  videos,
+  favorites,
+  screenshots,
+  hidden,
+  trash,
+  other
+}
+
 class LibraryPage extends StatefulWidget {
   final bool onlySelect;
   final Function(List<String> paths, Uint8List? thumbBytes)? onSelectedChanged;
-  final bool trashMode;
-  final bool favoriteMode;
-  final bool showScreenshots;
   final String? albumName;
+  final Album album; 
+
 
   const LibraryPage({
     super.key,
     this.onlySelect = false, 
     this.onSelectedChanged, 
-    this.trashMode = false,
-    this.favoriteMode = false, 
-    this.showScreenshots = false,
     this.albumName,
+    this.album = Album.none
   });
 
   @override
@@ -106,6 +113,8 @@ class _LibraryPageState extends State<LibraryPage> {
     
 
     // Generated with AI
+
+    if (!mounted) return;
     final List<AssetEntity>? assets = await AssetPicker.pickAssetsWithDelegate<
       AssetEntity,
       AssetPathEntity,
@@ -253,9 +262,9 @@ class _LibraryPageState extends State<LibraryPage> {
       if (widget.albumName != null) {
         return stored?.albums?.contains(widget.albumName) == true;
       }
-      if (widget.favoriteMode) return stored?.favorite == true;
-      if (widget.showScreenshots) return stored?.isScreenshot == true;
-      return widget.trashMode 
+      if (widget.album == Album.favorites) return stored?.favorite == true;
+      if (widget.album == Album.screenshots) return stored?.isScreenshot == true;
+      return widget.album == Album.trash 
         ? stored?.deletedAt != null
         : stored?.deletedAt == null;
       }).map((e) => _MediaEntry(
@@ -337,9 +346,9 @@ class _LibraryPageState extends State<LibraryPage> {
       backgroundColor: Colors.black,
       extendBodyBehindAppBar: true,
       appBar: !widget.onlySelect ? BlurredAppBar(
-        title: widget.albumName != null ? widget.albumName! : widget.trashMode ? "Trash" : widget.favoriteMode ? "Favorites" : widget.showScreenshots ? "Screenshots" : "Library",
-        subtitle: !widget.trashMode ? "$elements element${elements > 1 ? "s" : ""}" : null,
-        isAlbum:  widget.trashMode || widget.favoriteMode || widget.showScreenshots || widget.albumName != null ,
+        title: widget.albumName != null ? widget.albumName! : widget.album == Album.trash ? "Trash" : widget.album == Album.favorites ? "Favorites" : widget.album == Album.screenshots ? "Screenshots" : "Library",
+        subtitle:  widget.album != Album.trash ? "$elements element${elements > 1 ? "s" : ""}" : null,
+        isAlbum:  widget.album != Album.none || widget.albumName != null ,
         onBack: () => Navigator.of(context).pop(),
         actions: showButtons || !widget.onlySelect ? [
           // !widget.trashMode ?
@@ -356,7 +365,7 @@ class _LibraryPageState extends State<LibraryPage> {
           //   ) : SizedBox(),
 
           SizedBox(width: 10),
-          if (!widget.trashMode && !widget.favoriteMode && !widget.showScreenshots && connectedToInternet)...[
+          if (widget.album != Album.trash && widget.album != Album.favorites &&widget.album != Album.screenshots && connectedToInternet)...[
              widget.albumName == null ?
               Button.iconOnly(
                 icon: const Icon(CupertinoIcons.settings, color: Colors.white),
@@ -514,7 +523,7 @@ class _LibraryPageState extends State<LibraryPage> {
                         selected: (selectedMode || widget.onlySelect) && selectedImages.contains(index), 
                         isVideo: data.mimetypes[index].startsWith('video/'), 
                         isFavorite: photo?.favorite == true, 
-                        trashMode: widget.trashMode, 
+                        trashMode: widget.album == Album.trash, 
                         daysLeft: photo?.deletedAt != null
                           ? (30 - DateTime.now().difference(photo!.deletedAt!).inDays).clamp(0, 30)
                           : null,
@@ -549,7 +558,7 @@ class _LibraryPageState extends State<LibraryPage> {
                                   mimetype: mimetypes,
                                   index: index,
                                   encodedPaths: data.encodedPaths,
-                                  trashMode: widget.trashMode,
+                                  trashMode: widget.album == Album.trash,
                                   onRefresh: _refresh,
                                 ),
                                 transitionsBuilder: (_, animation, ___, child) {
@@ -572,7 +581,7 @@ class _LibraryPageState extends State<LibraryPage> {
                         },
 
                         menuProvider: (request) {
-                          return !widget.trashMode ? Menu(
+                          return widget.album != Album.trash ? Menu(
                             children: [
                               MenuAction(
                                 title: DownloadService.isDownloaded(data.encodedPaths[index])
@@ -710,8 +719,10 @@ class _LibraryPageState extends State<LibraryPage> {
                                         principalButton: TextButton(
                                           child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
                                           onPressed: () async {
+                                            final navigator = Navigator.of(context);
                                             await PhotoStore.hardDelete(data.encodedPaths[index]);
-                                            Navigator.pop(context);
+                                            if (!mounted) return;
+                                            navigator.pop();
                                             setState(() {
                                               _data!.images.removeAt(index);
                                               _data!.thumbs.removeAt(index);
@@ -747,7 +758,7 @@ class _LibraryPageState extends State<LibraryPage> {
                     child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          widget.trashMode
+                          widget.album == Album.trash
                             ? Button.iconOnly(
                               onPressed: () async {
                                 final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
@@ -828,14 +839,14 @@ class _LibraryPageState extends State<LibraryPage> {
                                   final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
                                   final sortedIndices = selectedImages.toList()..sort((a, b) => b.compareTo(a));
                                   return MyDialog(
-                                    content: widget.trashMode 
+                                    content: widget.album == Album.trash 
                                       ? "This action cannot be undone. The image will also be deleted from your server."
                                       : "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
                                     principalButton: TextButton(
                                       child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
                                       onPressed: () {
                                         for (final path in selectedPaths) {
-                                          if (widget.trashMode) {
+                                          if (widget.album == Album.trash) {
                                             PhotoStore.hardDelete(path);
                                           } else {
                                             PhotoStore.softDelete(path);
