@@ -105,38 +105,39 @@ class _AlbumsPageState extends State<AlbumsPage> {
 
       case 'hidden':
         return () async {
-          bool isAuthenticated = await auth.authenticate(
-            localizedReason: 'Please authenticate to access hidden photos',
-            biometricOnly: false,
-          );
-          if (isAuthenticated) {
-            log("Authenticated successfully.");
+          try {
+            bool isAuthenticated = await auth.authenticate(
+              localizedReason: 'Please authenticate to access hidden photos',
+              biometricOnly: false,
+            );
+            if (isAuthenticated) {
+              log("Authenticated successfully.");
+            } else {
+              auth.stopAuthentication();
+            }
+          } catch (e) {
+            log("Authentication failed");
           }
       };
 
       case 'recently_deleted':
         return () async {
-          bool isAuthenticated = await auth.authenticate(
-            localizedReason: 'Please authenticate to access hidden photos',
-            biometricOnly: false,
-          );
-          if (isAuthenticated) {
-            if (context.mounted) {
-              final navigator = Navigator.of(context);
-              navigator.push(
-                CupertinoPageRoute(
-                  builder: (_) => const LibraryPage(album: Album.trash)
-                )
-              ).then((_) {
-                Future.delayed(const Duration(milliseconds: 350), () {
-                  if (context.mounted) setState(() {});
-              });
-            });
-          }
+          try {
+            bool isAuthenticated = await auth.authenticate(
+              localizedReason: 'Please authenticate to access hidden photos',
+              biometricOnly: false,
+            );
+            if (isAuthenticated) {
+              log("Authenticated successfully.");
+            } else {
+              auth.stopAuthentication();
+            }
+          } catch (e) {
+            log("Authentication failed");
         }
       };
-    default:
-      return () => log("Tapped on $key");
+      default:
+        return () => log("Tapped on $key");
     }
   }
 
