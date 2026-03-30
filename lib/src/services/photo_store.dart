@@ -330,6 +330,13 @@ class PhotoStore {
   static int get screenshotsCount => 
     _photoBox.values.where((e) => e.isScreenshot == true && e.deletedAt == null).length;
 
+  static bool isLandscape(String path) {
+    final photo = _photoBox.get(path);
+    final w = photo?.width ?? 0;
+    final h = photo?.height ?? 0;
+    if (w == 0 || h == 0) return false;
+    return w > h;
+  }
   static ValueListenable<Box<PhotoEntry>>? _listenable;
 
   static ValueListenable<Box<PhotoEntry>> get listenable {
