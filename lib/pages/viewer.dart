@@ -16,7 +16,6 @@ import 'package:fover/src/services/download.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/widgets/adjust_date.dart';
-import 'package:fover/src/widgets/albums_list.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/dialog.dart';
 import 'package:fover/src/widgets/pop_menu.dart';
@@ -64,6 +63,8 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   bool showInfo = false;
   final _sheetController = DraggableScrollableController();
   bool hideAppbar = false;
+  late double _imageFocusScale = PhotoStore.isLandscape(widget.encodedPaths[currentIndex]) ? 1 : 0.73;
+
 
   @override
   void initState() {
@@ -124,6 +125,9 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   void _toggleFocus() {
     setState(() {
       focused = !focused;
+      if (!PhotoStore.isLandscape(widget.encodedPaths[currentIndex])) {
+        _imageFocusScale = focused ? 1 : 0.73;
+      }
       SystemChrome.setEnabledSystemUIMode(
         focused ? SystemUiMode.immersive : SystemUiMode.edgeToEdge,
       );
@@ -131,6 +135,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   }
 
   void _handleDoubleTap(ExtendedImageGestureState state) {
+    _toggleFocus();
     final pointerDownPosition = state.pointerDownPosition;
     final double begin = state.gestureDetails?.totalScale ?? 1.0;
     final double end =
@@ -169,99 +174,102 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
       },
       child: Scaffold(
         backgroundColor: Colors.transparent,
+        extendBodyBehindAppBar: true,
         extendBody: true,
         appBar: PreferredSize(
           preferredSize: const Size.fromHeight(kToolbarHeight),
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: focused ? _buildHiddenAppBar() : _buildAppBar(),
-          ),
+            duration: const Duration(milliseconds: 0),
+            child: focused ? const SizedBox.shrink() : _buildAppBar(),
+          )
         ),
         body: Stack(
           children: [ 
-            Column(
-              children: [
-                Expanded(
-                  child: Center(
-                    child: ExtendedImageGesturePageView.builder(
-                      controller: _pageController,
-                      itemCount: widget.images.length,
-                      scrollDirection: Axis.horizontal,
-                      onPageChanged: (index) {
-                        setState(() {
-                          currentIndex = index;
-                          _videoOffset = Offset.zero;
-                          _videoScale = 1.0;
-                        });
-                        player.stop();
-                        if (widget.mimetype[index].startsWith("video/")) {
-                          _loadVideo(index);
-                        }
-                      },
-                      
-                      itemBuilder: (context, index) {
-                        return GestureDetector(
-                          onTap: _toggleFocus,
-                          child: widget.mimetype[index].startsWith("video/")
-                            ? index == currentIndex
-                              ? GestureDetector(
-                                  onTap: _toggleFocus,
-                                  onVerticalDragUpdate: (details) {
+            Center(
+              child: AnimatedScale(
+                scale: _imageFocusScale,
+                curve: Curves.easeInOut,
+                duration: const Duration(milliseconds: 200),
+                child: ExtendedImageGesturePageView.builder(
+                  controller: _pageController,
+                  itemCount: widget.images.length,
+                  scrollDirection: Axis.horizontal,
+                  onPageChanged: (index) {
+                    setState(() {
+                      currentIndex = index;
+                      _videoOffset = Offset.zero;
+                      _videoScale = 1.0;
+                      _imageFocusScale = PhotoStore.isLandscape(widget.encodedPaths[index]) ? 1.0 : 0.73;
+                    });
+                    player.stop();
+                    if (widget.mimetype[index].startsWith("video/")) {
+                      _loadVideo(index);
+                    }
+                  },
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: _toggleFocus,
+                      child: widget.mimetype[index].startsWith("video/")
+                        ? index == currentIndex
+                          ? GestureDetector(
+                                onTap: _toggleFocus,
+                                onVerticalDragUpdate: (details) {
+                                  setState(() {
+                                    _videoOffset += Offset(0, details.delta.dy);
+                                    final progress = (_videoOffset.dy.abs() / 300).clamp(0.0, 1.0);
+                                    _videoScale = 1.0 - (progress * 0.3);
+                                  });
+                                },
+                                onVerticalDragEnd: (details) {
+                                  final velocity = details.primaryVelocity ?? 0;
+                                  if (_videoOffset.dy.abs() > 100 || velocity.abs() > 500) {
+                                    Navigator.pop(context);
+                                  } else {
                                     setState(() {
-                                      _videoOffset += Offset(0, details.delta.dy);
-                                      final progress = (_videoOffset.dy.abs() / 300).clamp(0.0, 1.0);
-                                      _videoScale = 1.0 - (progress * 0.3);
+                                      _videoOffset = Offset.zero;
+                                      _videoScale = 1.0;
                                     });
-                                  },
-                                  onVerticalDragEnd: (details) {
-                                    final velocity = details.primaryVelocity ?? 0;
-                                    if (_videoOffset.dy.abs() > 100 || velocity.abs() > 500) {
-                                      Navigator.pop(context);
-                                    } else {
-                                      setState(() {
-                                        _videoOffset = Offset.zero;
-                                        _videoScale = 1.0;
-                                      });
-                                    }
-                                  },
-                                  child: Transform.scale(
-                                    scale: _videoScale,
-                                    child: Transform.translate(
-                                      offset: _videoOffset,
-                                      child: Stack(
-                                        fit: StackFit.expand,
-                                        children: [
-                                          Video(
-                                            controller: controller,
-                                            controls: (state) => const SizedBox.shrink(),
-                                          ),
-                                          Positioned(
-                                            left: 0, right: 0, bottom: 0,
-                                            child: CupertinoVideoControls(controller: controller),
-                                          ),
-                                        ],
-                                      ),
+                                  }
+                                },
+                                child: Transform.scale(
+                                  scale: _videoScale,
+                                  child: Transform.translate(
+                                    offset: _videoOffset,
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        Video(
+                                          controller: controller,
+                                          controls: (state) => const SizedBox.shrink(),
+                                        ),
+                                        Positioned(
+                                          left: 0, right: 0, bottom: 0,
+                                          child: CupertinoVideoControls(controller: controller),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                )
-                              : const SizedBox()
-                            : _buildImage(index)
+                                ),
+                              )
+                            : const SizedBox()
+                          : _buildImage(index)
                         );
                       },
                     ),
                   ),
                 ),
-                AnimatedSwitcher(
+               Positioned(
+                bottom: 0, left: 0, right: 0,
+                child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
-                  child: focused ? _buildHiddenToolbar() : _buildBottomToolbar(),
+                  child: focused ? const SizedBox.shrink() : _buildBottomToolbar(),
                 ),
-              ],
-            ),
+              ),
 
             if (showInfo)
               _buildInfoSheet(context, widget.images[currentIndex]),
-          ],
-        ),
+          ]
+        )
       ),
     );
   }
@@ -272,7 +280,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
       return ExtendedImage.file(
         File(photo.localPath!),
-        fit: BoxFit.contain,
+        fit: BoxFit.fitWidth,
         mode: ExtendedImageMode.gesture,
         enableSlideOutPage: true,
         onDoubleTap: _handleDoubleTap,
@@ -281,26 +289,48 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
 
     if (detectBackend() == ServerBackend.copyparty) {
       final url = "${CopypartyService.baseUrl}/photos/${widget.encodedPaths[index]}";
-      return ExtendedImage.network(
-        url,
-        fit: BoxFit.contain,
-        mode: ExtendedImageMode.gesture,
-        enableSlideOutPage: true,
-        onDoubleTap: _handleDoubleTap,
-        headers: {'Authorization': 'Basic ${CopypartyService.credentials}'},
-        loadStateChanged: (state) {
-          if (state.extendedImageLoadState == LoadState.loading) {
-            return Container(color: Colors.transparent);
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final height = constraints.maxHeight;
+          final width = constraints.maxWidth;
+
+          double displayedWidth = width;
+          if ((photo?.width ?? 0) > 0 && (photo?.height ?? 0) > 0) {
+            final ratio = photo!.width! / photo.height!;
+            displayedWidth = (ratio * height).clamp(0.0, width);
           }
-          return null;
-        },
+
+          return Center(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(25),
+              child: SizedBox(
+                width: displayedWidth,
+                height: height,
+                child: ExtendedImage.network(
+                  url,
+                  fit: BoxFit.fitWidth,
+                  mode: ExtendedImageMode.gesture,
+                  enableSlideOutPage: true,
+                  onDoubleTap: _handleDoubleTap,
+                  headers: {'Authorization': 'Basic ${CopypartyService.credentials}'},
+                  loadStateChanged: (state) {
+                    if (state.extendedImageLoadState == LoadState.loading) {
+                      return Container(color: Colors.transparent);
+                    }
+                    return null;
+                  },
+                )
+              )
+            )
+          );
+        }
       );
     }
 
     return widget.images[index] != null
       ? ExtendedImage.memory(
           widget.images[index]!,
-          fit: BoxFit.contain,
+          fit: BoxFit.fitWidth,
           mode: ExtendedImageMode.gesture,
           enableSlideOutPage: true,
           onDoubleTap: _handleDoubleTap,
@@ -308,19 +338,8 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
       : Container(color: Colors.grey[900]);
   }
 
-
-
-  Widget _buildHiddenAppBar() {
-    return AppBar(
-      key: const ValueKey('hidden'),
-      leading: const SizedBox(),
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-    );
-  }
-
-  Widget? _buildAppBar() {
-    return hideAppbar ? null :  AppBar(
+  PreferredSizeWidget? _buildAppBar() {
+    return  AppBar(
       key: const ValueKey('toolbar'),
       centerTitle: true,
       backgroundColor: Colors.transparent,
@@ -468,13 +487,6 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildHiddenToolbar() {
-    return const SizedBox(
-      key: ValueKey('hidden'),
-      height: 64, // TODO: vérifier que c'est responsive
     );
   }
 
