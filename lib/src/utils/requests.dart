@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -88,6 +89,7 @@ Future fetchDir() async {
 
 Future<List<dynamic>> fetchPhotosDir() async {
   List<dynamic> entries = [];
+  Uint8List? imageBytes;
 
   switch (detectBackend()) {
     case ServerBackend.copyparty:
@@ -121,7 +123,6 @@ Future<List<dynamic>> fetchPhotosDir() async {
 
       Map<String, IfdTag> exifData = {};
       if (entry['mimetype'].contains('image/')) {
-        Uint8List? imageBytes;
 
         if (detectBackend() == ServerBackend.copyparty) {
           imageBytes = await CopypartyService.fetchFileRange(entry['path']);
@@ -174,12 +175,55 @@ Future<List<dynamic>> fetchPhotosDir() async {
         log('$key: ${value.printable}');
       });
 
-      bool isScreenshot(Map<String, IfdTag> exifData) {
+      // Generated with AI (The code I wrote isn't working right, so I have to ask Claude to fix it 😔)
+
+      bool isScreenshot(Map<String, IfdTag> exifData, int width, int height) {
         final hasCamera = exifData.containsKey('Image Make') ||
           exifData.containsKey('EXIF ExposureTime') ||
           exifData.containsKey('EXIF ISOSpeedRatings') ||
           exifData.containsKey('EXIF FocalLength');
-        return !hasCamera;
+
+        final software = exifData['Image Software']?.printable ?? '';
+        final hasMobileSoftwareTag = software.toLowerCase().contains('ios') ||
+          software.toLowerCase().contains('android');
+
+        final knownScreenSizes = [
+          // iPhone (portrait)
+          (390, 844), (393, 852), (430, 932), (428, 926),
+          (375, 812), (414, 896), (390, 844), (320, 568),
+          // iPhone (landscape)
+          (844, 390), (852, 393), (932, 430),
+          // iPhone Retina (points × 2 ou ×3)
+          (750, 1334), (1080, 1920), (1170, 2532), (1179, 2556),
+          (1290, 2796), (1284, 2778), (1125, 2436), (828, 1792),
+          // iPad
+          (768, 1024), (1024, 1366), (820, 1180), (834, 1194),
+          (1640, 2360), (2048, 2732),
+        ];
+
+        final matchesScreenSize = knownScreenSizes.any(
+          (s) => s.$1 == width && s.$2 == height,
+        );
+
+        // Screenshot = pas de données caméra ET (software mobile OU dimensions d'écran)
+        if (hasCamera) return false;
+        return hasMobileSoftwareTag || matchesScreenSize;
+      }
+
+      // 
+
+      int width = parseExifDimension(exifData, false);
+      int height = parseExifDimension(exifData, true);
+
+      if ((width == 0 || height == 0) && imageBytes != null) {
+        try {
+          final buffer = await ui.ImmutableBuffer.fromUint8List(imageBytes);
+          final descriptor = await ui.ImageDescriptor.encoded(buffer);
+          width = descriptor.width;
+          height = descriptor.height;
+          descriptor.dispose();
+          buffer.dispose();
+        } catch (_) {}
       }
 
       await PhotoStore.addPhoto(
@@ -196,14 +240,13 @@ Future<List<dynamic>> fetchPhotosDir() async {
           : null,
         cameraBrand: exifData['Image Make']?.printable ?? "Unknown",
         cameraModel: exifData['Image Model']?.printable,
-        height: parseExifDimension(exifData, true),
-        width: parseExifDimension(exifData, false),
+        height: height,
+        width: width,
         iso: int.tryParse(exifData['EXIF ISOSpeedRatings']?.printable ?? ""),
         focalLength: parseExifDouble(exifData['EXIF FocalLengthIn35mmFilm']?.printable ?? exifData['EXIF FocalLength']?.printable)?.round(),
         exposureValue: parseExifDouble(exifData['EXIF ExposureBiasValue']?.printable)?.round(),
         focus: parseExifDouble(exifData['EXIF FNumber']?.printable.replaceAll('ƒ/', ''))?.round(),
-        isScreenshot: isScreenshot(exifData)
-      );
+        isScreenshot: isScreenshot(exifData, parseExifDimension(exifData, false), parseExifDimension(exifData, true))      );
     }
   }
   
