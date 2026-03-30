@@ -265,7 +265,7 @@ class _LibraryPageState extends State<LibraryPage> {
         return stored?.albums?.contains(widget.albumName) == true;
       }
       if (widget.album == Album.favorites) return stored?.favorite == true;
-      if (widget.album == Album.screenshots) return stored?.isScreenshot == true;
+      if (widget.album == Album.screenshots) return stored?.isScreenshot == true && (stored?.deletedAt == null);
       return widget.album == Album.trash 
         ? stored?.deletedAt != null
         : stored?.deletedAt == null;
