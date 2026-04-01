@@ -36,13 +36,92 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
           ),
           widgets: TuneEditorWidgets(
             appBar: (tuneEditor, rebuildStream) => null,
+            slider: (editorState, rebuildStream, value, onChanged, onChangeEnd) => ReactiveWidget(builder: (context) => SizedBox(), stream: rebuildStream),
             bodyItemsRecorded: (tuneEditor, rebuildStream) => [
               _buildSubAppBar(
                 rebuildStream: rebuildStream, 
                 onCancel: tuneEditor.close,
                 onDone: tuneEditor.done
               )
-            ]
+            ],
+            bottomBar: (tuneEditor, rebuildStream) => ReactiveWidget(
+              stream: rebuildStream,  
+              builder: (context) {
+                final selected = tuneEditor.tuneAdjustmentList[tuneEditor.selectedIndex];
+                final sliderValue = ValueNotifier<double>(
+                  tuneEditor.tuneAdjustmentMatrix[tuneEditor.selectedIndex].value,
+                );
+                return SafeArea(
+                    child:  Container(
+                  constraints: BoxConstraints(
+                    maxHeight: 100,
+                    minHeight: 100
+                  ),
+                  color: Colors.black,
+                  child: Column(
+                      children: [
+                      SizedBox(
+                          height: 40,
+                          child: ValueListenableBuilder<double>(
+                            valueListenable: sliderValue,
+                            builder: (_, value, __) => CNSlider(
+                              min: selected.min,
+                              max: selected.max,
+                              value: value,
+                              onChanged: (val) {
+                                sliderValue.value = val;
+                                tuneEditor.onChanged(val);
+                              },
+                            ),
+                          ),
+                        ),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: Row(
+                            children: List.generate(tuneEditor.tuneAdjustmentList.length - 1, (i) {
+
+                            final item = tuneEditor.tuneAdjustmentList[i];
+                            final isSelected = tuneEditor.selectedIndex == i;
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  print("Selected index: $i");
+                                  tuneEditor.selectedIndex = i;
+                                  tuneEditor.uiStream.add(null);
+                                });
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 12),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      _tuneIcon(i),
+                                      size: 24, 
+                                      color: isSelected ? Colors.white : Colors.white54,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      item.label,
+                                      style: TextStyle(
+                                        color: isSelected ? Colors.white : Colors.white54,
+                                        fontSize: 11,
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ),
+                            );
+                            })
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           )
         ),
         filterEditor: FilterEditorConfigs(
@@ -51,6 +130,16 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
           ),
           widgets: FilterEditorWidgets(
             appBar: (filterEditor, rebuildStream) => null,
+            slider: (editorState, rebuildStream, value, onChanged, onChangeEnd) => ReactiveWidget(
+              stream: rebuildStream,
+              builder: (_) => Padding(
+                padding: const EdgeInsetsGeometry.symmetric(horizontal: 20),
+                child: CNSlider(
+                  value: value, 
+                  onChanged: onChanged,
+                ),
+              ),
+            ),
             bodyItemsRecorded: (tuneEditor, rebuildStream) => [
               _buildSubAppBar(
                 rebuildStream: rebuildStream, 
@@ -93,7 +182,6 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                 leading: Transform.scale(
                   scale: 0.85,
                   child: Button.iconOnly(
-                    
                     icon: const Icon(Icons.close, color: Colors.white, size: 18,),
                     glassIcon: CNSymbol('xmark', size: 18),
                     onPressed: editor.closeEditor,
@@ -126,6 +214,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                   ],
                 ),
                 actions: [
+                  // TODO popmenu button
                   Button.iconOnly(
                     tint: Colors.blue,
                     backgroundColor: Colors.blue,
@@ -169,6 +258,20 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
         ),
       ),
     );
+  }
+
+  IconData _tuneIcon(int index) {
+    const icons = [
+      CupertinoIcons.sun_max,
+      CupertinoIcons.circle_lefthalf_fill, 
+      CupertinoIcons.drop,
+      CupertinoIcons.plus_slash_minus,
+      CupertinoIcons.triangle,
+      CupertinoIcons.thermometer,
+      CupertinoIcons.right_triangle,
+      CupertinoIcons.lightbulb,
+    ];
+    return icons[index];
   }
 
   Widget _toolBtn(BuildContext context, IconData icon, String label, VoidCallback onTap) {
