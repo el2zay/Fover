@@ -15,6 +15,7 @@ import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/download.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
+import 'package:fover/src/utils/editor.dart';
 import 'package:fover/src/widgets/adjust_date.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/dialog.dart';
@@ -338,6 +339,29 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
       : Container(color: Colors.grey[900]);
   }
 
+  Future<Uint8List?> fetchFullBytes(int index) async {
+    final photo = PhotoStore.get(widget.encodedPaths[index]);
+
+    if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
+      return await File(photo.localPath!).readAsBytes();
+    }
+
+    if (detectBackend() == ServerBackend.copyparty) {
+      final bytes = await CopypartyService.fetchFile(widget.encodedPaths[index]);
+      return Uint8List.fromList(bytes);
+    }
+
+    if (widget.images[index] != null) {
+      return widget.images[index];
+    }
+
+    final response = await client?.fetch(
+      url: "v15/dl/${widget.encodedPaths[index]}",
+      parseJson: false,
+    );
+    return response?.data is Uint8List ? response!.data as Uint8List : null;
+  }
+
   PreferredSizeWidget? _buildAppBar() {
     return  AppBar(
       key: const ValueKey('toolbar'),
@@ -659,7 +683,19 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
           ),
           CNButtonData.icon(
             icon: const CNSymbol('slider.horizontal.3', size: 22),
-            onPressed: () {},
+            onPressed: () async {
+              setState(() => hideAppbar = true);
+              final bytes = await fetchFullBytes(currentIndex);
+              if (!mounted) return;
+              setState(() => hideAppbar = false);
+  
+              if (bytes == null) return;
+              Navigator.push(context, MaterialPageRoute(
+                builder: (context) => PhotoEditorPage(
+                  bytes: bytes
+                )
+              ));
+            },
             config: const CNButtonDataConfig(
               style: CNButtonStyle.prominentGlass,
               glassEffectUnionId: 'media-controls',
