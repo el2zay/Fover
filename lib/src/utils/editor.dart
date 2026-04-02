@@ -5,6 +5,7 @@ import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fover/src/widgets/button.dart';
+import 'package:fover/src/widgets/pop_menu.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 
 class PhotoEditorPage extends StatefulWidget {
@@ -35,13 +36,16 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
             background: Colors.black,
           ),
           widgets: TuneEditorWidgets(
-            appBar: (tuneEditor, rebuildStream) => null,
+            appBar: (tuneEditor, rebuildStream) => ReactiveAppbar(
+              stream: rebuildStream,
+              builder: (_) => PreferredSize(preferredSize: Size.zero, child: const SizedBox.shrink()),
+            ),
             slider: (editorState, rebuildStream, value, onChanged, onChangeEnd) => ReactiveWidget(builder: (context) => SizedBox(), stream: rebuildStream),
-            bodyItemsRecorded: (tuneEditor, rebuildStream) => [
+            bodyItems: (tuneEditor, rebuildStream) => [
               _buildSubAppBar(
                 rebuildStream: rebuildStream, 
                 onCancel: tuneEditor.close,
-                onDone: tuneEditor.done
+                onDone: tuneEditor.done,
               )
             ],
             bottomBar: (tuneEditor, rebuildStream) => ReactiveWidget(
@@ -54,13 +58,14 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                 return SafeArea(
                     child:  Container(
                   constraints: BoxConstraints(
-                    maxHeight: 100,
-                    minHeight: 100
+                    maxHeight: 115,
+                    minHeight: 115
                   ),
                   color: Colors.black,
                   child: Column(
                       children: [
-                      SizedBox(
+                        SizedBox(height: 15),
+                        SizedBox(
                           height: 40,
                           child: ValueListenableBuilder<double>(
                             valueListenable: sliderValue,
@@ -129,7 +134,10 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
             background: Colors.black
           ),
           widgets: FilterEditorWidgets(
-            appBar: (filterEditor, rebuildStream) => null,
+            appBar: (filterEditor, rebuildStream) => ReactiveAppbar(
+              stream: rebuildStream,
+              builder: (_) => PreferredSize(preferredSize: Size.zero, child: const SizedBox.shrink()),
+            ),
             slider: (editorState, rebuildStream, value, onChanged, onChangeEnd) => ReactiveWidget(
               stream: rebuildStream,
               builder: (_) => Padding(
@@ -140,26 +148,30 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                 ),
               ),
             ),
-            bodyItemsRecorded: (tuneEditor, rebuildStream) => [
+            bodyItems: (filterEditor, rebuildStream) => [
               _buildSubAppBar(
                 rebuildStream: rebuildStream, 
-                onCancel: tuneEditor.close,
-                onDone: tuneEditor.done
+                onCancel: filterEditor.close,
+                onDone: filterEditor.done,
               )
             ]
           )
         ),
         cropRotateEditor: CropRotateEditorConfigs(
           style: const CropRotateEditorStyle(
+            cropCornerColor: Colors.white,
+            cropCornerLength: 20,
+            cropCornerThickness: 4,
             background: Colors.black
           ),
           widgets: CropRotateEditorWidgets(
             appBar: (cropRotateEditor, rebuildStream) => null,
-            bodyItems:(tuneEditor, rebuildStream) => [
+            bodyItems:(cropRotateEditor, rebuildStream) => [
               _buildSubAppBar(
                 rebuildStream: rebuildStream, 
-                onCancel: tuneEditor.close,
-                onDone: tuneEditor.done
+                onCancel: cropRotateEditor.close,
+                onDone: cropRotateEditor.done,
+                editor: cropRotateEditor,
               )
             ]
           )
@@ -173,25 +185,42 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
             SubEditorMode.tune,
             SubEditorMode.filter,
           ],
+          
           widgets: MainEditorWidgets(
+            closeWarningDialog: (editor) async => true,
             appBar: (editor, rebuildStream) => ReactiveAppbar(
               stream: rebuildStream,
-              builder: (_) => AppBar(
+              builder: (_) => 
+              // si il y a eu des modification
+              AppBar(
                 backgroundColor: Colors.black,
                 centerTitle: true,
-                leading: Transform.scale(
-                  scale: 0.85,
-                  child: Button.iconOnly(
-                    icon: const Icon(Icons.close, color: Colors.white, size: 18,),
-                    glassIcon: CNSymbol('xmark', size: 18),
+                leading: editor.canUndo 
+                  ? CNPopupMenuButton.icon(
+                    buttonIcon: CNSymbol("xmark", size: 16),
+                    items: [
+                      CNPopupMenuItem(
+                        enabled: false,
+                        label: "Are you sure you want to discard your changes?",
+                      ),
+                      CNPopupMenuItem(label: "Discard Changes")
+                    ],
+                    onSelected: (selected) {
+                      if (selected == 1) {
+                        editor.closeEditor();
+                      }
+                    }
+                  ) : Button.iconOnly(
+                    icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                    glassIcon: const CNSymbol('xmark', size: 18),
                     onPressed: editor.closeEditor,
                   ),
-                ),
                 title: CNGlassButtonGroup(
-                    axis: Axis.horizontal,
-                    spacing: 5.0,
-                    buttons: [
+                  axis: Axis.horizontal,
+                  spacing: 5.0,
+                  buttons: [
                     CNButtonData.icon(
+                      enabled: !editor.isSubEditorOpen,
                       icon: CNSymbol('arrow.uturn.backward', size: 20, color: !editor.canUndo ? Colors.grey : null),
                       onPressed: editor.canUndo ? editor.undoAction : null,
                       config: const CNButtonDataConfig(
@@ -202,6 +231,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                       ),
                     ),
                     CNButtonData.icon(
+                      enabled: !editor.isSubEditorOpen,
                       icon: CNSymbol('arrow.uturn.forward', size: 20, color: !editor.canRedo ? Colors.grey : null),
                       onPressed: editor.canRedo ? editor.redoAction : null,
                       config: const CNButtonDataConfig(
@@ -212,9 +242,8 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                       ),
                     ),
                   ],
-                ),
+                ), 
                 actions: [
-                  // TODO popmenu button
                   Button.iconOnly(
                     tint: Colors.blue,
                     backgroundColor: Colors.blue,
@@ -227,7 +256,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                   ),
                   const SizedBox(width: 8),
                 ],
-              ),
+              )
             ),
             bottomBar: (editor, rebuildStream, key) => ReactiveWidget(
               key: key,
@@ -268,7 +297,8 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
       CupertinoIcons.plus_slash_minus,
       CupertinoIcons.triangle,
       CupertinoIcons.thermometer,
-      CupertinoIcons.right_triangle,
+      // Material icon right-triangle
+      CupertinoIcons.triangle_fill,
       CupertinoIcons.lightbulb,
     ];
     return icons[index];
@@ -284,7 +314,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
             icon: Icon(icon, color: Colors.white),
             onPressed: onTap,
           ),
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13)),
         ],
       ),
     );
@@ -293,7 +323,8 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
   ReactiveWidget _buildSubAppBar({
     required Stream rebuildStream,
     required VoidCallback onCancel,
-    required VoidCallback onDone
+    required VoidCallback onDone,
+    dynamic editor,
   })  {
     return ReactiveWidget(
       stream: rebuildStream,
@@ -310,6 +341,33 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                   glassIcon: const CNSymbol('xmark', size: 18),
                   onPressed: onCancel
                 ),
+                if (editor != null)
+                  CNGlassButtonGroup(
+                      axis: Axis.horizontal,
+                      spacing: 5.0,
+                      buttons: [
+                      CNButtonData.icon(
+                        icon: CNSymbol('arrow.uturn.backward', size: 20, color: !editor.canUndo ? Colors.grey : null),
+                        onPressed: editor.canUndo ? editor.undoAction : null,
+                        config: const CNButtonDataConfig(
+                          style: CNButtonStyle.prominentGlass,
+                          glassEffectUnionId: 'undo-redo',
+                          glassEffectId: 'undo',
+                          glassEffectInteractive: true,
+                        ),
+                      ),
+                      CNButtonData.icon(
+                        icon: CNSymbol('arrow.uturn.forward', size: 20, color: !editor.canRedo ? Colors.grey : null),
+                        onPressed: editor.canRedo ? editor.redoAction : null,
+                        config: const CNButtonDataConfig(
+                          style: CNButtonStyle.prominentGlass,
+                          glassEffectUnionId: 'undo-redo',
+                          glassEffectId: 'redo',
+                          glassEffectInteractive: true,
+                        ),
+                      ),
+                    ],
+                  ),
                 Button.iconOnly(
                   tint: Colors.blue,
                   backgroundColor: Colors.blue,
