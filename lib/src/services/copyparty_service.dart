@@ -4,12 +4,12 @@ import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
 
+
 import 'package:hive_ce/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
-import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 
 class CopypartyService {
@@ -36,7 +36,6 @@ class CopypartyService {
 
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       final isIp = RegExp(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}').hasMatch(url);
-      print(isIp);
       url = isIp ? 'http://$url' : 'https://$url';
     }
 
@@ -110,7 +109,7 @@ class CopypartyService {
   }
 
   static Future<List<int>> fetchFile(String encodedPath) async {
-    final response = await _client.get(Uri.parse('$baseUrl/$encodedPath'), headers: _headers);
+    final response = await _client.get(Uri.parse('$baseUrl/photos/$encodedPath'), headers: _headers);
     if (response.statusCode != 200) throw Exception('Failed to fetch file');
     return response.bodyBytes;
   }
@@ -183,7 +182,7 @@ class CopypartyService {
 
 
   // AI Generated
-  static Future<void> upload({
+  static Future<void> uploadLocalFiles({
     required List<File> files,
     List<String>? filenames,
     void Function(int uploaded, int total)? onProgress,
@@ -215,6 +214,37 @@ class CopypartyService {
 
       log('✅ Uploaded $filename');
     }
+  }
+
+  static Future<String?> uploadBytes({
+    required Uint8List bytes,
+    required String filename,
+    String? folderEncodedPath,
+  }) async {
+    final mimetype = _mimetypeFromFilename(filename);
+
+    final uri = Uri.parse('$baseUrl/photos?bup');
+
+    final request = http.MultipartRequest('POST', uri);
+    request.headers.addAll(_headers);
+    request.fields['act'] = 'bput';
+    request.files.add(http.MultipartFile.fromBytes(
+      'f',
+      bytes,
+      filename: filename,
+      contentType: MediaType.parse(mimetype),
+    ));
+
+    final streamedResponse = await _client.send(request);
+    await streamedResponse.stream.drain();
+
+    if (streamedResponse.statusCode != 200 &&
+        streamedResponse.statusCode != 201) {
+      throw Exception('Upload failed: ${streamedResponse.statusCode}');
+    }
+
+    log('✅ Uploaded $filename');
+    return filename;
   }
   //
 
