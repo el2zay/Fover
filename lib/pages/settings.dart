@@ -28,7 +28,9 @@ class _SettingsPageState extends State<SettingsPage> {
       setState(() {
         freeStorage = usage?["free"] ?? 0;
         totalStorage = usage?["total"] ?? 0;
-        storageUsed = freeStorage / totalStorage;
+        storageUsed = totalStorage > 0 
+          ? (totalStorage - freeStorage) / totalStorage 
+          : 0.0;
       });
     });
   }
@@ -78,6 +80,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       Colors.yellow,
                       Colors.orange,
                       Colors.red[500]!,
+                      Colors.red[600]!,
                       Colors.red[700]!,
                     ], storageUsed),
                 ],
