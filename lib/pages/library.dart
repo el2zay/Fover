@@ -147,7 +147,7 @@ class _LibraryPageState extends State<LibraryPage> {
       case ServerBackend.freebox:
         await uploadLocalFiles(files: files, filenames: fileNames);
       case ServerBackend.copyparty:
-        await CopypartyService.upload(files: files, filenames: fileNames);
+        await CopypartyService.uploadLocalFiles(files: files, filenames: fileNames);
       default:
         break;
     }
@@ -261,6 +261,8 @@ class _LibraryPageState extends State<LibraryPage> {
 
     final filtered = results.asMap().entries.where((e) {
       final stored = PhotoStore.get(entries[e.key]['path'] as String);
+      if (stored?.isOldVersion == true) return false;
+      
       if (widget.albumName != null) {
         return stored?.albums?.contains(widget.albumName) == true;
       }
@@ -1023,7 +1025,6 @@ class _MediaTile extends StatelessWidget {
                   future: thumbFuture,
                   builder: (context, snapshot) {
                     if (snapshot.data == null) {
-                      log('Thumbnail null [$index]');
                       return Container(color: Colors.grey[900]);
                     }
                     return Hero(
