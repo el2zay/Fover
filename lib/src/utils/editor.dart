@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 
 import 'package:cupertino_native_better/cupertino_native_better.dart';
@@ -22,6 +23,7 @@ class PhotoEditorPage extends StatefulWidget {
 
 class _PhotoEditorPageState extends State<PhotoEditorPage> {
   late final _editorKey = GlobalKey<ProImageEditorState>();
+  bool _didComplete = false;
   String _buildEditedName(String name) {
     final hasExt = name.contains('.');
     final base = hasExt ? name.substring(0, name.lastIndexOf('.')) : name;
@@ -57,6 +59,12 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
             folderEncodedPath: folder
           );
 
+          final codec = await ui.instantiateImageCodec(editedBytes);
+          final frame = await codec.getNextFrame();
+          final editedWidth = frame.image.width;
+          final editedHeight = frame.image.height;
+          frame.image.dispose();
+
           if (newPath == null) return;
 
           await PhotoStore.update(path: widget.encodedPath, isOldVersion: true);
@@ -69,11 +77,25 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
             mimetype: originalPhoto.mimetype ?? 'image/jpeg',
             displayDate: originalPhoto.displayDate,
             editedFrom: widget.encodedPath,
+            width: editedWidth,
+            height: editedHeight,
+            cameraBrand: originalPhoto.cameraBrand,
+            cameraModel: originalPhoto.cameraModel,
+            iso: originalPhoto.iso,
+            focalLength: originalPhoto.focalLength,
+            exposureValue: originalPhoto.exposureValue,
+            focus: originalPhoto.focus,
+            shutterSpeed: originalPhoto.shutterSpeed,
+            latitude: originalPhoto.latitude,
+            longitude: originalPhoto.longitude,
           );
           if (!mounted) return;
+          _didComplete = true;
           navigator.pop(newPath);
         },
-        onCloseEditor: (_) => Navigator.pop(context),
+        onCloseEditor: (_) {
+          if (!_didComplete) Navigator.pop(context);
+        }
       ),
       configs: ProImageEditorConfigs(
         designMode: ImageEditorDesignMode.cupertino,
