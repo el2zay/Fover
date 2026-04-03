@@ -671,6 +671,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
             icon: CNSymbol('info.circle', size: 22),
             onPressed: () {
               setState(() {
+                focused = true;
                 showInfo = !showInfo;
               });
             },
@@ -760,13 +761,16 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
       builder: (context, scrollController) {
         _sheetController.addListener(() {
           if (_sheetController.size == 0) {
-            setState(() => showInfo = false);
+            setState(() {
+              showInfo = false;
+              focused = false;
+            });
           }
         });
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
           decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
+            color: Colors.black,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: ListView(
