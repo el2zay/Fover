@@ -1,16 +1,20 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fover/src/services/photo_store.dart' show PhotoStore;
+import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/widgets/button.dart';
-import 'package:fover/src/widgets/pop_menu.dart';
+import 'package:fover/src/widgets/dialog.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 
 class PhotoEditorPage extends StatefulWidget {
-  const PhotoEditorPage({super.key, required this.bytes});
+  const PhotoEditorPage({super.key, required this.bytes, required this.encodedPath});
   final Uint8List bytes;
+  final String encodedPath;
 
   @override
   State<PhotoEditorPage> createState() => _PhotoEditorPageState();
@@ -18,19 +22,72 @@ class PhotoEditorPage extends StatefulWidget {
 
 class _PhotoEditorPageState extends State<PhotoEditorPage> {
   late final _editorKey = GlobalKey<ProImageEditorState>();
+  String _buildEditedName(String name) {
+    final hasExt = name.contains('.');
+    final base = hasExt ? name.substring(0, name.lastIndexOf('.')) : name;
+    final ext  = hasExt ? '.${name.split('.').last}' : '';
+    return '${base}_edited_${DateTime.now().millisecondsSinceEpoch}$ext';
+  }
+
+  String _extractFolder(String encodedPath) {
+    if (detectBackend() == ServerBackend.freebox) {
+      final decoded = utf8.decode(base64.decode(encodedPath));
+      final folder  = decoded.substring(0, decoded.lastIndexOf('/'));
+      return base64.encode(utf8.encode(folder));
+    } else {
+      return base64.encode(utf8.encode("/photos"));
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return ProImageEditor.memory(
       widget.bytes,
       key: _editorKey,
       callbacks: ProImageEditorCallbacks(
-        onImageEditingComplete: (bytes) async {
-          Navigator.pop(context, bytes);
+        onImageEditingComplete: (editedBytes) async {
+          final originalPhoto = PhotoStore.get(widget.encodedPath)!;
+          final folder = _extractFolder(widget.encodedPath);
+          final filename = _buildEditedName(originalPhoto.name);
+          final navigator = Navigator.of(context);
+          final newPath = await PhotoStore.uploadEditedPhoto(
+            bytes: editedBytes,
+            filename: filename,
+            folderEncodedPath: folder
+          );
+
+          if (newPath == null) return;
+
+          await PhotoStore.update(path: widget.encodedPath, isOldVersion: true);
+
+          await PhotoStore.addPhoto(
+            path: newPath, 
+            name: filename, 
+            date: originalPhoto.date,
+            size: editedBytes.length, 
+            mimetype: originalPhoto.mimetype ?? 'image/jpeg',
+            displayDate: originalPhoto.displayDate,
+            editedFrom: widget.encodedPath,
+          );
+          if (!mounted) return;
+          navigator.pop(newPath);
         },
         onCloseEditor: (_) => Navigator.pop(context),
       ),
       configs: ProImageEditorConfigs(
         designMode: ImageEditorDesignMode.cupertino,
+        dialogConfigs: DialogConfigs(
+          widgets: DialogWidgets(
+            loadingDialog: (message, configs) {
+              return MyDialog(
+                content: message,
+                needCancel: false,
+                principalButton: null,
+              );
+            },
+          )
+        ),
         tuneEditor: TuneEditorConfigs(
           style: const TuneEditorStyle(
             background: Colors.black,
@@ -91,7 +148,6 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                             return GestureDetector(
                               onTap: () {
                                 setState(() {
-                                  print("Selected index: $i");
                                   tuneEditor.selectedIndex = i;
                                   tuneEditor.uiStream.add(null);
                                 });
@@ -178,7 +234,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
         ),
         mainEditor: MainEditorConfigs(
           style: const MainEditorStyle(
-            background: Color(0xFF0A0A0A),
+            background: Colors.black,
           ),
           tools: [
             SubEditorMode.cropRotate,
@@ -188,6 +244,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
           
           widgets: MainEditorWidgets(
             closeWarningDialog: (editor) async => true,
+            
             appBar: (editor, rebuildStream) => ReactiveAppbar(
               stream: rebuildStream,
               builder: (_) => 
@@ -210,10 +267,13 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                         editor.closeEditor();
                       }
                     }
-                  ) : Button.iconOnly(
-                    icon: const Icon(Icons.close, color: Colors.white, size: 18),
-                    glassIcon: const CNSymbol('xmark', size: 18),
-                    onPressed: editor.closeEditor,
+                  ) : Transform.scale(
+                    scale: 0.9,
+                    child: Button.iconOnly(
+                      icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                      glassIcon: const CNSymbol('xmark', size: 18),
+                      onPressed: editor.closeEditor,
+                    ),
                   ),
                 title: CNGlassButtonGroup(
                   axis: Axis.horizontal,
@@ -337,8 +397,8 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Button.iconOnly(
-                  icon: const Icon(Icons.close, color: Colors.white, size: 18),
-                  glassIcon: const CNSymbol('xmark', size: 18),
+                  icon: const Icon(Icons.close, color: Colors.white, size: 16),
+                  glassIcon: const CNSymbol('xmark', size: 16),
                   onPressed: onCancel
                 ),
                 if (editor != null)
