@@ -280,6 +280,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
 
     if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
       return ExtendedImage.file(
+        key: ValueKey(photo.localPath),
         File(photo.localPath!),
         fit: BoxFit.fitWidth,
         mode: ExtendedImageMode.gesture,
@@ -308,6 +309,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                 width: displayedWidth,
                 height: height,
                 child: ExtendedImage.network(
+                  key: ValueKey(url),
                   url,
                   fit: BoxFit.fitWidth,
                   mode: ExtendedImageMode.gesture,
@@ -330,6 +332,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
 
     return widget.images[index] != null
       ? ExtendedImage.memory(
+          key: ValueKey(widget.encodedPaths[index]),
           widget.images[index]!,
           fit: BoxFit.fitWidth,
           mode: ExtendedImageMode.gesture,
@@ -427,6 +430,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
               isViewer: true,
               isDownloaded: DownloadService.isDownloaded(widget.encodedPaths[currentIndex]),
               isFavorite: PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true,
+              canRevert: PhotoStore.get(widget.encodedPaths[currentIndex])?.editedFrom != null,
               onSelected: (action) async {
                 switch (action) {
                   case PopMenuAction.download:
@@ -450,6 +454,25 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                     if (bytes == null) return;
                     await FlutterClipboard.copyImage(bytes);
                     break;
+                  case PopMenuAction.revert:
+                    final originalPath = PhotoStore.get(widget.encodedPaths[currentIndex])?.editedFrom;
+                    if (originalPath == null) break;
+
+                    await PhotoStore.revertEdit(widget.encodedPaths[currentIndex]);
+
+                    setState(() {
+                      widget.encodedPaths[currentIndex] = originalPath;
+                      widget.images[currentIndex] = null;
+                    });
+
+                    final bytes = await fetchFullBytes(currentIndex);
+                    if (mounted) {
+                      setState(() {
+                        widget.images[currentIndex] = bytes;
+                      });
+                    }
+                    widget.onRefresh?.call();
+                    break;                                                                                                                                                                                    
                   case PopMenuAction.share:
                     break;
                   case PopMenuAction.favorite:
@@ -691,12 +714,33 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
               setState(() => hideAppbar = false);
   
               if (bytes == null) return;
-              Navigator.push(context, MaterialPageRoute(
-                builder: (context) => PhotoEditorPage(
-                  bytes: bytes,
-                  encodedPath: widget.encodedPaths[currentIndex],
-                )
-              ));
+              final newPath = await Navigator.push<String>(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PopScope(
+                    canPop: false, 
+                    child: PhotoEditorPage(
+                      bytes: bytes,
+                      encodedPath: widget.encodedPaths[currentIndex],
+                    ),
+                  ),
+                ),
+              );
+
+              if (newPath != null && mounted) {
+                setState(() {
+                  widget.encodedPaths[currentIndex] = newPath;
+                  widget.images[currentIndex] = null;
+                });
+              }
+
+              final newBytes = await fetchFullBytes(currentIndex);
+              if (mounted) {
+                setState(() {
+                  widget.images[currentIndex] = newBytes;
+                });
+              }
+              widget.onRefresh?.call();
             },
             config: const CNButtonDataConfig(
               style: CNButtonStyle.prominentGlass,
