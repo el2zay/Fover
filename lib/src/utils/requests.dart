@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui' as ui;
 import 'dart:io';
 import 'dart:typed_data';
@@ -76,6 +77,34 @@ Future uploadLocalFiles({required List<File> files, List<String>? filenames}) as
     );
   }
 }
+
+// AI Generated
+Future<String?> uploadEditedBytes({
+  required Uint8List bytes,
+  required String filename,
+  required String folderEncodedPath,
+}) async {
+  final uploader = FreeboxUploader(
+    apiDomain: client!.apiDomain,
+    httpsPort: client!.httpsPort,
+    sessionToken: client!.sessionToken!,
+  );
+
+  await uploader.uploadFile(
+    fileBytes: bytes,
+    filename: filename,
+    dirname: folderEncodedPath,
+    onProgress: (uploaded, total) {
+      final percent = (uploaded / total * 100).toStringAsFixed(1);
+      log('Uploading edited file: $percent% — $uploaded / $total bytes');
+    },
+  );
+
+  final folderDecoded = utf8.decode(base64.decode(folderEncodedPath));
+  final fullPath = '$folderDecoded/$filename';
+  return base64.encode(utf8.encode(fullPath));
+}
+//
 
 
 
@@ -276,7 +305,7 @@ Future<void> uploadHive() async {
         try {
           await CopypartyService.deleteFile(filename);
         } catch (_) {}
-        await CopypartyService.upload(files: [file]);
+        await CopypartyService.uploadLocalFiles(files: [file]);
       }
       break;
 
