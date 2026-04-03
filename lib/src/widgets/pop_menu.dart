@@ -13,7 +13,8 @@ enum PopMenuAction {
   hide(5),
   addToAlbum(6),
   adjustDate(7),
-  adjustLocation(8);
+  adjustLocation(8),
+  revert(9);
 
   final int id;
   const PopMenuAction(this.id);
@@ -25,6 +26,7 @@ class PopMenu extends StatelessWidget {
   final bool isViewer;
   final bool isDownloaded;
   final bool isFavorite;
+  final bool canRevert;
   final Function(PopMenuAction) onSelected;
 
   const PopMenu({
@@ -34,12 +36,14 @@ class PopMenu extends StatelessWidget {
     required this.isViewer, 
     this.isDownloaded = false, 
     this.isFavorite = false,
+    this.canRevert = false,
     required this.onSelected
   });
 
   List<PopMenuAction> get _visibleActions => [
   PopMenuAction.download,
   if (showCopy && isViewer) PopMenuAction.copy,
+  if (canRevert) PopMenuAction.revert,
   if (!isViewer) PopMenuAction.share,
   if (!isViewer) PopMenuAction.favorite,
   if (isViewer) PopMenuAction.duplicate,
@@ -47,6 +51,7 @@ class PopMenu extends StatelessWidget {
   PopMenuAction.addToAlbum,
   if (isViewer) PopMenuAction.adjustDate,
   if (isViewer) PopMenuAction.adjustLocation,
+
 ];
 
   @override
@@ -64,6 +69,11 @@ class PopMenu extends StatelessWidget {
             CNPopupMenuItem(
               label: 'Copy',
               icon: CNSymbol('doc.on.doc', size: 20),
+            ),
+          if (canRevert)
+            CNPopupMenuItem(
+              label: 'Revert to original',
+              icon: CNSymbol('arrow.counterclockwise.circle')
             ),
           if (!isViewer) 
             CNPopupMenuItem(
@@ -123,6 +133,11 @@ class PopMenu extends StatelessWidget {
               onTap: () {
                 onSelected(PopMenuAction.copy);
               },
+            ),
+          if (canRevert)
+            PullDownMenuItem(
+              title: 'Revert to original',
+              onTap: () => onSelected(PopMenuAction.revert),
             ),
           if (!isViewer) 
             PullDownMenuItem(
