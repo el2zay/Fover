@@ -692,7 +692,8 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
               if (bytes == null) return;
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) => PhotoEditorPage(
-                  bytes: bytes
+                  bytes: bytes,
+                  encodedPath: widget.encodedPaths[currentIndex],
                 )
               ));
             },
