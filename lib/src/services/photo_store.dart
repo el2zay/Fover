@@ -232,7 +232,7 @@ class PhotoStore {
     }
   }
 
-  static Future<void> reverseEdit(String editedPath) async {
+  static Future<void> revertEdit(String editedPath) async {
     final editedEntry = _photoBox.get(editedPath);
     if (editedEntry == null) return;
 
