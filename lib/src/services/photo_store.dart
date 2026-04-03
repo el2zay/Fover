@@ -6,6 +6,7 @@ import 'package:fover/src/models/album_entry.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/utils/requests.dart';
+import 'package:freebox/freebox.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:fover/src/models/photo_entry.dart';
 
@@ -50,7 +51,9 @@ class PhotoStore {
     int? focus,
     int? shutterSpeed,
     DateTime? displayDate,
-    bool? isScreenshot
+    bool? isScreenshot,
+    String? editedFrom,
+    bool isOldVersion = false,
   }) async {
     if (_photoBox.containsKey(path)) return;
 
@@ -74,7 +77,9 @@ class PhotoStore {
         focus: focus,
         shutterSpeed: shutterSpeed,
         displayDate: displayDate,
-        isScreenshot: isScreenshot
+        isScreenshot: isScreenshot,
+        editedFrom: editedFrom,
+        isOldVersion: isOldVersion
       )
     );
   }
@@ -145,7 +150,9 @@ class PhotoStore {
     bool? hidden,
     bool? favorite,
     DateTime? displayDate,
-    String? localPath
+    String? localPath,
+    String? editedForm,
+    bool? isOldVersion
     }) async {
       final entry = _photoBox.get(path);
       if (entry == null) return;
@@ -156,6 +163,8 @@ class PhotoStore {
       if (favorite != null) entry.favorite = favorite;
       if (displayDate != null) entry.displayDate = displayDate;
       if (localPath != null) entry.localPath = localPath;
+      if (editedForm != null) entry.editedFrom = editedForm;
+      if (isOldVersion != null) entry.isOldVersion = isOldVersion;
       await entry.save();
   }
 
@@ -220,6 +229,54 @@ class PhotoStore {
 
     for (final photo in expired) {
       await photo.delete();
+    }
+  }
+
+  static Future<void> reverseEdit(String editedPath) async {
+    final editedEntry = _photoBox.get(editedPath);
+    if (editedEntry == null) return;
+
+    final originalPath = editedEntry.editedFrom;
+    if (originalPath == null) return;
+
+    await update(path: originalPath, isOldVersion: false);
+
+    await hardDelete(editedPath);
+  }
+
+  static Future<String?> uploadEditedPhoto({
+    required Uint8List bytes, 
+    required String filename,
+    required String folderEncodedPath
+  }) async {
+    switch (detectBackend()) {
+      case ServerBackend.copyparty:
+        return await CopypartyService.uploadBytes(
+          bytes: bytes, 
+          filename: filename, 
+          folderEncodedPath: folderEncodedPath
+        );
+      
+      case ServerBackend.freebox:
+        final uploader = FreeboxUploader(
+          apiDomain: client!.apiDomain, 
+          httpsPort: client!.httpsPort,
+          sessionToken: client!.sessionToken!,
+        );
+        await uploader.uploadFile(
+          fileBytes: bytes, 
+          filename: filename, 
+          dirname: folderEncodedPath, 
+          onProgress: (uploaded, total) {
+            final percent = (uploaded / total * 100).toStringAsFixed(1);
+            log('Uploading edited file: $percent% — $uploaded / $total bytes');
+          },
+        );
+        final folderDecoded = utf8.decode(base64.decode(folderEncodedPath));
+        return base64.encode(utf8.encode('$folderDecoded/$filename'));
+
+        default:
+          return null;
     }
   }
 
@@ -318,8 +375,11 @@ class PhotoStore {
 
   static PhotoEntry? get(String path) => _photoBox.get(path);
 
-  static List<PhotoEntry> getAll() =>
-    _photoBox.values.where((e) => e.deletedAt == null).toList();
+static List<PhotoEntry> getAll() =>
+    _photoBox.values.where((e) =>
+      e.deletedAt == null &&
+      e.isOldVersion != true // ← doit être présent
+    ).toList();
 
   static int get favoritesCount => 
     _photoBox.values.where((e) => e.favorite == true).length;
