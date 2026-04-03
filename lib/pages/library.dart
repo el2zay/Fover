@@ -262,7 +262,7 @@ class _LibraryPageState extends State<LibraryPage> {
     final filtered = results.asMap().entries.where((e) {
       final stored = PhotoStore.get(entries[e.key]['path'] as String);
       if (stored?.isOldVersion == true) return false;
-      
+
       if (widget.albumName != null) {
         return stored?.albums?.contains(widget.albumName) == true;
       }
@@ -656,6 +656,23 @@ class _LibraryPageState extends State<LibraryPage> {
                                     image: MenuImage.icon(CupertinoIcons.doc_on_doc),
                                     callback: () => FlutterClipboard.copyImage(data.thumbs[index] ?? Uint8List(0))
                                   ),
+                                if (PhotoStore.get(data.encodedPaths[index])?.editedFrom != null)
+                                  MenuAction(
+                                    title: "Revert to original",
+                                    image: MenuImage.icon(CupertinoIcons.arrow_counterclockwise_circle),
+                                    callback: () async {
+                                      await PhotoStore.revertEdit(data.encodedPaths[index]);
+                                      setState(() {
+                                        data.images.removeAt(index);
+                                        data.thumbs.removeAt(index);
+                                        data.thumbFutures.removeAt(index);
+                                        data.mimetypes.removeAt(index);
+                                        data.encodedPaths.removeAt(index);
+                                        elements = data.images.length;
+                                      });
+                                      _refresh();
+                                    },
+                                  ),
                                 MenuAction(
                                   title: "Duplicate",
                                   image: MenuImage.icon(CupertinoIcons.plus_square_on_square),
@@ -882,6 +899,8 @@ class _LibraryPageState extends State<LibraryPage> {
                                       }
                                     break;
                                     case PopMenuAction.copy:
+                                      break;
+                                    case PopMenuAction.revert:
                                       break;
                                     case PopMenuAction.share:
                                       break;
