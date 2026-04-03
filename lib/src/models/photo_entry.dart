@@ -85,6 +85,12 @@ class PhotoEntry extends HiveObject {
   @HiveField(27)
   bool? isScreenshot;
 
-  PhotoEntry({required this.path, required this.name, required this.date, required this.size, this.description, required this.mimetype, this.detectedText, this.albums, this.hidden, this.favorite, this.deletedAt, this.latitude, this.longitude, this.cameraBrand, this.cameraModel, this.height, this.width, this.iso, this.focalLength, this.exposureValue, this.focus, this.shutterSpeed, this.displayDate, this.localPath, this.isScreenshot});
+  @HiveField(28)
+  String? editedFrom;
+
+  @HiveField(29)
+  bool? isOldVersion;
+
+  PhotoEntry({required this.path, required this.name, required this.date, required this.size, this.description, required this.mimetype, this.detectedText, this.albums, this.hidden, this.favorite, this.deletedAt, this.latitude, this.longitude, this.cameraBrand, this.cameraModel, this.height, this.width, this.iso, this.focalLength, this.exposureValue, this.focus, this.shutterSpeed, this.displayDate, this.localPath, this.isScreenshot, this.editedFrom, this.isOldVersion});
 
 }
