@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 class MyDialog extends StatelessWidget {
   final String content;
   final TextButton? principalButton;
-  const MyDialog({super.key, required this.content, required this.principalButton});
+  final bool? needCancel;
+  const MyDialog({super.key, required this.content, required this.principalButton, this.needCancel = true});
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +39,7 @@ class MyDialog extends StatelessWidget {
                   ),
                 ),
                 Divider(thickness: 0.5, height: 1, color: Colors.white24),
+                if (needCancel != false)
                 Row(
                   mainAxisAlignment: principalButton != null ? MainAxisAlignment.spaceAround : MainAxisAlignment.center,
                   children: [
