@@ -2,9 +2,9 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:clipboard/clipboard.dart';
-import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
@@ -343,6 +343,104 @@ class _LibraryPageState extends State<LibraryPage> {
     showButtons = images.isNotEmpty;
   }
 
+  // Overlay pour la card "annuler l'upload"
+  OverlayEntry? _uploadOverlay;
+  final _cardVisible = ValueNotifier<bool>(false);
+  bool alreadyPressed = false;
+
+  void _dismissCard() {
+    _cardVisible.value = false;
+  }
+
+  void _showUploadOverlay(bool alreadyPressed) {
+    if (alreadyPressed) {
+      _uploadOverlay?.remove();
+      return;
+    }
+
+    _uploadOverlay = OverlayEntry(
+      builder: (context) => Stack(
+        children: [
+        Positioned.fill(
+          child: GestureDetector(
+            onTap: _dismissCard, 
+            behavior: HitTestBehavior.opaque,
+            child: const SizedBox.expand(),
+          ),
+        ),
+        Positioned(
+          top: MediaQuery.of(context).padding.top + kToolbarHeight + 10,
+          left: MediaQuery.of(context).size.width * 0.15,
+          child: GestureDetector(
+            onTap: () {}, 
+            child: ValueListenableBuilder<bool>(
+              valueListenable: _cardVisible,
+              builder: (context, visible, child) => AnimatedOpacity(
+                opacity: visible ? 1.0 : 0.0,
+                duration: Duration(milliseconds: visible ? 350 : 180),
+                curve: visible ? Curves.easeOutCubic : Curves.easeInCubic,
+                onEnd: () {
+                  if (!visible) {
+                    _uploadOverlay?.remove();
+                    _uploadOverlay = null;
+                  }
+                },
+                child: AnimatedScale(
+                  scale: visible ? 1.0 : 0.92,
+                  duration: Duration(milliseconds: visible ? 350 : 180),
+                  curve: visible ? Curves.easeOutCubic : Curves.easeInCubic,
+                  alignment: Alignment.topCenter,
+                  child: child!,
+                ),
+              ),
+              child: ValueListenableBuilder(
+                valueListenable: CopypartyService.uploadProgress,
+                builder: (context, progress, _) => Material(
+                  color: Colors.transparent,
+                  child: CNGlassCard(
+                    tint: Colors.white.withAlpha(5),
+                    child: Padding(
+                      padding: const EdgeInsetsGeometry.symmetric(horizontal: 10, vertical: 0),
+                      child: Column(
+                        children: [
+                          Text("Do you want to cancel the upload?", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                          SizedBox(height: 10),
+                          CupertinoButton.tinted(
+                            color: Colors.grey,
+                            borderRadius: BorderRadius.all(Radius.circular(20)),
+                            minimumSize: Size(0, 30),
+                            padding: EdgeInsets.symmetric(horizontal: 40, vertical: 0),
+                            child: Text("Cancel", style: TextStyle(
+                              fontSize: 15, 
+                              fontWeight: FontWeight.w500,
+                              color: Colors.redAccent
+                              )
+                            ),
+                            onPressed: () {
+                              CopypartyService.cancelUpload();
+                            }
+                          )
+                        ],
+                      ),
+                    )
+                  ),
+                ),
+              ),
+              )
+            )
+          )
+        ]
+      )
+    );
+
+    Overlay.of(context).insert(_uploadOverlay!);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _cardVisible.value = true;
+    });
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -355,20 +453,32 @@ class _LibraryPageState extends State<LibraryPage> {
         isAlbum:  widget.album != Album.none || widget.albumName != null ,
         onBack: () => Navigator.of(context).pop(),
         actions: showButtons || !widget.onlySelect ? [
-          // !widget.trashMode ?
-          //   Button.iconOnly(
-          //     icon: const Icon(CupertinoIcons.refresh, color: Colors.white),
-          //     glassIcon: CNSymbol('arrow.clockwise', size: 17),
-          //     tint: Colors.white.withAlpha(10),
-          //     glassConfig: const CNButtonConfig(
-          //       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          //     ),
-          //     onPressed: () {
-          //        _refresh();
-          //     },
-          //   ) : SizedBox(),
+          if (widget.albumName == null)
+            GestureDetector(
+              onTap: () {
+                _showUploadOverlay(alreadyPressed);
+                setState(() => alreadyPressed = !alreadyPressed);
+              },
+              child: ValueListenableBuilder<double?>(
+                valueListenable: CopypartyService.uploadProgress,
+                builder: (context, progress, _) {
+                  if (progress == null || progress >= 1.0) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (_uploadOverlay != null) _dismissCard();
+                  });
+                  return const SizedBox.shrink();
+                  }
+                  return CircularProgressIndicator(
+                    value: progress,
+                    constraints: const BoxConstraints(minHeight: 25, minWidth: 25),
+                    backgroundColor: Colors.white.withAlpha(35),
+                    valueColor: AlwaysStoppedAnimation(Colors.blue[700]!),
+                  );
+                },
+              ),
+            ),
 
-          SizedBox(width: 10),
+          SizedBox(width: 15),
           if (widget.album != Album.trash && widget.album != Album.favorites &&widget.album != Album.screenshots && connectedToInternet)...[
              widget.albumName == null ?
               Button.iconOnly(
