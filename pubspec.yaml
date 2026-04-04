@@ -43,6 +43,7 @@ dependencies:
   mime: ^2.0.0
   wechat_assets_picker: ^10.1.1
   pro_image_editor: ^12.0.13
+  dio: ^5.9.2
 
 dev_dependencies:
   hive_ce_generator: ^1.11.1
