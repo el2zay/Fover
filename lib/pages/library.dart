@@ -353,11 +353,12 @@ class _LibraryPageState extends State<LibraryPage> {
   }
 
   void _showUploadOverlay(bool alreadyPressed) {
-    if (alreadyPressed) {
-      _uploadOverlay?.remove();
-      return;
-    }
-
+  if (_cardVisible.value) {
+    _dismissCard();
+    return;
+  }
+  if (_uploadOverlay != null) return;
+    _cardVisible.value = false; 
     _uploadOverlay = OverlayEntry(
       builder: (context) => Stack(
         children: [
