@@ -1082,8 +1082,10 @@ class _LibraryPageState extends State<LibraryPage> {
                                               _data!.encodedPaths.removeAt(i);
                                             }
                                             selectedImages.clear();
+                                            selectedMode = false;
                                             elements = _data!.images.length;
                                           });
+                                          
                                           Navigator.pop(context);
                                         },
                                       ),
