@@ -976,82 +976,82 @@ class _LibraryPageState extends State<LibraryPage> {
                     child: Padding(
                       padding: EdgeInsetsGeometry.symmetric(horizontal: 15, vertical: 5),
                       child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            widget.album == Album.trash
-                              ? Button.iconOnly(
-                                onPressed: () async {
-                                  final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
-                                  for (final path in selectedPaths) {
-                                    await PhotoStore.restore(path);
-                                  }
-                                  _removeLocally(selectedImages);
-                                },
-                                glassIcon: CNSymbol('arrow.up.bin', size: 20),
-                                icon: Icon(CupertinoIcons.arrow_up_bin, size: 20),
-                                tint: Theme.of(context).scaffoldBackgroundColor,
-                              ) : PopMenu(
-                                scale: 0.85,
-                                showCopy: false,
-                                isViewer: false,
-                                isDownloaded: selectedImages.map((i) => data.encodedPaths[i]).every((p) => DownloadService.isDownloaded(p)),
-                                isFavorite: false,
-                                onSelected: (action) async {
-                                  final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
-                                  switch (action) {
-                                    case PopMenuAction.download:
-                                      for (final path in selectedPaths) {
-                                        final photo = PhotoStore.get(path);
-                                        if (DownloadService.isDownloaded(path)) {
-                                          DownloadService.remove(path);
-                                        } else {
-                                          DownloadService.download(encodedPath: path, filename: photo!.name);
-                                        }
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          widget.album == Album.trash
+                            ? Button.iconOnly(
+                              onPressed: () async {
+                                final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
+                                for (final path in selectedPaths) {
+                                  await PhotoStore.restore(path);
+                                }
+                                _removeLocally(selectedImages);
+                              },
+                              glassIcon: CNSymbol('arrow.up.bin', size: 20),
+                              icon: Icon(CupertinoIcons.arrow_up_bin, size: 20),
+                              tint: Theme.of(context).scaffoldBackgroundColor,
+                            ) : PopMenu(
+                              scale: 0.85,
+                              showCopy: false,
+                              isViewer: false,
+                              isDownloaded: selectedImages.map((i) => data.encodedPaths[i]).every((p) => DownloadService.isDownloaded(p)),
+                              isFavorite: false,
+                              onSelected: (action) async {
+                                final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
+                                switch (action) {
+                                  case PopMenuAction.download:
+                                    for (final path in selectedPaths) {
+                                      final photo = PhotoStore.get(path);
+                                      if (DownloadService.isDownloaded(path)) {
+                                        DownloadService.remove(path);
+                                      } else {
+                                        DownloadService.download(encodedPath: path, filename: photo!.name);
                                       }
+                                    }
+                                  break;
+                                  case PopMenuAction.copy:
                                     break;
-                                    case PopMenuAction.copy:
-                                      break;
-                                    case PopMenuAction.revert:
-                                      break;
-                                    case PopMenuAction.share:
-                                      break;
-                                    case PopMenuAction.favorite:
-                                      for (final i in selectedImages) {
-                                        await PhotoStore.update(path: data.encodedPaths[i], hidden: true);
+                                  case PopMenuAction.revert:
+                                    break;
+                                  case PopMenuAction.share:
+                                    break;
+                                  case PopMenuAction.favorite:
+                                    for (final i in selectedImages) {
+                                      await PhotoStore.update(path: data.encodedPaths[i], hidden: true);
+                                    }
+                                    _removeLocally(selectedImages);
+                                    break;
+                                  case PopMenuAction.duplicate:
+                                    for (final i in selectedImages) {
+                                      await PhotoStore.duplicate(path: data.encodedPaths[i]);
+                                    }
+                                    _refresh();
+                                    break;
+                                  case PopMenuAction.hide:
+                                    for (final i in selectedImages) {
+                                      await PhotoStore.update(path: data.encodedPaths[i], hidden: true);
+                                    }
+                                    _removeLocally(selectedImages);
+                                    break;
+                                  case PopMenuAction.addToAlbum:
+                                    showModalBottomSheet(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
+                                      builder: (context) {
+                                        return AddToAlbumSheet(
+                                          photoPath: selectedImages.map((i) => data.encodedPaths[i]).toList(),
+                                        );
                                       }
-                                      _removeLocally(selectedImages);
-                                      break;
-                                    case PopMenuAction.duplicate:
-                                      for (final i in selectedImages) {
-                                        await PhotoStore.duplicate(path: data.encodedPaths[i]);
-                                      }
-                                      _refresh();
-                                      break;
-                                    case PopMenuAction.hide:
-                                      for (final i in selectedImages) {
-                                        await PhotoStore.update(path: data.encodedPaths[i], hidden: true);
-                                      }
-                                      _removeLocally(selectedImages);
-                                      break;
-                                    case PopMenuAction.addToAlbum:
-                                      showModalBottomSheet(
-                                        context: context,
-                                        isScrollControlled: true,
-                                        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
-                                        builder: (context) {
-                                          return AddToAlbumSheet(
-                                            photoPath: selectedImages.map((i) => data.encodedPaths[i]).toList(),
-                                          );
-                                        }
-                                      );
-                                      break;
-                                    case PopMenuAction.adjustDate:
-                                      break;
-                                    case PopMenuAction.adjustLocation:
-                                      break;
-                                  }
-                                },
-                              ),
+                                    );
+                                    break;
+                                  case PopMenuAction.adjustDate:
+                                    break;
+                                  case PopMenuAction.adjustLocation:
+                                    break;
+                                }
+                              },
+                            ),
                             Button.iconOnly(
                               onPressed: () {
                                 showGeneralDialog(
