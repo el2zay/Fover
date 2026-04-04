@@ -5,6 +5,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 
+import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
@@ -17,6 +19,11 @@ class CopypartyService {
   static String credentials = "";
   static Box box = Hive.box('settings');
   static final _client = _buildClient();
+  static final ValueNotifier<double?> uploadProgress = ValueNotifier(null);
+  static final _dio = Dio();
+  static CancelToken? _uploadCancelToken;
+  static bool _cancelRequested = false;
+
 
   static http.Client _buildClient() {
     final ioClient = HttpClient()
@@ -156,16 +163,6 @@ class CopypartyService {
     }
   }
 
-//   static Future<void> deleteFile(String encodedPath) async {
-//   final response = await _client.post(
-//     Uri.parse('$baseUrl/?delete'),
-//     headers: _headers,
-//     body: jsonEncode({'paths': [encodedPath]}),
-//   );
-
-//   final body = jsonDecode(response.body);
-//   if (body['ok'] != true) throw Exception('Failed to delete: ${body['msg']}');
-// }
   static Future<Set<String>> listAllFiles({String path = ''}) async {
     final response = await _client.get(
       Uri.parse('$baseUrl/photos?ls'),
@@ -181,38 +178,92 @@ class CopypartyService {
   }
 
 
+  static void cancelUpload() {
+    _cancelRequested = true; 
+    _uploadCancelToken?.cancel('User cancelled');
+  }
+
   // AI Generated
   static Future<void> uploadLocalFiles({
     required List<File> files,
     List<String>? filenames,
-    void Function(int uploaded, int total)? onProgress,
   }) async {
-    for (int i = 0; i < files.length; i++) {
-      final filename = filenames?[i] ?? files[i].path.split('/').last;
-      final bytes = await files[i].readAsBytes();
-      final mimetype = _mimetypeFromFilename(filename);
+    _uploadCancelToken = CancelToken();
+    _cancelRequested = false; 
 
-      final uri = Uri.parse('$baseUrl/photos?bup');
-      final request = http.MultipartRequest('POST', uri);
-      request.headers.addAll(_headers);
-      request.fields['act'] = 'bput';
-      request.files.add(http.MultipartFile.fromBytes(
-        'f',
-        bytes,
-        filename: filename,
-        contentType: MediaType.parse(mimetype),
-      ));
+    final allFilenames = List.generate(
+      files.length,
+      (i) => filenames?[i] ?? files[i].path.split('/').last,
+    );
 
-      onProgress?.call(0, bytes.length);
+    final totalBytes = (await Future.wait(
+      files.map((f) async => await f.length()),
+    )).fold<int>(0, (sum, size) => sum + size);
 
-      final streamedResponse = await _client.send(request);
-      await streamedResponse.stream.drain();
+    int bytesUploadedSoFar = 0;
+    bool needsCleanup = false;
 
-      if (streamedResponse.statusCode != 200 && streamedResponse.statusCode != 201) {
-        throw Exception('Upload failed: ${streamedResponse.statusCode}');
+    try {
+      for (int i = 0; i < files.length; i++) {
+        if (_cancelRequested) {
+          needsCleanup = true;
+          break;
+        }
+
+        final filename = allFilenames[i];
+        final fileSize = await files[i].length();
+
+        final formData = FormData.fromMap({
+          'act': 'bput',
+          'f': await MultipartFile.fromFile(
+            files[i].path,
+            filename: filename,
+            contentType: DioMediaType.parse(_mimetypeFromFilename(filename)),
+          ),
+        });
+
+        await _dio.post(
+          '$baseUrl/photos?bup',
+          data: formData,
+          options: Options(headers: _headers),
+          cancelToken: _uploadCancelToken,
+          onSendProgress: (sent, total) {
+            uploadProgress.value = (bytesUploadedSoFar + sent) / totalBytes;
+          },
+        );
+
+        if (_cancelRequested) {
+          needsCleanup = true;
+          break;
+        }
+
+        bytesUploadedSoFar += fileSize;
+        log('Uploaded $filename');
+      }
+    } on DioException catch (e) {
+      if (CancelToken.isCancel(e)) {
+        needsCleanup = true;
+      } else {
+        rethrow;
+      }
+    } finally {
+      if (needsCleanup) {
+        log("Cleaning up ${allFilenames.length} files...");
+        await Future.wait(
+          allFilenames.map((filename) async {
+            try {
+              await deleteFile(filename);
+              log('🗑️ Deleted $filename');
+            } catch (_) {
+              log('$filename not found — skipping');
+            }
+          }),
+        );
       }
 
-      log('✅ Uploaded $filename');
+      uploadProgress.value = null;
+      _uploadCancelToken = null;
+      _cancelRequested = false;
     }
   }
 
