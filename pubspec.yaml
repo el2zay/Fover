@@ -25,9 +25,6 @@ dependencies:
   flutter_image_compress: ^2.4.0
   extended_image: ^10.0.1
   path_provider: ^2.1.5
-  media_kit: ^1.2.6
-  media_kit_video: ^2.0.1
-  media_kit_libs_video: ^1.0.7
   gradient_progress_bar: ^1.0.7
   hive_ce: ^2.19.3
   hive_ce_flutter: ^2.3.4
@@ -44,6 +41,7 @@ dependencies:
   wechat_assets_picker: ^10.1.1
   pro_image_editor: ^12.0.13
   dio: ^5.9.2
+  video_player: ^2.11.1
 
 dev_dependencies:
   hive_ce_generator: ^1.11.1
