@@ -21,15 +21,13 @@ import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/dialog.dart';
 import 'package:fover/src/widgets/pop_menu.dart';
 import 'package:intl/intl.dart';
-import 'package:media_kit_video/media_kit_video.dart';
-import 'package:media_kit/media_kit.dart';
+import 'package:video_player/video_player.dart';
 
 bool focused = false;
 
 class ViewerPage extends StatefulWidget {
   const ViewerPage({
     super.key,
-    required this.images,
     required this.mimetype,
     required this.encodedPaths,
     required this.index,
@@ -37,7 +35,6 @@ class ViewerPage extends StatefulWidget {
     required this.onRefresh,
   });
 
-  final List<Uint8List?> images;
   final List<String> mimetype;
   final List<String> encodedPaths;
   final int index;
@@ -58,13 +55,20 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   final GlobalKey<ExtendedImageSlidePageState> _slideKey = GlobalKey<ExtendedImageSlidePageState>();
   Offset _videoOffset = Offset.zero;
   double _videoScale = 1.0;
-  late final player = Player();
-  late final controller = VideoController(player);
+  VideoPlayerController? _videoPlayerController;
   late final ExtendedPageController _pageController;
   bool showInfo = false;
   final _sheetController = DraggableScrollableController();
   bool hideAppbar = false;
   late double _imageFocusScale = PhotoStore.isLandscape(widget.encodedPaths[currentIndex]) ? 1 : 0.73;
+  final Map<int, Uint8List?> _bytesCache = {};
+
+  Future<Uint8List?> _getBytes(int index) async {
+    if (_bytesCache.containsKey(index)) return _bytesCache[index];
+    final bytes = await fetchFullBytes(index);
+    _bytesCache[index] = bytes;
+    return bytes;
+  }
 
 
   @override
@@ -87,40 +91,39 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
 
   @override
   void dispose() {
+    clearMemoryImageCache();
+    clearDiskCachedImages();
     _animation?.removeListener(animationListener);
     _animationController.dispose();
     _pageController.dispose();
-    player.dispose();
+    _videoPlayerController?.dispose();
     focused = false;
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
-  void _loadVideo(int index) {
+  Future<void> _loadVideo(int index) async {
+    await _videoPlayerController?.dispose();
     final encodedPath = widget.encodedPaths[index];
     final photo = PhotoStore.get(encodedPath);
 
-    final Media source;
-
     if (photo?.localPath != null) {
-      source = Media(photo!.localPath!);
+      _videoPlayerController = VideoPlayerController.file(File(photo!.localPath!));
     } else if (detectBackend() == ServerBackend.copyparty) {
-      final url = "${CopypartyService.baseUrl}/photos/$encodedPath";
-      source = Media(
-        url,
-        httpHeaders: {
-           'Authorization': 'Basic ${CopypartyService.credentials}',
-        }
+      _videoPlayerController = VideoPlayerController.networkUrl(
+        Uri.parse("${CopypartyService.baseUrl}/photos/$encodedPath"),
+        httpHeaders: {'Authorization': 'Basic ${CopypartyService.credentials}'},
       );
     } else {
-      source = Media(
-        "https://${box.get('apiDomain')}:${box.get('httpsPort')}/api/v15/dl/$encodedPath",
-        httpHeaders: {
-          "X-Fbx-App-Auth": client!.sessionToken!,
-        },
+      _videoPlayerController = VideoPlayerController.networkUrl(
+        Uri.parse("https://${box.get('apiDomain')}:${box.get('httpsPort')}/api/v15/dl/$encodedPath"),
+        httpHeaders: {"X-Fbx-App-Auth": client!.sessionToken!},
       );
     }
-    player.open(source, play: false);
+
+    await _videoPlayerController?.initialize();
+    if (mounted) setState(() {});
+
   }
 
   void _toggleFocus() {
@@ -193,19 +196,24 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                 duration: const Duration(milliseconds: 200),
                 child: ExtendedImageGesturePageView.builder(
                   controller: _pageController,
-                  itemCount: widget.images.length,
+                  itemCount: widget.encodedPaths.length,
                   scrollDirection: Axis.horizontal,
                   onPageChanged: (index) {
+                    if (_videoPlayerController?.value.isPlaying == true) {
+                      _videoPlayerController?.dispose();
+                    }
                     setState(() {
                       currentIndex = index;
                       _videoOffset = Offset.zero;
                       _videoScale = 1.0;
                       _imageFocusScale = PhotoStore.isLandscape(widget.encodedPaths[index]) ? 1.0 : 0.73;
                     });
-                    player.stop();
-                    if (widget.mimetype[index].startsWith("video/")) {
-                      _loadVideo(index);
-                    }
+                    _videoPlayerController?.dispose();
+                    Future.delayed(const Duration(milliseconds: 100), () {
+                      if (widget.mimetype[index].startsWith("video/")) {
+                        _loadVideo(index);
+                      }
+                    });
                   },
                   itemBuilder: (context, index) {
                     return GestureDetector(
@@ -239,13 +247,15 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                                     child: Stack(
                                       fit: StackFit.expand,
                                       children: [
-                                        Video(
-                                          controller: controller,
-                                          controls: (state) => const SizedBox.shrink(),
+                                        Center(
+                                          child: AspectRatio(
+                                            aspectRatio: _videoPlayerController!.value.aspectRatio,
+                                            child: VideoPlayer(_videoPlayerController!),
+                                          )
                                         ),
                                         Positioned(
                                           left: 0, right: 0, bottom: 0,
-                                          child: CupertinoVideoControls(controller: controller),
+                                          child: CupertinoVideoControls(controller: _videoPlayerController!),
                                         ),
                                       ],
                                     ),
@@ -268,7 +278,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
               ),
 
             if (showInfo)
-              _buildInfoSheet(context, widget.images[currentIndex]),
+              _buildInfoSheet(context),
           ]
         )
       ),
@@ -311,6 +321,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                 child: ExtendedImage.network(
                   key: ValueKey(url),
                   url,
+                  cacheWidth: 1080,
                   fit: BoxFit.fitWidth,
                   mode: ExtendedImageMode.gesture,
                   enableSlideOutPage: true,
@@ -330,16 +341,22 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
       );
     }
 
-    return widget.images[index] != null
-      ? ExtendedImage.memory(
+    return FutureBuilder(
+      future: _getBytes(index), 
+      builder: (context, snap) {
+        if (snap.data == null) {
+          return Container(color: Colors.grey[900]);
+        }
+        return ExtendedImage.memory(
           key: ValueKey(widget.encodedPaths[index]),
-          widget.images[index]!,
+          snap.data!,
           fit: BoxFit.fitWidth,
           mode: ExtendedImageMode.gesture,
           enableSlideOutPage: true,
           onDoubleTap: _handleDoubleTap,
-        )
-      : Container(color: Colors.grey[900]);
+        );
+      }
+    );
   }
 
   Future<Uint8List?> fetchFullBytes(int index) async {
@@ -352,10 +369,6 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     if (detectBackend() == ServerBackend.copyparty) {
       final bytes = await CopypartyService.fetchFile(widget.encodedPaths[index]);
       return Uint8List.fromList(bytes);
-    }
-
-    if (widget.images[index] != null) {
-      return widget.images[index];
     }
 
     final response = await client?.fetch(
@@ -450,7 +463,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                       }
                     break;
                   case PopMenuAction.copy:
-                    final bytes = widget.images[currentIndex];
+                    final bytes = await _getBytes(currentIndex);
                     if (bytes == null) return;
                     await FlutterClipboard.copyImage(bytes);
                     break;
@@ -462,13 +475,13 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
 
                     setState(() {
                       widget.encodedPaths[currentIndex] = originalPath;
-                      widget.images[currentIndex] = null;
+                      _bytesCache.remove(currentIndex);
                     });
 
                     final bytes = await fetchFullBytes(currentIndex);
                     if (mounted) {
                       setState(() {
-                        widget.images[currentIndex] = bytes;
+                        _bytesCache[currentIndex] = bytes;
                       });
                     }
                     widget.onRefresh?.call();
@@ -571,7 +584,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                             onPressed: () async {
                               await PhotoStore.softDelete(widget.encodedPaths[currentIndex]);
                               Navigator.pop(context);
-                              final totalRemaining = widget.images.length - 1;
+                              final totalRemaining = widget.encodedPaths.length - 1;
 
                               if (totalRemaining == 0) {
                                 Navigator.pop(context);
@@ -579,7 +592,18 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                               }
 
                               setState(() {
-                                widget.images.removeAt(currentIndex);
+                                _bytesCache.remove(currentIndex);
+                                final newCache = <int, Uint8List?>{};
+                                _bytesCache.forEach((k, v) {
+                                  if (k < currentIndex) {
+                                    newCache[k] = v;
+                                  // ignore: curly_braces_in_flow_control_structures
+                                  } else if (k > currentIndex) newCache[k - 1] = v;
+                                });
+                                _bytesCache
+                                  ..clear()
+                                  ..addAll(newCache);
+
                                 widget.encodedPaths.removeAt(currentIndex);
                                 widget.mimetype.removeAt(currentIndex);
                               });
@@ -605,7 +629,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   label: "Recover",
                   onPressed: () async {
                     await PhotoStore.restore(widget.encodedPaths[currentIndex]);
-                    final totalRemaining = widget.images.length - 1;
+                    final totalRemaining = widget.encodedPaths.length - 1;
 
                     if (totalRemaining == 0) {
                       Navigator.pop(context);
@@ -636,7 +660,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                             onPressed: () async {
                               await PhotoStore.hardDelete(widget.encodedPaths[currentIndex]);
                               Navigator.pop(context);
-                              final totalRemaining = widget.images.length - 1;
+                              final totalRemaining = widget.encodedPaths.length - 1;
 
                               if (totalRemaining == 0) {
                                 Navigator.pop(context);
@@ -730,14 +754,14 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
               if (newPath != null && mounted) {
                 setState(() {
                   widget.encodedPaths[currentIndex] = newPath;
-                  widget.images[currentIndex] = null;
+                  _bytesCache.remove(currentIndex);;
                 });
               }
 
               final newBytes = await fetchFullBytes(currentIndex);
               if (mounted) {
                 setState(() {
-                  widget.images[currentIndex] = newBytes;
+                  _bytesCache[currentIndex] = newBytes;
                 });
               }
               widget.onRefresh?.call();
@@ -793,7 +817,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     );
   }
 
-  DraggableScrollableSheet _buildInfoSheet(context, image) {
+  DraggableScrollableSheet _buildInfoSheet(context) {
     final photo = PhotoStore.get(widget.encodedPaths[currentIndex])! ;
     final descriptionController = TextEditingController(text: photo.description);
     return DraggableScrollableSheet(
@@ -940,14 +964,12 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
 
 
 class CupertinoVideoControls extends StatelessWidget {
-  final VideoController controller;
+  final VideoPlayerController controller;
 
   const CupertinoVideoControls({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
-    final player = controller.player;
-
     return AnimatedSwitcher(
       duration: Duration(milliseconds: 200),
       child: !focused ?
@@ -962,16 +984,20 @@ class CupertinoVideoControls extends StatelessWidget {
                   shape: CNGlassEffectShape.capsule,
                   tint: Colors.black.withAlpha(70),
                 ),
-                child: Row(
-                  children: [
-                    StreamBuilder<bool>(
-                      stream: player.stream.playing,
-                      initialData: player.state.playing,
-                      builder: (context, snapshot) {
-                        final playing = snapshot.data ?? false;
-                        return CupertinoButton(
+                child: ValueListenableBuilder<VideoPlayerValue>(
+                  valueListenable: controller,
+                  builder: (context, value, _) {
+                    final position = value.position;
+                    final duration = value.duration;
+                    final playing = value.isPlaying;
+                    final maxMs = duration.inMilliseconds.toDouble();
+                    return Row(
+                      children: [
+                        CupertinoButton(
                           padding: EdgeInsets.only(left: 15),
-                          onPressed: () => playing ? player.pause() : player.play(),
+                          onPressed: () => playing
+                              ? controller.pause()
+                              : controller.play(),
                           child: Icon(
                             playing
                               ? CupertinoIcons.pause_fill
@@ -979,77 +1005,51 @@ class CupertinoVideoControls extends StatelessWidget {
                             color: Colors.white,
                             size: 26,
                           ),
-                        );
-                      },
-                    ),
-                    SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.7,
-                      child: StreamBuilder<Duration>(
-                        stream: player.stream.position,
-                        initialData: player.state.position,
-                        builder: (context, posSnap) {
-                          final position = posSnap.data ?? Duration.zero;
-                          return StreamBuilder<Duration>(
-                            stream: player.stream.duration,
-                            initialData: player.state.duration,
-                            builder: (context, durSnap) {
-                              final duration = durSnap.data ?? Duration.zero;
-                              final double max = duration.inMilliseconds
-                                  .toDouble()
-                                  .clamp(0, double.infinity);
-                              final value = position.inMilliseconds
-                                  .clamp(0, duration.inMilliseconds)
-                                  .toDouble();
-
-                              return Transform.scale(
-                                scaleY: 1.3,
-                                child: SliderTheme(
-                                  data: SliderTheme.of(context).copyWith(
-                                    thumbShape: SliderComponentShape.noThumb,
-                                    overlayShape: SliderComponentShape.noOverlay,
-                                    padding: EdgeInsets.only(left: 15, right: 10)
-                                  ),
-                                  child: Slider(
-                                    min: 0,
-                                    max: max == 0 ? 1 : max,
-                                    value: max == 0 ? 0 : value,
-                                    activeColor: Colors.white,
-                                    inactiveColor: Colors.grey.withAlpha(100),
-                                    thumbColor: Colors.transparent,
-                                    overlayColor:
-                                        WidgetStateProperty.all(Colors.transparent),
-                                    onChanged: (v) {
-                                      if (duration == Duration.zero) return;
-                                      player.seek(Duration(milliseconds: v.toInt()));
-                                    },
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                    StreamBuilder<Duration>(
-                      stream: player.stream.position,
-                      initialData: player.state.position,
-                      builder: (context, posSnap) {
-                        final dur = posSnap.data ?? Duration.zero;
-                        return Text(
-                          _formatDuration(dur), 
+                        ),
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.7,
+                          child: Transform.scale(
+                            scaleY: 1.3,
+                            child: SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                thumbShape: SliderComponentShape.noThumb,
+                                overlayShape: SliderComponentShape.noOverlay,
+                                padding: EdgeInsets.only(left: 15, right: 10),
+                              ),
+                              child: Slider(
+                                min: 0,
+                                max: maxMs == 0 ? 1 : maxMs,
+                                value: position.inMilliseconds
+                                    .clamp(0, duration.inMilliseconds)
+                                    .toDouble(),
+                                activeColor: Colors.white,
+                                inactiveColor: Colors.grey.withAlpha(100),
+                                thumbColor: Colors.transparent,
+                                overlayColor: WidgetStateProperty.all(Colors.transparent),
+                                onChanged: (v) {
+                                  if (duration == Duration.zero) return;
+                                  controller.seekTo(Duration(milliseconds: v.toInt()));
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                        Text(
+                          _formatDuration(position),
                           style: TextStyle(
-                          color: Colors.white, 
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600
-                        ));
-                      }
-                    )
-                  ],
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
           ),
-        ) 
+        )
       : SizedBox()
     );
   }
