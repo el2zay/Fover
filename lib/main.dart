@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/pages/albums.dart';
 import 'package:fover/pages/onboarding/first.dart';
 import 'package:fover/pages/library.dart';
+import 'package:fover/pages/search.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
@@ -16,7 +18,6 @@ import 'package:freebox/freebox.dart';
 import 'package:fover/src/utils/requests.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:media_kit/media_kit.dart';
 import 'package:pull_down_button/pull_down_button.dart'; 
 
 FreeboxClient? client;
@@ -25,6 +26,7 @@ final box = Hive.box('settings');
 final ValueNotifier<bool> showTabBar = ValueNotifier(false);
 String? model;
 late bool connectedToInternet;
+final GlobalKey bottomNavKey = GlobalKey();
 
 Future<void> initApp() async {
   await PhotoStore.init();
@@ -40,10 +42,7 @@ Future<void> initApp() async {
         apiDomain: box.get("apiDomain"),
         httpsPort: box.get("httpsPort"),
       );
-
       await client?.authentificate();
-
-
     }
 
     if (box.get("copypartyUrl") != null) {
@@ -58,17 +57,19 @@ Future<void> initApp() async {
       if (box.get("appToken") != null ) model = await getFreeboxModel();
       fetchPhotosDir();
     }
-    
   }
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  MediaKit.ensureInitialized();
   await initializeDateFormatting('en', null);
   await Hive.initFlutter();
   await Hive.openBox('settings');
 
+  ExtendedImageGesturePageView;
+  clearMemoryImageCache();
+  PaintingBinding.instance.imageCache.maximumSize = 50;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 30 << 20;
   connectedToInternet = await hasInternet();
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   await initApp();
@@ -103,10 +104,10 @@ class _MainAppState extends State<MainApp> {
             children: const [
               LibraryPage(onlySelect: false),
               AlbumsPage(),
-              Placeholder(),
+              SearchPage(),
             ],
           ),
-          bottomNavigationBar: box.get("appToken") != null || box.get("copypartyUrl") != null
+          bottomNavigationBar: is26OrNewer && (box.get("appToken") != null || box.get("copypartyUrl") != null)
           ? Container(
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
@@ -121,8 +122,9 @@ class _MainAppState extends State<MainApp> {
             ),
             child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
               child: BottomNavigationBar(
+                key: bottomNavKey,
                 elevation: 0,
-                backgroundColor: Colors.transparent,
+                backgroundColor: Colors.black.withAlpha(155),
                 fixedColor: const Color.fromARGB(255, 52, 161, 250),
                 type: BottomNavigationBarType.fixed,
                 selectedFontSize: 13,
@@ -140,41 +142,40 @@ class _MainAppState extends State<MainApp> {
                 ]
               ) 
             ) 
-          ) : null
-          // CNTabBar(
-          //   tint: Colors.blue,
-          //   iconSize: 18,
-          //   items: [
-          //     CNTabBarItem(
-          //       label: 'Library',
-          //       icon: CNSymbol('photo.fill.on.rectangle.fill'),
-          //     ),
-          //     CNTabBarItem(
-          //       label: 'Albums',
-          //       icon: CNSymbol('rectangle.stack.fill'),
-          //     ),
-          //     CNTabBarItem(
-          //       label: 'Search',
-          //       icon: CNSymbol('magnifyingglass'),
-          //     ),
-          //   ],
-          //   currentIndex: _currentIndex,
-          //   onTap: (i) => setState(() => _currentIndex = i),
-          //   searchItem: CNTabBarSearchItem(
-          //     placeholder: 'Search',
-          //     automaticallyActivatesSearch: false,
-          //     onSearchChanged: (query) {
-          //     },
-          //     onSearchSubmit: (query) {
-          //     },
-          //     onSearchActiveChanged: (isActive) {
-          //     },
-          //     style: const CNTabBarSearchStyle(
-          //       iconSize: 20,
-          //       animationDuration: Duration(milliseconds: 400),
-          //     ),
-          //   ),
-          // ),
+          ) :  
+          is26OrNewer && (box.get("appToken") != null || box.get("copypartyUrl") != null)
+          ? CNTabBar(
+            tint: Colors.blue,
+            iconSize: 18,
+            items: [
+              CNTabBarItem(
+                label: 'Library',
+                icon: CNSymbol('photo.fill.on.rectangle.fill'),
+              ),
+              CNTabBarItem(
+                label: 'Albums',
+                icon: CNSymbol('rectangle.stack.fill'),
+              ),
+            ],
+            currentIndex: _currentIndex,
+            onTap: (i) => setState(() => _currentIndex = i),
+            searchItem: CNTabBarSearchItem(
+              placeholder: 'Search',
+              automaticallyActivatesSearch: false,
+              onSearchChanged: (query) {
+              },
+              onSearchSubmit: (query) {
+              },
+              onSearchActiveChanged: (isActive) {
+              },
+              style: const CNTabBarSearchStyle(
+                iconSize: 20,
+                animationDuration: Duration(milliseconds: 400),
+              ),
+            ),
+          ) : 
+          
+          null
         ),
       ),
       theme: ThemeData(
