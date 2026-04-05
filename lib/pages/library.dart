@@ -59,14 +59,12 @@ class LibraryPage extends StatefulWidget {
 }
 
 class _GalleryData {
-  final List<Uint8List?> images;
   final List<Uint8List?> thumbs;
   final List<Future<Uint8List?>?> thumbFutures;
   final List<String> mimetypes;
   final List<String> encodedPaths;
 
   const _GalleryData({
-    required this.images, 
     required this.thumbs, 
     required this.thumbFutures,
     required this.mimetypes, 
@@ -75,12 +73,10 @@ class _GalleryData {
 }
 
 class _MediaEntry {
-  final Uint8List? bytes;
   final String mimetype;
   final String encodedPath;
 
   const _MediaEntry({
-    required this.bytes, 
     required this.mimetype, 
     required this.encodedPath
   });
@@ -95,12 +91,37 @@ class _LibraryPageState extends State<LibraryPage> {
   final ScrollController _scrollController = ScrollController();
   bool _isRefreshing = false;
   double _pullUpProgress = 0.0;
-  static const double _refreshThreshold = 160.0;
+  List<_MediaEntry> _allEntries = [];
+  int _loadedCount = 0;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+
+    for (final bytes in _data?.thumbs ?? []) {
+      if (bytes != null) {
+        PaintingBinding.instance.imageCache.evict(MemoryImage(bytes));
+      }
+    }
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_data == null) return;
+    if (_loadedCount >= _allEntries.length) return;
+
+    final pos = _scrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 300) {
+      _loadPage(_loadedCount);
+    }
   }
 
   Future pickImages() async {
@@ -166,50 +187,105 @@ class _LibraryPageState extends State<LibraryPage> {
 
   // Generated with AI
   Future<void> _load() async {
-    final images = await _loadImages();
+    final allImages = await _loadImages();
+    _allEntries = allImages;
+
+    int start = 0;
+    while (start < _allEntries.length) {
+      await _loadPage(start);
+      start += 60;
+    }
+
+    if (!mounted) return;
+    FlutterNativeSplash.remove();
+
+    if (_data!.encodedPaths.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+          }
+        });
+      });
+    }
+  }
+
+  Future<void> _loadPage(int startIndex) async {
+    final end = (startIndex + 60).clamp(0, _allEntries.length);
+    final pageEntries = _allEntries.sublist(startIndex, end);
+
     List<Uint8List?> thumbs;
     List<Future<Uint8List?>?> thumbFutures;
 
     if (detectBackend() == ServerBackend.copyparty) {
-      thumbs = List.filled(images.length, null, growable: true);
-      thumbFutures = images
-        .map((e) => CopypartyService.getThumbnail(e.encodedPath))
-        .toList();
+      thumbs = List.filled(pageEntries.length, null, growable: true);
+      thumbFutures = pageEntries
+          .map((e) => CopypartyService.getThumbnail(e.encodedPath))
+          .toList();
     } else {
-      thumbs = await _compressImages(images.map((e) => e.bytes).toList());
-      thumbFutures = List.filled(images.length, null, growable: true);
+      thumbs = List.filled(pageEntries.length, null, growable: true);
+
+      for (int i = 0; i < pageEntries.length; i++) {
+        final e = pageEntries[i];
+        final photo = PhotoStore.get(e.encodedPath);
+        Uint8List? raw;
+
+        if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
+          if (e.mimetype.startsWith('video/')) {
+            raw = await VideoThumbnail.thumbnailData(
+              video: photo.localPath!,
+              imageFormat: ImageFormat.WEBP,
+              maxWidth: 300,
+              quality: 10,
+            );
+          } else {
+            raw = await File(photo.localPath!).readAsBytes();
+          }
+        } else {
+          raw = await fetchImageBytes(e.encodedPath, e.mimetype);
+        }
+
+        if (raw != null) {
+          thumbs[i] = await FlutterImageCompress.compressWithList(
+            raw,
+            minWidth: 300,
+            minHeight: 300,
+            quality: 10,
+            format: CompressFormat.webp,
+          );
+        }
+      }
+
+      thumbFutures = List.filled(pageEntries.length, null, growable: true);
     }
 
     if (!mounted) return;
-    
+
     setState(() {
-      _data = _GalleryData(
-        images: images.map((e) => e.bytes).toList(),
-        thumbs: thumbs,
-        thumbFutures: thumbFutures,
-        mimetypes: images.map((e) => e.mimetype).toList(),
-        encodedPaths: images.map((e) => e.encodedPath).toList(),
-      );
+      if (startIndex == 0) {
+        _data = _GalleryData(
+          thumbs: thumbs,
+          thumbFutures: thumbFutures,
+          mimetypes: pageEntries.map((e) => e.mimetype).toList(),
+          encodedPaths: pageEntries.map((e) => e.encodedPath).toList(),
+        );
+      } else {
+        _data!.thumbs.addAll(thumbs);
+        _data!.thumbFutures.addAll(thumbFutures);
+        _data!.mimetypes.addAll(pageEntries.map((e) => e.mimetype));
+        _data!.encodedPaths.addAll(pageEntries.map((e) => e.encodedPath));
+      }
+      _loadedCount = end;
       _loading = false;
-      elements = images.length;
-      showButtons = images.isNotEmpty;
+      elements = _allEntries.length;
+      showButtons = _allEntries.isNotEmpty;
     });
-
-     FlutterNativeSplash.remove();
-
-    if (_data!.images.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-      });
-    }
-
   }
   
   void _removeLocally(List<int> indexes) {
     setState(() {
       final sorted = indexes.toList()..sort((a, b) => b.compareTo(a));
       for (final i in sorted) {
-        _data!.images.removeAt(i);
         _data!.thumbs.removeAt(i);
         _data!.thumbFutures.removeAt(i);
         _data!.mimetypes.removeAt(i);
@@ -217,7 +293,7 @@ class _LibraryPageState extends State<LibraryPage> {
       }
       selectedImages.clear();
     });
-      elements = _data!.images.length;
+      elements = _data!.encodedPaths.length;
   }
   //
 
@@ -237,46 +313,19 @@ class _LibraryPageState extends State<LibraryPage> {
         .toList();
     }
 
-    final results = await Future.wait(
-      entries.map((entry) async {
-        final photo = PhotoStore.get(entry['path'] as String);
-        final isVideo = entry['mimetype'].startsWith('video/');
-
-        if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
-          if (isVideo) {
-            return await VideoThumbnail.thumbnailData(
-              video: photo.localPath!,
-              imageFormat: ImageFormat.WEBP,
-              maxWidth: 300,
-              quality: 10,
-            );
-          }
-          return await File(photo.localPath!).readAsBytes() as Uint8List?;
-        }
-
-        if (connectedToInternet == false) return null;
-        return fetchImageBytes(entry['path'], entry['mimetype']);
-      }),
-    );
-
-    final filtered = results.asMap().entries.where((e) {
-      final stored = PhotoStore.get(entries[e.key]['path'] as String);
+    final filtered = entries.where((entry) {
+      final stored = PhotoStore.get(entry['path'] as String);
       if (stored?.isOldVersion == true) return false;
-
-      if (widget.albumName != null) {
-        return stored?.albums?.contains(widget.albumName) == true;
-      }
+      if (widget.albumName != null) return stored?.albums?.contains(widget.albumName) == true;
       if (widget.album == Album.favorites) return stored?.favorite == true;
-      if (widget.album == Album.screenshots) return stored?.isScreenshot == true && (stored?.deletedAt == null);
-      return widget.album == Album.trash 
+      if (widget.album == Album.screenshots) return stored?.isScreenshot == true && stored?.deletedAt == null;
+      return widget.album == Album.trash
         ? stored?.deletedAt != null
         : stored?.deletedAt == null;
-      }).map((e) => _MediaEntry(
-        bytes: e.value,
-        mimetype: entries[e.key]['mimetype'] as String,
-        encodedPath: entries[e.key]['path'] as String,
+    }).map((entry) => _MediaEntry(
+      mimetype: entry['mimetype'] as String,
+      encodedPath: entry['path'] as String,
     )).toList();
-
 
     filtered.sort((a, b) {
       final dateA = PhotoStore.getDate(a.encodedPath);
@@ -312,35 +361,23 @@ class _LibraryPageState extends State<LibraryPage> {
 
 
   Future<void> _refresh() async {
-    final images = await _loadImages();
-    List<Uint8List?> thumbs;
-    List<Future<Uint8List?>?> thumbFutures;
+    final allImages = await _loadImages();
+    _allEntries = allImages;
+    _loadedCount = 0;
 
-
-    if (detectBackend() == ServerBackend.copyparty) {
-      thumbs = List.filled(images.length, null, growable: true);
-      thumbFutures = images
-        .map((e) => CopypartyService.getThumbnail(e.encodedPath))
-        .toList();
-    } else {
-      thumbs = await _compressImages(images.map((e) => e.bytes).toList());
-      thumbFutures = List.filled(images.length, null, growable: true);
-  }
+    // Charge toutes les pages d'un coup
+    int start = 0;
+    while (start < _allEntries.length) {
+      await _loadPage(start);
+      start += 60;
+    }
 
     if (!mounted) return;
 
     setState(() {
-      _data = _GalleryData(
-        images: images.map((e) => e.bytes).toList(),
-        thumbs: thumbs,
-        thumbFutures: thumbFutures,
-        mimetypes: images.map((e) => e.mimetype).toList(),
-        encodedPaths: images.map((e) => e.encodedPath).toList(),
-      );
+      _isRefreshing = false;
+      showButtons = _allEntries.isNotEmpty;
     });
-
-    elements = images.length;
-    showButtons = images.isNotEmpty;
   }
 
   // Overlay pour la card "annuler l'upload"
@@ -573,7 +610,7 @@ class _LibraryPageState extends State<LibraryPage> {
           ConstrainedBox(
             constraints : const BoxConstraints(maxWidth: 95),
             child: Button(
-              enabled: _data?.images.isNotEmpty ?? false,
+              enabled: _data?.encodedPaths.isNotEmpty ?? false,
               label: selectedMode ? "Cancel" : "Select",
               tint: Colors.white.withAlpha(10),
               glassConfig: const CNButtonConfig(
@@ -615,9 +652,8 @@ class _LibraryPageState extends State<LibraryPage> {
           }
 
           final data = _data!;
-          final images = data.images;
           final mimetypes = data.mimetypes;          
-          if (images.isEmpty) {
+          if (data.encodedPaths.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -635,28 +671,28 @@ class _LibraryPageState extends State<LibraryPage> {
               Positioned.fill(
                 child: NotificationListener<ScrollNotification>(
                     // generated with AI
-                    onNotification: (notification) {
-                      if (_isRefreshing) return false;
-                      if (notification is ScrollUpdateNotification && 
-                      notification.metrics.outOfRange && 
-                      notification.metrics.pixels > notification.metrics.maxScrollExtent) {
-                        final excess = notification.metrics.pixels - notification.metrics.maxScrollExtent;
-                        setState(() {
-                          _pullUpProgress = ((excess / _refreshThreshold).clamp(0.0, 1.0));
-                        });
-                        if (excess >= _refreshThreshold) {
-                          triggerPullRefresh();
-                        }
+                  onNotification: (notification) {
+                    if (_isRefreshing) return false;
+                    if (notification is ScrollUpdateNotification && 
+                    notification.metrics.outOfRange && 
+                    notification.metrics.pixels > notification.metrics.maxScrollExtent) {
+                      final excess = notification.metrics.pixels - notification.metrics.maxScrollExtent;
+                      setState(() {
+                        _pullUpProgress = ((excess / 160).clamp(0.0, 1.0));
+                      });
+                      if (excess >= 160) {
+                        triggerPullRefresh();
                       }
+                    }
 
-                      if (notification is ScrollEndNotification && !_isRefreshing) {
-                        setState(() {
-                          _pullUpProgress = 0.0;
-                        });
-                      }
+                    if (notification is ScrollEndNotification && !_isRefreshing) {
+                      setState(() {
+                        _pullUpProgress = 0.0;
+                      });
+                    }
                     return false;
-                    //
                   },
+                    //
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: 8.0),
                     child: GridView.builder(
@@ -673,253 +709,249 @@ class _LibraryPageState extends State<LibraryPage> {
                       itemBuilder: (context, index) {
                         final photo = PhotoStore.get(data.encodedPaths[index]);
 
-                        return _MediaTile(
-                          index: index,
-                          bytes: data.thumbs[index], 
-                          thumbFuture: data.thumbFutures[index], 
-                          selected: (selectedMode || widget.onlySelect) && selectedImages.contains(index), 
-                          isVideo: data.mimetypes[index].startsWith('video/'), 
-                          isFavorite: photo?.favorite == true, 
-                          trashMode: widget.album == Album.trash, 
-                          daysLeft: photo?.deletedAt != null
-                            ? (30 - DateTime.now().difference(photo!.deletedAt!).inDays).clamp(0, 30)
-                            : null,
-                          onTap: () async {
-                            if (selectedMode || widget.onlySelect) {
-                              setState(() {
-                                if (selectedImages.contains(index)) {
-                                  selectedImages.remove(index);
-                                } else {
-                                  selectedImages.add(index);
-                                }
-                              });
+                        return RepaintBoundary(
+                          child: _MediaTile(
+                            index: index,
+                            bytes: data.thumbs[index], 
+                            thumbFuture: data.thumbFutures[index], 
+                            selected: (selectedMode || widget.onlySelect) && selectedImages.contains(index), 
+                            isVideo: data.mimetypes[index].startsWith('video/'), 
+                            isFavorite: photo?.favorite == true, 
+                            trashMode: widget.album == Album.trash, 
+                            daysLeft: photo?.deletedAt != null
+                              ? (30 - DateTime.now().difference(photo!.deletedAt!).inDays).clamp(0, 30)
+                              : null,
+                            onTap: () async {
+                              if (selectedMode || widget.onlySelect) {
+                                setState(() {
+                                  if (selectedImages.contains(index)) {
+                                    selectedImages.remove(index);
+                                  } else {
+                                    selectedImages.add(index);
+                                  }
+                                });
 
-                              final paths = selectedImages.map((i) => data.encodedPaths[i]).toList();
-                              final thumbBytes = selectedImages.isNotEmpty 
-                                  ? (data.thumbs[selectedImages.first] ?? await data.thumbFutures[selectedImages.first])
-                                  : null;
+                                final paths = selectedImages.map((i) => data.encodedPaths[i]).toList();
+                                final thumbBytes = selectedImages.isNotEmpty 
+                                    ? (data.thumbs[selectedImages.first] ?? await data.thumbFutures[selectedImages.first])
+                                    : null;
+                                  widget.onSelectedChanged?.call(paths, thumbBytes);
+
                                 widget.onSelectedChanged?.call(paths, thumbBytes);
-
-                              widget.onSelectedChanged?.call(paths, thumbBytes);
-                              countSelected.value = selectedImages.length;
-                              countSelected.value = selectedImages.length;
-                            } else {
-                              Navigator.push(
-                                context,
-                                PageRouteBuilder(
-                                  opaque: false,
-                                  transitionDuration: const Duration(milliseconds: 300),
-                                  reverseTransitionDuration: const Duration(milliseconds: 300),
-                                  pageBuilder: (_, __, ___) => ViewerPage(
-                                    images: data.images.toList(),
-                                    mimetype: mimetypes,
-                                    index: index,
-                                    encodedPaths: data.encodedPaths,
-                                    trashMode: widget.album == Album.trash,
-                                    onRefresh: _refresh,
-                                  ),
-                                  transitionsBuilder: (_, animation, ___, child) {
-                                    return Stack(
-                                      children: [
-                                        FadeTransition(
-                                          opacity: animation,
-                                          child: const ColoredBox(
-                                            color: Colors.black,
-                                            child: SizedBox.expand(),
+                                countSelected.value = selectedImages.length;
+                                countSelected.value = selectedImages.length;
+                              } else {
+                                Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                    opaque: false,
+                                    transitionDuration: const Duration(milliseconds: 300),
+                                    reverseTransitionDuration: const Duration(milliseconds: 300),
+                                    pageBuilder: (_, __, ___) => ViewerPage(
+                                      mimetype: mimetypes,
+                                      index: index,
+                                      encodedPaths: data.encodedPaths,
+                                      trashMode: widget.album == Album.trash,
+                                      onRefresh: _refresh,
+                                    ),
+                                    transitionsBuilder: (_, animation, ___, child) {
+                                      return Stack(
+                                        children: [
+                                          FadeTransition(
+                                            opacity: animation,
+                                            child: const ColoredBox(
+                                              color: Colors.black,
+                                              child: SizedBox.expand(),
+                                            ),
                                           ),
-                                        ),
-                                        child
-                                      ],
-                                    );
-                                  }
-                                )
-                              ).then((_) => _refresh());
-                            }
-                          },
-
-                          menuProvider: (request) {
-                            return widget.album != Album.trash ? Menu(
-                              children: [
-                                MenuAction(
-                                  title: DownloadService.isDownloaded(data.encodedPaths[index])
-                                    ? 'Remove download'
-                                    : 'Download',
-                                  image: MenuImage.icon(DownloadService.isDownloaded(data.encodedPaths[index])
-                                    ? CupertinoIcons.arrow_down_circle_fill
-                                    : CupertinoIcons.arrow_down_circle),
-                                  callback: () async {
-                                    final photo = PhotoStore.get(data.encodedPaths[index]);
-                                    if (!DownloadService.isDownloaded(data.encodedPaths[index])) {
-                                      final path = await DownloadService.download(
-                                        encodedPath: data.encodedPaths[index],
-                                        filename: photo?.name ?? data.encodedPaths[index],
+                                          child
+                                        ],
                                       );
-                                      log('Downloaded to: $path');
-                                    } else {
-                                      log("ici");
-                                      DownloadService.remove(data.encodedPaths[index]);
                                     }
-                                  }
-                                ),
-                                if (mimetypes[index].startsWith("image/"))
+                                  )
+                                ).then((_) => _refresh());
+                              }
+                            },
+
+                            menuProvider: (request) {
+                              return widget.album != Album.trash ? Menu(
+                                children: [
                                   MenuAction(
-                                    title: "Copy",
-                                    image: MenuImage.icon(CupertinoIcons.doc_on_doc),
-                                    callback: () => FlutterClipboard.copyImage(data.thumbs[index] ?? Uint8List(0))
-                                  ),
-                                if (PhotoStore.get(data.encodedPaths[index])?.editedFrom != null)
-                                  MenuAction(
-                                    title: "Revert to original",
-                                    image: MenuImage.icon(CupertinoIcons.arrow_counterclockwise_circle),
+                                    title: DownloadService.isDownloaded(data.encodedPaths[index])
+                                      ? 'Remove download'
+                                      : 'Download',
+                                    image: MenuImage.icon(DownloadService.isDownloaded(data.encodedPaths[index])
+                                      ? CupertinoIcons.arrow_down_circle_fill
+                                      : CupertinoIcons.arrow_down_circle),
                                     callback: () async {
-                                      await PhotoStore.revertEdit(data.encodedPaths[index]);
-                                      setState(() {
-                                        data.images.removeAt(index);
-                                        data.thumbs.removeAt(index);
-                                        data.thumbFutures.removeAt(index);
-                                        data.mimetypes.removeAt(index);
-                                        data.encodedPaths.removeAt(index);
-                                        elements = data.images.length;
-                                      });
-                                      _refresh();
-                                    },
+                                      final photo = PhotoStore.get(data.encodedPaths[index]);
+                                      if (!DownloadService.isDownloaded(data.encodedPaths[index])) {
+                                        final path = await DownloadService.download(
+                                          encodedPath: data.encodedPaths[index],
+                                          filename: photo?.name ?? data.encodedPaths[index],
+                                        );
+                                        log('Downloaded to: $path');
+                                      } else {
+                                        log("ici");
+                                        DownloadService.remove(data.encodedPaths[index]);
+                                      }
+                                    }
                                   ),
-                                MenuAction(
-                                  title: "Duplicate",
-                                  image: MenuImage.icon(CupertinoIcons.plus_square_on_square),
-                                  callback: () => PhotoStore.duplicate(path: data.encodedPaths[index])
-                                ),
-                                MenuAction(
-                                  title: "Share",
-                                  image: MenuImage.icon(CupertinoIcons.share),
-                                  callback: () {}
-                                ),
-                                MenuAction(
-                                  title: "Hide",
-                                  image: MenuImage.icon(CupertinoIcons.eye_slash),
-                                  callback: () => PhotoStore.update(path: data.encodedPaths[index], hidden: true)
-                                ),
-                                widget.albumName == null 
-                                  ? MenuAction(
-                                    title: "Add to album",
-                                    image: MenuImage.icon(CupertinoIcons.plus_rectangle_on_rectangle),
+                                  if (mimetypes[index].startsWith("image/"))
+                                    MenuAction(
+                                      title: "Copy",
+                                      image: MenuImage.icon(CupertinoIcons.doc_on_doc),
+                                      callback: () => FlutterClipboard.copyImage(data.thumbs[index] ?? Uint8List(0))
+                                    ),
+                                  if (PhotoStore.get(data.encodedPaths[index])?.editedFrom != null)
+                                    MenuAction(
+                                      title: "Revert to original",
+                                      image: MenuImage.icon(CupertinoIcons.arrow_counterclockwise_circle),
+                                      callback: () async {
+                                        await PhotoStore.revertEdit(data.encodedPaths[index]);
+                                        setState(() {
+                                          data.thumbs.removeAt(index);
+                                          data.thumbFutures.removeAt(index);
+                                          data.mimetypes.removeAt(index);
+                                          data.encodedPaths.removeAt(index);
+                                          elements = data.encodedPaths.length;
+                                        });
+                                        _refresh();
+                                      },
+                                    ),
+                                  MenuAction(
+                                    title: "Duplicate",
+                                    image: MenuImage.icon(CupertinoIcons.plus_square_on_square),
+                                    callback: () => PhotoStore.duplicate(path: data.encodedPaths[index])
+                                  ),
+                                  MenuAction(
+                                    title: "Share",
+                                    image: MenuImage.icon(CupertinoIcons.share),
+                                    callback: () {}
+                                  ),
+                                  MenuAction(
+                                    title: "Hide",
+                                    image: MenuImage.icon(CupertinoIcons.eye_slash),
+                                    callback: () => PhotoStore.update(path: data.encodedPaths[index], hidden: true)
+                                  ),
+                                  widget.albumName == null 
+                                    ? MenuAction(
+                                      title: "Add to album",
+                                      image: MenuImage.icon(CupertinoIcons.plus_rectangle_on_rectangle),
+                                      callback: () {
+                                        showModalBottomSheet(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
+                                          builder: (context) {
+                                            return AddToAlbumSheet(
+                                              photoPath: [data.encodedPaths[index]],
+                                            );
+                                          }
+                                        );
+                                      }
+                                    ) 
+                                    : MenuAction(
+                                      title: "Remove from album",
+                                      image: MenuImage.icon(CupertinoIcons.xmark),
+                                      callback: () {
+                                        PhotoStore.removeFromAlbum(path: data.encodedPaths[index], album: widget.albumName!);
+                                        setState(() {
+                                          _data!.thumbs.removeAt(index);
+                                          _data!.thumbFutures.removeAt(index);
+                                          _data!.mimetypes.removeAt(index);
+                                          _data!.encodedPaths.removeAt(index);
+                                          elements = _data!.encodedPaths.length;
+                                        });
+                                      }
+                                    ),
+                                  MenuAction(
+                                    title: "Delete",
+                                    image: MenuImage.icon(CupertinoIcons.trash),
+                                    attributes: MenuActionAttributes(destructive: true),
                                     callback: () {
-                                      showModalBottomSheet(
+                                      showGeneralDialog(
+                                        barrierDismissible: false,
                                         context: context,
-                                        isScrollControlled: true,
-                                        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
-                                        builder: (context) {
-                                          return AddToAlbumSheet(
-                                            photoPath: [data.encodedPaths[index]],
+                                        pageBuilder: (context, animation, secondaryAnimation) {
+                                          return MyDialog(
+                                            content: "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
+                                            principalButton: TextButton(
+                                              child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
+                                              onPressed: () {
+                                                PhotoStore.softDelete(data.encodedPaths[index]);
+                                                setState(() {
+                                                  _data!.thumbs.removeAt(index);
+                                                  _data!.thumbFutures.removeAt(index);
+                                                  _data!.mimetypes.removeAt(index);
+                                                  _data!.encodedPaths.removeAt(index);
+                                                  elements = _data!.encodedPaths.length;
+                                                });
+                                                Navigator.pop(context);
+                                              }
+                                            ),
                                           );
                                         }
                                       );
                                     }
-                                  ) 
-                                  : MenuAction(
-                                    title: "Remove from album",
-                                    image: MenuImage.icon(CupertinoIcons.xmark),
+                                  ),
+                                ]
+                              ) : Menu(
+                                children: [
+                                  MenuAction(
+                                    title: "Restore",
+                                    image: MenuImage.icon(CupertinoIcons.arrow_up_bin),
                                     callback: () {
-                                      PhotoStore.removeFromAlbum(path: data.encodedPaths[index], album: widget.albumName!);
+                                      PhotoStore.restore(data.encodedPaths[index]);
                                       setState(() {
-                                        _data!.images.removeAt(index);
                                         _data!.thumbs.removeAt(index);
                                         _data!.thumbFutures.removeAt(index);
                                         _data!.mimetypes.removeAt(index);
                                         _data!.encodedPaths.removeAt(index);
-                                        elements = _data!.images.length;
                                       });
                                     }
                                   ),
-                                MenuAction(
-                                  title: "Delete",
-                                  image: MenuImage.icon(CupertinoIcons.trash),
-                                  attributes: MenuActionAttributes(destructive: true),
-                                  callback: () {
-                                    showGeneralDialog(
-                                      barrierDismissible: false,
-                                      context: context,
-                                      pageBuilder: (context, animation, secondaryAnimation) {
-                                        return MyDialog(
-                                          content: "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
-                                          principalButton: TextButton(
-                                            child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
-                                            onPressed: () {
-                                              PhotoStore.softDelete(data.encodedPaths[index]);
-                                              setState(() {
-                                                _data!.images.removeAt(index);
-                                                _data!.thumbs.removeAt(index);
-                                                _data!.thumbFutures.removeAt(index);
-                                                _data!.mimetypes.removeAt(index);
-                                                _data!.encodedPaths.removeAt(index);
-                                                elements = _data!.images.length;
-                                              });
-                                              Navigator.pop(context);
-                                            }
-                                          ),
-                                        );
-                                      }
-                                    );
-                                  }
-                                ),
-                              ]
-                            ) : Menu(
-                              children: [
-                                MenuAction(
-                                  title: "Restore",
-                                  image: MenuImage.icon(CupertinoIcons.arrow_up_bin),
-                                  callback: () {
-                                    PhotoStore.restore(data.encodedPaths[index]);
-                                    setState(() {
-                                      _data!.images.removeAt(index);
-                                      _data!.thumbs.removeAt(index);
-                                      _data!.thumbFutures.removeAt(index);
-                                      _data!.mimetypes.removeAt(index);
-                                      _data!.encodedPaths.removeAt(index);
-                                    });
-                                  }
-                                ),
-                                MenuAction(
-                                  title: "Delete permanently",
-                                  image: MenuImage.icon(CupertinoIcons.trash),
-                                  attributes: MenuActionAttributes(destructive: true),
-                                  callback: () {
-                                    showGeneralDialog(
-                                      barrierDismissible: false,
-                                      context: context,
-                                      pageBuilder: (context, animation, secondaryAnimation) {
-                                        return MyDialog(
-                                          content: "This action cannot be undone. The image will also be deleted from your server.",
-                                          principalButton: TextButton(
-                                            child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
-                                            onPressed: () async {
-                                              final navigator = Navigator.of(context);
-                                              await PhotoStore.hardDelete(data.encodedPaths[index]);
-                                              if (!mounted) return;
-                                              navigator.pop();
-                                              setState(() {
-                                                _data!.images.removeAt(index);
-                                                _data!.thumbs.removeAt(index);
-                                                _data!.thumbFutures.removeAt(index);
-                                                _data!.mimetypes.removeAt(index);
-                                                _data!.encodedPaths.removeAt(index);
-                                                elements = _data!.images.length;
-                                              });
-                                            }
-                                          ),
-                                        );
-                                      }
-                                    );
-                                  }
-                                ),
-                              ]
-                            );
-                          },
+                                  MenuAction(
+                                    title: "Delete permanently",
+                                    image: MenuImage.icon(CupertinoIcons.trash),
+                                    attributes: MenuActionAttributes(destructive: true),
+                                    callback: () {
+                                      showGeneralDialog(
+                                        barrierDismissible: false,
+                                        context: context,
+                                        pageBuilder: (context, animation, secondaryAnimation) {
+                                          return MyDialog(
+                                            content: "This action cannot be undone. The image will also be deleted from your server.",
+                                            principalButton: TextButton(
+                                              child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
+                                              onPressed: () async {
+                                                final navigator = Navigator.of(context);
+                                                await PhotoStore.hardDelete(data.encodedPaths[index]);
+                                                if (!mounted) return;
+                                                navigator.pop();
+                                                setState(() {
+                                                  _data!.thumbs.removeAt(index);
+                                                  _data!.thumbFutures.removeAt(index);
+                                                  _data!.mimetypes.removeAt(index);
+                                                  _data!.encodedPaths.removeAt(index);
+                                                  elements = _data!.encodedPaths.length;
+                                                });
+                                              }
+                                            ),
+                                          );
+                                        }
+                                      );
+                                    }
+                                  ),
+                                ]
+                              );
+                            },
+                          ),
                         );
                       },
                     ),
                   ),
-              ),
+                ),
               ),
               if (_pullUpProgress > 0 || _isRefreshing)
                 Positioned(
@@ -1076,16 +1108,14 @@ class _LibraryPageState extends State<LibraryPage> {
                                           }
                                           setState(() {
                                             for (final i in sortedIndices) {
-                                              _data!.images.removeAt(i);
                                               _data!.thumbs.removeAt(i);
                                               _data!.mimetypes.removeAt(i);
                                               _data!.encodedPaths.removeAt(i);
                                             }
                                             selectedImages.clear();
                                             selectedMode = false;
-                                            elements = _data!.images.length;
+                                            elements = _data!.encodedPaths.length;
                                           });
-                                          
                                           Navigator.pop(context);
                                         },
                                       ),
@@ -1161,7 +1191,13 @@ class _MediaTile extends StatelessWidget {
                     }
                     return Hero(
                       tag: "image_$index",
-                      child: Image.memory(snapshot.data!, fit: BoxFit.cover, opacity: opacity),
+                      child: Image.memory(
+                        snapshot.data!, 
+                        fit: BoxFit.cover, 
+                        opacity: opacity,
+                        cacheHeight: 300,
+                        cacheWidth: 300,
+                      ),
                     );
                   },
                 )
