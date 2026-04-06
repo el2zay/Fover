@@ -266,9 +266,9 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                                             child: CircularProgressIndicator(color: Colors.white38)
                                           ),
                                       Positioned(
-                                        left: 0, 
-                                        right: 0, 
-                                        bottom: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 84,
                                         child: _videoController != null && _videoController!.value.isInitialized
                                             ? CupertinoVideoControls(controller: _videoController!)
                                             : const SizedBox(),
