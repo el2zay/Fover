@@ -243,8 +243,6 @@ class CopypartyService {
     } on DioException catch (e) {
       if (CancelToken.isCancel(e)) {
         needsCleanup = true;
-      } else {
-        rethrow;
       }
     } finally {
       if (needsCleanup) {
