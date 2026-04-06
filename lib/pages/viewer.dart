@@ -61,7 +61,6 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   late final ExtendedPageController _pageController;
   bool showInfo = false;
   final _sheetController = DraggableScrollableController();
-  bool hideAppbar = false;
   late double _imageFocusScale = PhotoStore.isLandscape(widget.encodedPaths[currentIndex]) ? 1 : 0.73;
   bool _isDisposed = false;
 
@@ -189,7 +188,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         extendBodyBehindAppBar: true,
         extendBody: true,
         appBar: PreferredSize(
@@ -498,7 +497,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                       });
                     }
                     widget.onRefresh?.call();
-                    break;                                                                                                                                                                                    
+                    break;
                   case PopMenuAction.share:
                     break;
                   case PopMenuAction.favorite:
@@ -528,14 +527,14 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                     break;
                   case PopMenuAction.adjustDate:
                     setState(() {
-                      hideAppbar = true;
+                      focused = true;
                     });
                     showModalBottomSheet(
                       barrierColor: Colors.transparent,
                       isScrollControlled: true,
                       constraints: BoxConstraints(
                         minHeight: 0,
-                        maxHeight: MediaQuery.of(context).size.height * 0.92,
+                        maxHeight: MediaQuery.of(context).size.height * 0.93,
                       ),
                       context: context,
                       builder: (context) {
@@ -547,7 +546,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                       },
                     ).then((_) {
                       setState(() {
-                        hideAppbar = false;
+                        focused = false;
                       });
                     });
                     break;
@@ -733,10 +732,10 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
           CNButtonData.icon(
             icon: const CNSymbol('slider.horizontal.3', size: 22),
             onPressed: () async {
-              setState(() => hideAppbar = true);
+              setState(() => focused = true);
               final bytes = await fetchFullBytes(currentIndex);
               if (!mounted) return;
-              setState(() => hideAppbar = false);
+              setState(() => focused = false);
   
               if (bytes == null) return;
               final newPath = await Navigator.push<String>(
@@ -882,7 +881,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   TextButton(
                     onPressed: () {
                       setState(() {
-                        hideAppbar = true;
+                        focused = true;
                       });
                       showModalBottomSheet(
                         barrierColor: Colors.transparent,
@@ -902,7 +901,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                         },
                       ).then((_) {
                         setState(() {
-                          hideAppbar = false;
+                          focused = false;
                         });
                       });
                     },
