@@ -40,7 +40,7 @@ class PopMenu extends StatelessWidget {
     required this.onSelected
   });
 
-  List<PopMenuAction> get _visibleActions => [
+  List<PopMenuAction?> get _actionMap => [
   PopMenuAction.download,
   if (showCopy && isViewer) PopMenuAction.copy,
   if (canRevert) PopMenuAction.revert,
@@ -49,6 +49,7 @@ class PopMenu extends StatelessWidget {
   if (isViewer) PopMenuAction.duplicate,
   PopMenuAction.hide,
   PopMenuAction.addToAlbum,
+  if (isViewer) null,
   if (isViewer) PopMenuAction.adjustDate,
   if (isViewer) PopMenuAction.adjustLocation,
 
@@ -111,8 +112,8 @@ class PopMenu extends StatelessWidget {
           ]
         ],
         onSelected: (id) {
-          if (id < _visibleActions.length) {
-            onSelected(_visibleActions[id]);
+          if (_actionMap[id] != null) {
+            onSelected(_actionMap[id]!);
           }
         }
       );
