@@ -173,6 +173,11 @@ class PhotoStore {
     return entry?.displayDate ?? entry?.date ?? DateTime(1970);
   }
 
+  static DateTime getOriginalDate(String path) {
+    final entry = _photoBox.get(path);
+    return entry?.date ?? DateTime(1970);
+  }
+
   static Future<void> softDelete(String path) async {
     final entry = _photoBox.get(path);
     if (entry == null) return;

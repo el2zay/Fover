@@ -538,12 +538,11 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                         maxHeight: MediaQuery.of(context).size.height * 0.92,
                       ),
                       context: context,
-                      
                       builder: (context) {
                         return AdjustDate(
                           encodedPath: widget.encodedPaths[currentIndex],
                           photo: PhotoStore.get(widget.encodedPaths[currentIndex])!,
-                          initialDate: PhotoStore.getDate(widget.encodedPaths[currentIndex]),
+                          initialDate: PhotoStore.getOriginalDate(widget.encodedPaths[currentIndex]),
                         );
                       },
                     ).then((_) {
@@ -898,7 +897,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                           return AdjustDate(
                             encodedPath: widget.encodedPaths[currentIndex],
                             photo: photo,
-                            initialDate: PhotoStore.getDate(widget.encodedPaths[currentIndex]),
+                            initialDate: PhotoStore.getOriginalDate(widget.encodedPaths[currentIndex]),
                           );
                         },
                       ).then((_) {

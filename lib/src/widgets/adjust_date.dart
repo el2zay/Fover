@@ -68,7 +68,7 @@ class _AdjustDateState extends State<AdjustDate> {
                     Text("Original", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     Text(
                       DateFormat('d MMMM yyyy — hh:mm', 'en').format(widget.initialDate),
-                      style: TextStyle(fontSize: 14, color: Colors.white)
+                      style: TextStyle(fontSize: 14, color: Colors.white70)
                     ),
                   ],
                 ),
@@ -81,7 +81,7 @@ class _AdjustDateState extends State<AdjustDate> {
                     Text("Adjusted", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     Text(
                       DateFormat('d MMMM yyyy — hh:mm', 'en').format(localNewDate),
-                      style: TextStyle(fontSize: 14, color: Colors.white70)
+                      style: TextStyle(fontSize: 14)
                     ),
                   ],
                 ),
@@ -106,7 +106,7 @@ class _AdjustDateState extends State<AdjustDate> {
               timeLabel: "Time",
               onDateTimeChanged: (date) {
                 setState(() => newDate = date);
-                PhotoStore.update(path: widget.encodedPath, displayDate: date);
+                PhotoStore.update(path: widget.encodedPath, displayDate: date,);
               },
             ),
           )
