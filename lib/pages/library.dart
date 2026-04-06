@@ -596,7 +596,7 @@ class _LibraryPageState extends State<LibraryPage> {
                               Navigator.push(
                                 context,
                                 PageRouteBuilder(
-                                  opaque: false,
+                                  opaque: true,
                                   transitionDuration: const Duration(milliseconds: 300),
                                   reverseTransitionDuration: const Duration(milliseconds: 300),
                                   pageBuilder: (_, __, ___) => ViewerPage(
