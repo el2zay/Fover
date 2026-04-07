@@ -45,6 +45,21 @@ class _SearchPageState extends State<SearchPage> {
   ];
 
   @override
+  void didUpdateWidget(covariant SearchPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      FocusScope.of(context).requestFocus(searchFocus);
+    });
+  }
+
+  @override
+  void dispose() {
+    searchFocus.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: BlurredAppBar(
