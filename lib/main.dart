@@ -24,6 +24,7 @@ FreeboxClient? client;
 bool is26OrNewer =  PlatformVersion.supportsLiquidGlass;
 final box = Hive.box('settings');
 final ValueNotifier<bool> showTabBar = ValueNotifier(false);
+final ValueNotifier<String> searchQuery = ValueNotifier('');
 String? model;
 late bool connectedToInternet;
 final GlobalKey bottomNavKey = GlobalKey();
@@ -101,81 +102,88 @@ class _MainAppState extends State<MainApp> {
             ? const FirstPage()
             : IndexedStack(
             index: _currentIndex,
-            children: const [
+            children:  [
               LibraryPage(onlySelect: false),
               AlbumsPage(),
-              SearchPage(),
+              if (!is26OrNewer) 
+                SearchPage()
             ],
           ),
-          bottomNavigationBar: is26OrNewer && (box.get("appToken") != null || box.get("copypartyUrl") != null)
-          ? Container(
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.transparent,
-                  spreadRadius: 2,
-                  blurRadius: 5,
-                  offset: Offset(0, 3),
-                )
-              ]
-            ),
-            child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-              child: BottomNavigationBar(
-                key: bottomNavKey,
-                elevation: 0,
-                backgroundColor: Colors.black.withAlpha(155),
-                fixedColor: const Color.fromARGB(255, 52, 161, 250),
-                type: BottomNavigationBarType.fixed,
-                selectedFontSize: 13,
-                unselectedFontSize: 13,
-                currentIndex: _currentIndex,
-                onTap: (value) {
-                  setState(() {
-                    _currentIndex = value;
-                  });
-                },
-                items: [
-                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.photo), label: "Library"),
-                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.collections), label: "Albums"),
-                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: "Search"),
+          bottomNavigationBar: !is26OrNewer && (box.get("appToken") != null || box.get("copypartyUrl") != null) 
+          // bottomNavigationBar: true
+            ? Container(
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.transparent,
+                    spreadRadius: 2,
+                    blurRadius: 5,
+                    offset: Offset(0, 3),
+                  )
                 ]
+              ),
+              child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                child: BottomNavigationBar(
+                  key: bottomNavKey,
+                  elevation: 0,
+                  backgroundColor: Colors.black.withAlpha(155),
+                  fixedColor: const Color.fromARGB(255, 52, 161, 250),
+                  type: BottomNavigationBarType.fixed,
+                  selectedFontSize: 13,
+                  unselectedFontSize: 13,
+                  currentIndex: _currentIndex,
+                  onTap: (value) {
+                    setState(() {
+                      _currentIndex = value;
+                    });
+                  },
+                  items: [
+                    BottomNavigationBarItem(icon: Icon(CupertinoIcons.photo), label: "Library"),
+                    BottomNavigationBarItem(icon: Icon(CupertinoIcons.collections), label: "Albums"),
+                    BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: "Search"),
+                  ]
+                ) 
               ) 
-            ) 
-          ) :  
+            ) : 
           is26OrNewer && (box.get("appToken") != null || box.get("copypartyUrl") != null)
-          ? CNTabBar(
-            tint: Colors.blue,
-            iconSize: 18,
-            items: [
-              CNTabBarItem(
-                label: 'Library',
-                icon: CNSymbol('photo.fill.on.rectangle.fill'),
+            ? CNTabBar(
+              tint: Colors.blue,
+              iconSize: 18,
+              items: [
+                CNTabBarItem(
+                  label: 'Library',
+                  icon: CNSymbol('photo.fill.on.rectangle.fill'),
+                ),
+                CNTabBarItem(
+                  label: 'Albums',
+                  icon: CNSymbol('rectangle.stack.fill'),
+                ),
+              ],
+              currentIndex: _currentIndex,
+              onTap: (i) => setState(() => _currentIndex = i),
+              searchItem: CNTabBarSearchItem(
+                placeholder: 'Search in Fover',
+                automaticallyActivatesSearch: true,
+                onSearchChanged: (query) {
+                  searchQuery.value = query;
+                },
+                onSearchSubmit: (query) {
+                  searchQuery.value = query;
+                },
+                onSearchActiveChanged: (isActive) {
+                  if (!isActive) searchQuery.value = "";
+                },
+                style: const CNTabBarSearchStyle(
+                  iconSize: 20,
+                  buttonSize: 44,
+                  searchBarHeight: 44,
+                  animationDuration: Duration(milliseconds: 400),
+                  showClearButton: true,
+                ),
               ),
-              CNTabBarItem(
-                label: 'Albums',
-                icon: CNSymbol('rectangle.stack.fill'),
-              ),
-            ],
-            currentIndex: _currentIndex,
-            onTap: (i) => setState(() => _currentIndex = i),
-            searchItem: CNTabBarSearchItem(
-              placeholder: 'Search',
-              automaticallyActivatesSearch: false,
-              onSearchChanged: (query) {
-              },
-              onSearchSubmit: (query) {
-              },
-              onSearchActiveChanged: (isActive) {
-              },
-              style: const CNTabBarSearchStyle(
-                iconSize: 20,
-                animationDuration: Duration(milliseconds: 400),
-              ),
-            ),
-          ) : 
-          
-          null
+              // searchController: _searchController, // Optional programmatic control
+            ) : null
         ),
       ),
       theme: ThemeData(
