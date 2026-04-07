@@ -35,6 +35,7 @@ class FirstPage extends StatelessWidget {
                 const Text(
                   "Free up your phone. Keep your photos.",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
                 ),
                 const Spacer(flex: 1),
                 Container(
