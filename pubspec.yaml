@@ -42,6 +42,7 @@ dependencies:
   pro_image_editor: ^12.0.13
   dio: ^5.9.2
   video_player: ^2.11.1
+  pro_video_editor: ^1.14.2
 
 dev_dependencies:
   hive_ce_generator: ^1.11.1
