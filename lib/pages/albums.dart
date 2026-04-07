@@ -27,7 +27,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
   List<Map<String, dynamic>> albums = [];
   bool isUnfolded = true;
 
-  static final List<Map<String, dynamic>> _defaultAlbums = [
+  static const List<Map<String, dynamic>> _defaultAlbums = [
     {
       'key': 'videos',
       'title': "Videos",
@@ -183,10 +183,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
             glassIcon: CNSymbol('plus', size: 20),
             onPressed: () {
               log("Add Album Tapped");
-              showModalBottomSheet(
-                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
-                backgroundColor: Colors.black,
-                isScrollControlled: true,
+              showCupertinoSheet(
                 context: context, builder: (context) {
                   return NewAlbumSheet();
                 }
@@ -466,17 +463,14 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
                               builder: (context, value, _) {
                                 return Button.iconOnly(
                                   enabled: value > 0,
-                            
                                   onPressed: () => Navigator.pop(context),
                                   icon: Icon(CupertinoIcons.check_mark, size: 14),
                                   glassIcon: CNSymbol('checkmark', size: 14),
                                   tint: Colors.blue,
                                   glassConfig: CNButtonConfig(
                                     style: CNButtonStyle.prominentGlass,
-
                                   ),
                                   backgroundColor: Colors.blue
-                            
                                 );
                               }
                             ),
