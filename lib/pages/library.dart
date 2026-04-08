@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'dart:io';
+import 'dart:async';
 
 import 'package:clipboard/clipboard.dart';
 import 'package:cupertino_native_better/cupertino_native.dart';
@@ -44,6 +45,8 @@ class LibraryPage extends StatefulWidget {
   final Function(List<String> paths, Uint8List? thumbBytes)? onSelectedChanged;
   final String? albumName;
   final Album album; 
+  final bool research;
+  final String searchText;
 
 
   const LibraryPage({
@@ -51,7 +54,9 @@ class LibraryPage extends StatefulWidget {
     this.onlySelect = false, 
     this.onSelectedChanged, 
     this.albumName,
-    this.album = Album.none
+    this.album = Album.none,
+    this.research = false,
+    this.searchText = "",
   });
 
   @override
@@ -88,7 +93,9 @@ class _MediaEntry {
 
 class _LibraryPageState extends State<LibraryPage> {
   bool showButtons = false;
-  _GalleryData? _data;  bool selectedMode = false;
+  _GalleryData? _allData;
+  _GalleryData? _filteredData;
+  bool selectedMode = false;
   bool _loading = true;
   List<int> selectedImages = [];
   int elements = 0;
@@ -97,10 +104,21 @@ class _LibraryPageState extends State<LibraryPage> {
   double _pullUpProgress = 0.0;
   static const double _refreshThreshold = 160.0;
 
+  _GalleryData? get _data => _filteredData;
+
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant LibraryPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.searchText != widget.searchText) {
+      _applyFilter();
+    }
   }
 
   Future pickImages() async {
@@ -165,44 +183,112 @@ class _LibraryPageState extends State<LibraryPage> {
   }
 
   // Generated with AI
+  void _applyFilter() {
+    if (_allData == null) return;
+
+  final query = widget.searchText.trim().toLowerCase();
+
+    if (query.isEmpty) {
+      setState(() {
+        _filteredData = _cloneGalleryData(_allData!);
+        elements = _filteredData!.images.length;
+        showButtons = _filteredData!.images.isNotEmpty;
+      });
+      return;
+    }
+
+    final matches = <int>[];
+
+    for (int i = 0; i < _allData!.encodedPaths.length; i++) {
+      final encodedPath = _allData!.encodedPaths[i];
+      final photo = PhotoStore.get(encodedPath);
+
+      final name = photo?.name?.toLowerCase() ?? '';
+      final camera = photo?.cameraModel?.toLowerCase() ?? '';
+      final dt = PhotoStore.getDate(encodedPath);
+      final dateStr =
+          '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+
+      if (name.contains(query) ||
+          camera.contains(query) ||
+          dateStr.contains(query)) {
+        matches.add(i);
+      }
+    }
+
+    setState(() {
+      _filteredData = _subsetGalleryData(_allData!, matches);
+      elements = _filteredData!.images.length;
+      showButtons = _filteredData!.images.isNotEmpty;
+      selectedImages.clear();
+    });
+  }
+
+  _GalleryData _cloneGalleryData(_GalleryData source) {
+    return _GalleryData(
+      images: List<Uint8List?>.from(source.images),
+      thumbs: List<Uint8List?>.from(source.thumbs),
+      thumbFutures: List<Future<Uint8List?>?>.from(source.thumbFutures),
+      mimetypes: List<String>.from(source.mimetypes),
+      encodedPaths: List<String>.from(source.encodedPaths),
+    );
+  }
+
+  _GalleryData _subsetGalleryData(_GalleryData source, List<int> indexes) {
+    return _GalleryData(
+      images: indexes.map((i) => source.images[i]).toList(),
+      thumbs: indexes.map((i) => source.thumbs[i]).toList(),
+      thumbFutures: indexes.map((i) => source.thumbFutures[i]).toList(),
+      mimetypes: indexes.map((i) => source.mimetypes[i]).toList(),
+      encodedPaths: indexes.map((i) => source.encodedPaths[i]).toList(),
+    );
+  }
+
   Future<void> _load() async {
-    final images = await _loadImages();
+    final images = await _loadImagesWithoutSearch();
+
     List<Uint8List?> thumbs;
     List<Future<Uint8List?>?> thumbFutures;
 
     if (detectBackend() == ServerBackend.copyparty) {
       thumbs = List.filled(images.length, null, growable: true);
       thumbFutures = images
-        .map((e) => CopypartyService.getThumbnail(e.encodedPath))
-        .toList();
+          .map((e) => CopypartyService.getThumbnail(e.encodedPath))
+          .toList();
     } else {
       thumbs = await _compressImages(images.map((e) => e.bytes).toList());
       thumbFutures = List.filled(images.length, null, growable: true);
     }
 
     if (!mounted) return;
-    
+
+    _allData = _GalleryData(
+      images: images.map((e) => e.bytes).toList(),
+      thumbs: thumbs,
+      thumbFutures: thumbFutures,
+      mimetypes: images.map((e) => e.mimetype).toList(),
+      encodedPaths: images.map((e) => e.encodedPath).toList(),
+    );
+
+    _filteredData = _cloneGalleryData(_allData!);
+
     setState(() {
-      _data = _GalleryData(
-        images: images.map((e) => e.bytes).toList(),
-        thumbs: thumbs,
-        thumbFutures: thumbFutures,
-        mimetypes: images.map((e) => e.mimetype).toList(),
-        encodedPaths: images.map((e) => e.encodedPath).toList(),
-      );
       _loading = false;
-      elements = images.length;
-      showButtons = images.isNotEmpty;
+      elements = _filteredData!.images.length;
+      showButtons = _filteredData!.images.isNotEmpty;
     });
 
-     FlutterNativeSplash.remove();
+    _applyFilter();
+
+    FlutterNativeSplash.remove();
 
     if (_data!.images.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        if (_scrollController.hasClients) {
+          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        }
       });
     }
-
   }
   
   void _removeLocally(List<int> indexes) {
@@ -222,8 +308,9 @@ class _LibraryPageState extends State<LibraryPage> {
   //
 
 
-  Future<List<_MediaEntry>> _loadImages() async {
+  Future<List<_MediaEntry>> _loadImagesWithoutSearch() async {
     List<Map<String, dynamic>> entries;
+    final currentQuery = searchQuery.value;
 
     if (connectedToInternet) {
       entries = (await fetchPhotosDir()).cast<Map<String, dynamic>>();
@@ -239,6 +326,7 @@ class _LibraryPageState extends State<LibraryPage> {
 
     final results = await Future.wait(
       entries.map((entry) async {
+
         final photo = PhotoStore.get(entry['path'] as String);
         final isVideo = entry['mimetype'].startsWith('video/');
 
@@ -255,14 +343,18 @@ class _LibraryPageState extends State<LibraryPage> {
         }
 
         if (connectedToInternet == false) return null;
-        return fetchImageBytes(entry['path'], entry['mimetype']);
+        try {
+          return await fetchImageBytes(entry['path'], entry['mimetype']);
+        } catch (e) {
+          log("Error fetching image bytes for ${entry['path']} : $e");
+          return null;
+        }
       }),
     );
 
     final filtered = results.asMap().entries.where((e) {
       final stored = PhotoStore.get(entries[e.key]['path'] as String);
       if (stored?.isOldVersion == true) return false;
-
       if (widget.albumName != null) {
         return stored?.albums?.contains(widget.albumName) == true;
       }
@@ -312,35 +404,32 @@ class _LibraryPageState extends State<LibraryPage> {
 
 
   Future<void> _refresh() async {
-    final images = await _loadImages();
+    final images = await _loadImagesWithoutSearch();
+
     List<Uint8List?> thumbs;
     List<Future<Uint8List?>?> thumbFutures;
-
 
     if (detectBackend() == ServerBackend.copyparty) {
       thumbs = List.filled(images.length, null, growable: true);
       thumbFutures = images
-        .map((e) => CopypartyService.getThumbnail(e.encodedPath))
-        .toList();
+          .map((e) => CopypartyService.getThumbnail(e.encodedPath))
+          .toList();
     } else {
       thumbs = await _compressImages(images.map((e) => e.bytes).toList());
       thumbFutures = List.filled(images.length, null, growable: true);
-  }
+    }
 
     if (!mounted) return;
 
-    setState(() {
-      _data = _GalleryData(
-        images: images.map((e) => e.bytes).toList(),
-        thumbs: thumbs,
-        thumbFutures: thumbFutures,
-        mimetypes: images.map((e) => e.mimetype).toList(),
-        encodedPaths: images.map((e) => e.encodedPath).toList(),
-      );
-    });
+    _allData = _GalleryData(
+      images: images.map((e) => e.bytes).toList(),
+      thumbs: thumbs,
+      thumbFutures: thumbFutures,
+      mimetypes: images.map((e) => e.mimetype).toList(),
+      encodedPaths: images.map((e) => e.encodedPath).toList(),
+    );
 
-    elements = images.length;
-    showButtons = images.isNotEmpty;
+    _applyFilter();
   }
 
   @override
@@ -349,7 +438,7 @@ class _LibraryPageState extends State<LibraryPage> {
       extendBody: true,
       backgroundColor: Colors.black,
       extendBodyBehindAppBar: true,
-      appBar: !widget.onlySelect ? BlurredAppBar(
+      appBar: !widget.onlySelect && !widget.research ? BlurredAppBar(
         title: widget.albumName != null ? widget.albumName! : widget.album == Album.trash ? "Trash" : widget.album == Album.favorites ? "Favorites" : widget.album == Album.screenshots ? "Screenshots" : "Library",
         subtitle:  widget.album != Album.trash ? "$elements element${elements > 1 ? "s" : ""}" : null,
         isAlbum:  widget.album != Album.none || widget.albumName != null ,
@@ -810,7 +899,7 @@ class _LibraryPageState extends State<LibraryPage> {
                   ),
               ),
               ),
-              if (_pullUpProgress > 0 || _isRefreshing)
+              if (!widget.research && _pullUpProgress > 0 || _isRefreshing)
                 Positioned(
                   bottom: bottomNavKey.currentContext != null ? MediaQuery.of(context).size.height - (bottomNavKey.currentContext!.findRenderObject() as RenderBox).localToGlobal(Offset.zero).dy + 10 : 20,
                   left: 0,
@@ -849,7 +938,7 @@ class _LibraryPageState extends State<LibraryPage> {
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                          ),
+                          )
                         ],
                       ),
                     ),
