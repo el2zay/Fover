@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:fover/main.dart';
 import 'package:fover/pages/library.dart';
 
 class SearchPage extends StatefulWidget {
@@ -91,10 +90,7 @@ class _SearchPageState extends State<SearchPage> {
                     top: _hasSearched ? 62 : 1202
                   ),
                   child: _hasSearched
-                      ? LibraryPage(
-                          research: true,
-                          searchText: _query,
-                        )
+                      ? LibraryPage(searchText: _query)
                       : _buildSuggestions(),
                 ),
               ),
