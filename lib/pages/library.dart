@@ -45,7 +45,6 @@ class LibraryPage extends StatefulWidget {
   final Function(List<String> paths, Uint8List? thumbBytes)? onSelectedChanged;
   final String? albumName;
   final Album album; 
-  final bool research;
   final String searchText;
 
 
@@ -55,7 +54,6 @@ class LibraryPage extends StatefulWidget {
     this.onSelectedChanged, 
     this.albumName,
     this.album = Album.none,
-    this.research = false,
     this.searchText = "",
   });
 
@@ -203,7 +201,7 @@ class _LibraryPageState extends State<LibraryPage> {
       final encodedPath = _allData!.encodedPaths[i];
       final photo = PhotoStore.get(encodedPath);
 
-      final name = photo?.name?.toLowerCase() ?? '';
+      final name = photo?.name.toLowerCase() ?? '';
       final camera = photo?.cameraModel?.toLowerCase() ?? '';
       final dt = PhotoStore.getDate(encodedPath);
       final dateStr =
@@ -292,25 +290,44 @@ class _LibraryPageState extends State<LibraryPage> {
   }
   
   void _removeLocally(List<int> indexes) {
+    if (_filteredData == null || _allData == null) return;
+
+    final pathsToRemove = indexes.map((i) => _filteredData!.encodedPaths[i]).toSet();
+
     setState(() {
-      final sorted = indexes.toList()..sort((a, b) => b.compareTo(a));
-      for (final i in sorted) {
-        _data!.images.removeAt(i);
-        _data!.thumbs.removeAt(i);
-        _data!.thumbFutures.removeAt(i);
-        _data!.mimetypes.removeAt(i);
-        _data!.encodedPaths.removeAt(i);
+      void removeFromGallery(_GalleryData gallery) {
+        final sortedIndexes = <int>[];
+
+        for (int i = 0; i < gallery.encodedPaths.length; i++) {
+          if (pathsToRemove.contains(gallery.encodedPaths[i])) {
+            sortedIndexes.add(i);
+          }
+        }
+
+        sortedIndexes.sort((a, b) => b.compareTo(a));
+
+        for (final i in sortedIndexes) {
+          gallery.images.removeAt(i);
+          gallery.thumbs.removeAt(i);
+          gallery.thumbFutures.removeAt(i);
+          gallery.mimetypes.removeAt(i);
+          gallery.encodedPaths.removeAt(i);
+        }
       }
+
+      removeFromGallery(_allData!);
+      removeFromGallery(_filteredData!);
+
       selectedImages.clear();
+      elements = _filteredData!.images.length;
+      showButtons = _filteredData!.images.isNotEmpty;
     });
-      elements = _data!.images.length;
   }
   //
 
 
   Future<List<_MediaEntry>> _loadImagesWithoutSearch() async {
     List<Map<String, dynamic>> entries;
-    final currentQuery = searchQuery.value;
 
     if (connectedToInternet) {
       entries = (await fetchPhotosDir()).cast<Map<String, dynamic>>();
@@ -438,7 +455,7 @@ class _LibraryPageState extends State<LibraryPage> {
       extendBody: true,
       backgroundColor: Colors.black,
       extendBodyBehindAppBar: true,
-      appBar: !widget.onlySelect && !widget.research ? BlurredAppBar(
+      appBar: !widget.onlySelect && !widget.searchText.isNotEmpty ? BlurredAppBar(
         title: widget.albumName != null ? widget.albumName! : widget.album == Album.trash ? "Trash" : widget.album == Album.favorites ? "Favorites" : widget.album == Album.screenshots ? "Screenshots" : "Library",
         subtitle:  widget.album != Album.trash ? "$elements element${elements > 1 ? "s" : ""}" : null,
         isAlbum:  widget.album != Album.none || widget.albumName != null ,
@@ -899,7 +916,7 @@ class _LibraryPageState extends State<LibraryPage> {
                   ),
               ),
               ),
-              if (!widget.research && _pullUpProgress > 0 || _isRefreshing)
+              if (!widget.searchText.isNotEmpty && _pullUpProgress > 0 || _isRefreshing)
                 Positioned(
                   bottom: bottomNavKey.currentContext != null ? MediaQuery.of(context).size.height - (bottomNavKey.currentContext!.findRenderObject() as RenderBox).localToGlobal(Offset.zero).dy + 10 : 20,
                   left: 0,
