@@ -81,16 +81,6 @@ class _SearchEntry {
   });
 }
 
-class _VisibleMediaEntry {
-  final String encodedPath;
-  final String mimetype;
-
-  const _VisibleMediaEntry({
-      required this.encodedPath,
-      required this.mimetype,
-    });
-}
-
 class LibraryPageState extends State<LibraryPage> {
   bool showButtons = false;
   _GalleryData? _allData;
@@ -107,6 +97,7 @@ class LibraryPageState extends State<LibraryPage> {
   static const double _refreshThreshold = 160.0;
 
   List<_SearchEntry> _searchIndex = [];
+  String get _heroPrefix => widget.searchText.isEmpty ? 'library' : 'search';
 
   @override
   void initState() {
@@ -763,6 +754,7 @@ class LibraryPageState extends State<LibraryPage> {
                           isVideo: data.mimetypes[index].startsWith('video/'), 
                           isFavorite: photo?.favorite == true, 
                           trashMode: widget.album == Album.trash, 
+                          heroPrefix: _heroPrefix,
                           daysLeft: photo?.deletedAt != null
                             ? (30 - DateTime.now().difference(photo!.deletedAt!).inDays).clamp(0, 30)
                             : null,
@@ -788,7 +780,6 @@ class LibraryPageState extends State<LibraryPage> {
                                   transitionDuration: const Duration(milliseconds: 300),
                                   reverseTransitionDuration: const Duration(milliseconds: 300),
                                   pageBuilder: (_, __, ___) => ViewerPage(
-
                                     mimetype: mimetypes,
                                     index: index,
                                     encodedPaths: data.encodedPaths,
@@ -1164,6 +1155,7 @@ class _MediaTile extends StatefulWidget {
   final VoidCallback onTap;
   final MenuProvider menuProvider;
   final int index;
+  final String heroPrefix;
 
   const _MediaTile({
     required this.encodedPath,
@@ -1176,6 +1168,7 @@ class _MediaTile extends StatefulWidget {
     required this.onTap,
     required this.menuProvider,
     required this.index,
+    required this.heroPrefix
   });
 
   @override
@@ -1265,9 +1258,8 @@ class _MediaTileState extends State<_MediaTile> {
                   if (snapshot.data == null) {
                     return Container(color: Colors.grey[900]);
                   }
-
                   return Hero(
-                    tag: "image_${widget.index}",
+                    tag: "${widget.heroPrefix}_image_${widget.index}",
                     child: Image.memory(
                       snapshot.data!,
                       fit: BoxFit.cover,
