@@ -87,7 +87,7 @@ class _SearchPageState extends State<SearchPage> {
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
                   padding: EdgeInsets.only(
-                    top: _hasSearched ? 62 : 1202
+                    top: _hasSearched ? 62 : 120
                   ),
                   child: _hasSearched
                       ? LibraryPage(searchText: _query)
