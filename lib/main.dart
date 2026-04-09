@@ -105,11 +105,10 @@ class _MainAppState extends State<MainApp> {
             children:  [
               LibraryPage(onlySelect: false),
               AlbumsPage(),
-              if (!is26OrNewer) 
-                SearchPage()
+              SearchPage()
             ],
           ),
-          bottomNavigationBar: !is26OrNewer && (box.get("appToken") != null || box.get("copypartyUrl") != null) 
+          bottomNavigationBar: (box.get("appToken") != null || box.get("copypartyUrl") != null) 
           // bottomNavigationBar: true
             ? Container(
               clipBehavior: Clip.antiAlias,
