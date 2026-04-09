@@ -28,7 +28,6 @@ bool focused = false;
 class ViewerPage extends StatefulWidget {
   const ViewerPage({
     super.key,
-    required this.images,
     required this.mimetype,
     required this.encodedPaths,
     required this.index,
@@ -36,7 +35,6 @@ class ViewerPage extends StatefulWidget {
     required this.onRefresh,
   });
 
-  final List<Uint8List?> images;
   final List<String> mimetype;
   final List<String> encodedPaths;
   final int index;
@@ -207,7 +205,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                 duration: const Duration(milliseconds: 200),
                 child: ExtendedImageGesturePageView.builder(
                   controller: _pageController,
-                  itemCount: widget.images.length,
+                  itemCount: widget.encodedPaths.length,
                   scrollDirection: Axis.horizontal,
                   onPageChanged: (index) {
                     setState(() {
@@ -293,7 +291,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
               ),
 
             if (showInfo)
-              _buildInfoSheet(context, widget.images[currentIndex]),
+              _buildInfoSheet(context),
           ]
         )
       ),
@@ -307,7 +305,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
       return ExtendedImage.file(
         key: ValueKey(photo.localPath),
         File(photo.localPath!),
-        fit: BoxFit.fitWidth,
+        fit: BoxFit.contain,
         mode: ExtendedImageMode.gesture,
         enableSlideOutPage: true,
         onDoubleTap: _handleDoubleTap,
@@ -316,55 +314,57 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
 
     if (detectBackend() == ServerBackend.copyparty) {
       final url = "${CopypartyService.baseUrl}/photos/${widget.encodedPaths[index]}";
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          final height = constraints.maxHeight;
-          final width = constraints.maxWidth;
 
-          double displayedWidth = width;
-          if ((photo?.width ?? 0) > 0 && (photo?.height ?? 0) > 0) {
-            final ratio = photo!.width! / photo.height!;
-            displayedWidth = (ratio * height).clamp(0.0, width);
+      return ExtendedImage.network(
+        key: ValueKey(url),
+        url,
+        fit: BoxFit.contain,
+        mode: ExtendedImageMode.gesture,
+        enableSlideOutPage: true,
+        onDoubleTap: _handleDoubleTap,
+        headers: {'Authorization': 'Basic ${CopypartyService.credentials}'},
+        loadStateChanged: (state) {
+          switch (state.extendedImageLoadState) {
+            case LoadState.loading:
+              return const Center(
+                child: CircularProgressIndicator(color: Colors.white38),
+              );
+            case LoadState.failed:
+              return const Center(
+                child: Text("Error loading image"),
+              );
+            case LoadState.completed:
+              return null;
           }
-
-          return Center(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(25),
-              child: SizedBox(
-                width: displayedWidth,
-                height: height,
-                child: ExtendedImage.network(
-                  key: ValueKey(url),
-                  url,
-                  fit: BoxFit.fitWidth,
-                  mode: ExtendedImageMode.gesture,
-                  enableSlideOutPage: true,
-                  onDoubleTap: _handleDoubleTap,
-                  headers: {'Authorization': 'Basic ${CopypartyService.credentials}'},
-                  loadStateChanged: (state) {
-                    if (state.extendedImageLoadState == LoadState.loading) {
-                      return Container(color: Colors.transparent);
-                    }
-                    return null;
-                  },
-                )
-              )
-            )
-          );
-        }
+        },
       );
     }
 
-    return widget.images[index] != null
-      ? ExtendedImage.memory(
-          key: ValueKey(widget.encodedPaths[index]),
-          widget.images[index]!,
-          fit: BoxFit.fitWidth,
-          mode: ExtendedImageMode.gesture,
-          enableSlideOutPage: true,
-          onDoubleTap: _handleDoubleTap,
-        )
-      : Container(color: Colors.grey[900]);
+    final url = "https://${box.get('apiDomain')}:${box.get('httpsPort')}/api/v15/dl/${widget.encodedPaths[index]}";
+
+    return ExtendedImage.network(
+      key: ValueKey(url),
+      url,
+      fit: BoxFit.contain,
+      mode: ExtendedImageMode.gesture,
+      enableSlideOutPage: true,
+      onDoubleTap: _handleDoubleTap,
+      headers: {"X-Fbx-App-Auth": client!.sessionToken!},
+      loadStateChanged: (state) {
+        switch (state.extendedImageLoadState) {
+          case LoadState.loading:
+            return const Center(
+              child: CircularProgressIndicator(color: Colors.white38),
+            );
+          case LoadState.failed:
+            return const Center(
+              child: Text("Error loading image"),
+            );
+          case LoadState.completed:
+            return null;
+        }
+      },
+    );
   }
 
   Future<Uint8List?> fetchFullBytes(int index) async {
@@ -379,16 +379,13 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
       return Uint8List.fromList(bytes);
     }
 
-    if (widget.images[index] != null) {
-      return widget.images[index];
-    }
-
     final response = await client?.fetch(
       url: "v15/dl/${widget.encodedPaths[index]}",
       parseJson: false,
     );
+
     return response?.data is Uint8List ? response!.data as Uint8List : null;
-  }
+}
 
   PreferredSizeWidget? _buildAppBar() {
     return  AppBar(
@@ -475,7 +472,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                       }
                     break;
                   case PopMenuAction.copy:
-                    final bytes = widget.images[currentIndex];
+                    final bytes = await fetchFullBytes(currentIndex);
                     if (bytes == null) return;
                     await FlutterClipboard.copyImage(bytes);
                     break;
@@ -487,15 +484,8 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
 
                     setState(() {
                       widget.encodedPaths[currentIndex] = originalPath;
-                      widget.images[currentIndex] = null;
                     });
-
-                    final bytes = await fetchFullBytes(currentIndex);
-                    if (mounted) {
-                      setState(() {
-                        widget.images[currentIndex] = bytes;
-                      });
-                    }
+                    
                     widget.onRefresh?.call();
                     break;
                   case PopMenuAction.share:
@@ -595,7 +585,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                             onPressed: () async {
                               await PhotoStore.softDelete(widget.encodedPaths[currentIndex]);
                               Navigator.pop(context);
-                              final totalRemaining = widget.images.length - 1;
+                              final totalRemaining = widget.encodedPaths.length - 1;
 
                               if (totalRemaining == 0) {
                                 Navigator.pop(context);
@@ -603,7 +593,6 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                               }
 
                               setState(() {
-                                widget.images.removeAt(currentIndex);
                                 widget.encodedPaths.removeAt(currentIndex);
                                 widget.mimetype.removeAt(currentIndex);
                               });
@@ -629,7 +618,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   label: "Recover",
                   onPressed: () async {
                     await PhotoStore.restore(widget.encodedPaths[currentIndex]);
-                    final totalRemaining = widget.images.length - 1;
+                    final totalRemaining = widget.encodedPaths.length - 1;
 
                     if (totalRemaining == 0) {
                       Navigator.pop(context);
@@ -660,7 +649,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                             onPressed: () async {
                               await PhotoStore.hardDelete(widget.encodedPaths[currentIndex]);
                               Navigator.pop(context);
-                              final totalRemaining = widget.images.length - 1;
+                              final totalRemaining = widget.encodedPaths.length - 1;
 
                               if (totalRemaining == 0) {
                                 Navigator.pop(context);
@@ -751,19 +740,9 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                 ),
               );
 
-              if (newPath != null && mounted) {
-                setState(() {
-                  widget.encodedPaths[currentIndex] = newPath;
-                  widget.images[currentIndex] = null;
-                });
-              }
-
-              final newBytes = await fetchFullBytes(currentIndex);
-              if (mounted) {
-                setState(() {
-                  widget.images[currentIndex] = newBytes;
-                });
-              }
+             setState(() {
+              widget.encodedPaths[currentIndex] = newPath ?? "";
+            });
               widget.onRefresh?.call();
             },
             config: const CNButtonDataConfig(
@@ -817,7 +796,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     );
   }
 
-  DraggableScrollableSheet _buildInfoSheet(context, image) {
+  DraggableScrollableSheet _buildInfoSheet(BuildContext context) {
     final photo = PhotoStore.get(widget.encodedPaths[currentIndex])! ;
     final descriptionController = TextEditingController(text: photo.description);
     return DraggableScrollableSheet(
