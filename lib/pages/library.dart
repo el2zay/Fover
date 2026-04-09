@@ -58,51 +58,57 @@ class LibraryPage extends StatefulWidget {
   });
 
   @override
-  State<LibraryPage> createState() => _LibraryPageState();
+  State<LibraryPage> createState() => LibraryPageState();
 }
 
 class _GalleryData {
-  final List<Uint8List?> images;
-  final List<Uint8List?> thumbs;
-  final List<Future<Uint8List?>?> thumbFutures;
   final List<String> mimetypes;
   final List<String> encodedPaths;
 
-  const _GalleryData({
-    required this.images, 
-    required this.thumbs, 
-    required this.thumbFutures,
-    required this.mimetypes, 
-    required this.encodedPaths
+  _GalleryData({
+    required this.mimetypes,
+    required this.encodedPaths,
   });
 }
 
-class _MediaEntry {
-  final Uint8List? bytes;
-  final String mimetype;
+class _SearchEntry {
   final String encodedPath;
+  final String mimetype;
+  final String searchableText;
 
-  const _MediaEntry({
-    required this.bytes, 
-    required this.mimetype, 
-    required this.encodedPath
+  const _SearchEntry({
+    required this.encodedPath,
+    required this.mimetype,
+    required this.searchableText,
   });
 }
 
-class _LibraryPageState extends State<LibraryPage> {
+class _VisibleMediaEntry {
+  final String encodedPath;
+  final String mimetype;
+
+  const _VisibleMediaEntry({
+      required this.encodedPath,
+      required this.mimetype,
+    });
+}
+
+class LibraryPageState extends State<LibraryPage> {
   bool showButtons = false;
   _GalleryData? _allData;
   _GalleryData? _filteredData;
+
   bool selectedMode = false;
   bool _loading = true;
   List<int> selectedImages = [];
   int elements = 0;
+
   final ScrollController _scrollController = ScrollController();
   bool _isRefreshing = false;
   double _pullUpProgress = 0.0;
   static const double _refreshThreshold = 160.0;
 
-  _GalleryData? get _data => _filteredData;
+  List<_SearchEntry> _searchIndex = [];
 
   @override
   void initState() {
@@ -115,7 +121,9 @@ class _LibraryPageState extends State<LibraryPage> {
     super.didUpdateWidget(oldWidget);
 
     if (oldWidget.searchText != widget.searchText) {
-      _applyFilter();
+      setState(() {
+        _applyFilter();
+      });
     }
   }
 
@@ -182,105 +190,63 @@ class _LibraryPageState extends State<LibraryPage> {
 
   // Generated with AI
   void _applyFilter() {
-    if (_allData == null) return;
+    final query = widget.searchText.trim().toLowerCase();
 
-  final query = widget.searchText.trim().toLowerCase();
+    final matches = query.isEmpty
+        ? _searchIndex
+        : _searchIndex
+            .where((entry) => entry.searchableText.contains(query))
+            .toList();
+
+    final result = _GalleryData(
+      encodedPaths: matches.map((e) => e.encodedPath).toList(),
+      mimetypes: matches.map((e) => e.mimetype).toList(),
+    );
+
+    _filteredData = result;
 
     if (query.isEmpty) {
-      setState(() {
-        _filteredData = _cloneGalleryData(_allData!);
-        elements = _filteredData!.images.length;
-        showButtons = _filteredData!.images.isNotEmpty;
-      });
-      return;
+      _allData = _GalleryData(
+        encodedPaths: List<String>.from(result.encodedPaths),
+        mimetypes: List<String>.from(result.mimetypes),
+      );
     }
 
-    final matches = <int>[];
-
-    for (int i = 0; i < _allData!.encodedPaths.length; i++) {
-      final encodedPath = _allData!.encodedPaths[i];
-      final photo = PhotoStore.get(encodedPath);
-
-      final name = photo?.name.toLowerCase() ?? '';
-      final camera = photo?.cameraModel?.toLowerCase() ?? '';
-      final dt = PhotoStore.getDate(encodedPath);
-      final dateStr =
-          '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
-
-      if (name.contains(query) ||
-          camera.contains(query) ||
-          dateStr.contains(query)) {
-        matches.add(i);
-      }
-    }
-
-    setState(() {
-      _filteredData = _subsetGalleryData(_allData!, matches);
-      elements = _filteredData!.images.length;
-      showButtons = _filteredData!.images.isNotEmpty;
-      selectedImages.clear();
-    });
+    elements = result.encodedPaths.length;
+    showButtons = result.encodedPaths.isNotEmpty;
   }
 
-  _GalleryData _cloneGalleryData(_GalleryData source) {
-    return _GalleryData(
-      images: List<Uint8List?>.from(source.images),
-      thumbs: List<Uint8List?>.from(source.thumbs),
-      thumbFutures: List<Future<Uint8List?>?>.from(source.thumbFutures),
-      mimetypes: List<String>.from(source.mimetypes),
-      encodedPaths: List<String>.from(source.encodedPaths),
-    );
-  }
+  // _GalleryData _cloneGalleryData(_GalleryData source) {
+  //   return _GalleryData(
+  //     images: List<Uint8List?>.from(source.images),
+  //     thumbs: List<Uint8List?>.from(source.thumbs),
+  //     thumbFutures: List<Future<Uint8List?>?>.from(source.thumbFutures),
+  //     mimetypes: List<String>.from(source.mimetypes),
+  //     encodedPaths: List<String>.from(source.encodedPaths),
+  //   );
+  // }
 
-  _GalleryData _subsetGalleryData(_GalleryData source, List<int> indexes) {
-    return _GalleryData(
-      images: indexes.map((i) => source.images[i]).toList(),
-      thumbs: indexes.map((i) => source.thumbs[i]).toList(),
-      thumbFutures: indexes.map((i) => source.thumbFutures[i]).toList(),
-      mimetypes: indexes.map((i) => source.mimetypes[i]).toList(),
-      encodedPaths: indexes.map((i) => source.encodedPaths[i]).toList(),
-    );
-  }
+  // _GalleryData _subsetGalleryData(_GalleryData source, List<int> indexes) {
+  //   return _GalleryData(
+  //     images: indexes.map((i) => source.images[i]).toList(),
+  //     thumbs: indexes.map((i) => source.thumbs[i]).toList(),
+  //     thumbFutures: indexes.map((i) => source.thumbFutures[i]).toList(),
+  //     mimetypes: indexes.map((i) => source.mimetypes[i]).toList(),
+  //     encodedPaths: indexes.map((i) => source.encodedPaths[i]).toList(),
+  //   );
+  // }
 
   Future<void> _load() async {
-    final images = await _loadImagesWithoutSearch();
-
-    List<Uint8List?> thumbs;
-    List<Future<Uint8List?>?> thumbFutures;
-
-    if (detectBackend() == ServerBackend.copyparty) {
-      thumbs = List.filled(images.length, null, growable: true);
-      thumbFutures = images
-          .map((e) => CopypartyService.getThumbnail(e.encodedPath))
-          .toList();
-    } else {
-      thumbs = await _compressImages(images.map((e) => e.bytes).toList());
-      thumbFutures = List.filled(images.length, null, growable: true);
-    }
+    await _buildSearchIndex();
+    _applyFilter();
 
     if (!mounted) return;
 
-    _allData = _GalleryData(
-      images: images.map((e) => e.bytes).toList(),
-      thumbs: thumbs,
-      thumbFutures: thumbFutures,
-      mimetypes: images.map((e) => e.mimetype).toList(),
-      encodedPaths: images.map((e) => e.encodedPath).toList(),
-    );
-
-    _filteredData = _cloneGalleryData(_allData!);
-
     setState(() {
       _loading = false;
-      elements = _filteredData!.images.length;
-      showButtons = _filteredData!.images.isNotEmpty;
     });
 
-    _applyFilter();
-
-    FlutterNativeSplash.remove();
-
-    if (_data!.images.isNotEmpty) {
+    if ((_filteredData?.encodedPaths.isEmpty ?? false)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_scrollController.hasClients) {
           _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
@@ -290,163 +256,172 @@ class _LibraryPageState extends State<LibraryPage> {
   }
   
   void _removeLocally(List<int> indexes) {
-    if (_filteredData == null || _allData == null) return;
+    if (_filteredData == null || indexes.isEmpty) return;
 
-    final pathsToRemove = indexes.map((i) => _filteredData!.encodedPaths[i]).toSet();
+    final pathsToRemove = indexes
+        .where((i) => i >= 0 && i < _filteredData!.encodedPaths.length)
+        .map((i) => _filteredData!.encodedPaths[i])
+        .toSet();
 
-    setState(() {
-      void removeFromGallery(_GalleryData gallery) {
-        final sortedIndexes = <int>[];
+    void removeFromGallery(_GalleryData gallery) {
+      final indexesToRemove = <int>[];
 
-        for (int i = 0; i < gallery.encodedPaths.length; i++) {
-          if (pathsToRemove.contains(gallery.encodedPaths[i])) {
-            sortedIndexes.add(i);
-          }
-        }
-
-        sortedIndexes.sort((a, b) => b.compareTo(a));
-
-        for (final i in sortedIndexes) {
-          gallery.images.removeAt(i);
-          gallery.thumbs.removeAt(i);
-          gallery.thumbFutures.removeAt(i);
-          gallery.mimetypes.removeAt(i);
-          gallery.encodedPaths.removeAt(i);
+      for (int i = 0; i < gallery.encodedPaths.length; i++) {
+        if (pathsToRemove.contains(gallery.encodedPaths[i])) {
+          indexesToRemove.add(i);
         }
       }
 
-      removeFromGallery(_allData!);
+      indexesToRemove.sort((a, b) => b.compareTo(a));
+
+      for (final i in indexesToRemove) {
+        gallery.mimetypes.removeAt(i);
+        gallery.encodedPaths.removeAt(i);
+      }
+    }
+
+    setState(() {
       removeFromGallery(_filteredData!);
 
+      if (_allData != null) {
+        removeFromGallery(_allData!);
+      }
+
       selectedImages.clear();
-      elements = _filteredData!.images.length;
-      showButtons = _filteredData!.images.isNotEmpty;
+      elements = _filteredData!.encodedPaths.length;
+      showButtons = _filteredData!.encodedPaths.isNotEmpty;
     });
   }
-  //
 
-
-  Future<List<_MediaEntry>> _loadImagesWithoutSearch() async {
+  Future<void> _buildSearchIndex() async {
     List<Map<String, dynamic>> entries;
 
     if (connectedToInternet) {
       entries = (await fetchPhotosDir()).cast<Map<String, dynamic>>();
     } else {
       entries = PhotoStore.getAll()
-        .where((p) => p.localPath != null && File(p.localPath!).existsSync())
-        .map((p) => {
-          'path': p.path,
-          'mimetype': p.mimetype ?? 'image/jpeg',
-        })
-        .toList();
+          .where((p) => p.localPath != null && File(p.localPath!).existsSync())
+          .map((p) => {
+                'path': p.path,
+                'mimetype': p.mimetype ?? 'image/jpeg',
+              })
+          .toList();
     }
 
-    final results = await Future.wait(
-      entries.map((entry) async {
+    final filteredEntries = entries.where((entry) {
+      final stored = PhotoStore.get(entry['path'] as String);
 
-        final photo = PhotoStore.get(entry['path'] as String);
-        final isVideo = entry['mimetype'].startsWith('video/');
-
-        if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
-          if (isVideo) {
-            return await VideoThumbnail.thumbnailData(
-              video: photo.localPath!,
-              imageFormat: ImageFormat.WEBP,
-              maxWidth: 300,
-              quality: 10,
-            );
-          }
-          return await File(photo.localPath!).readAsBytes() as Uint8List?;
-        }
-
-        if (connectedToInternet == false) return null;
-        try {
-          return await fetchImageBytes(entry['path'], entry['mimetype']);
-        } catch (e) {
-          log("Error fetching image bytes for ${entry['path']} : $e");
-          return null;
-        }
-      }),
-    );
-
-    final filtered = results.asMap().entries.where((e) {
-      final stored = PhotoStore.get(entries[e.key]['path'] as String);
       if (stored?.isOldVersion == true) return false;
+
       if (widget.albumName != null) {
         return stored?.albums?.contains(widget.albumName) == true;
       }
-      if (widget.album == Album.favorites) return stored?.favorite == true;
-      if (widget.album == Album.screenshots) return stored?.isScreenshot == true && (stored?.deletedAt == null);
-      return widget.album == Album.trash 
-        ? stored?.deletedAt != null
-        : stored?.deletedAt == null;
-      }).map((e) => _MediaEntry(
-        bytes: e.value,
-        mimetype: entries[e.key]['mimetype'] as String,
-        encodedPath: entries[e.key]['path'] as String,
-    )).toList();
 
+      if (widget.album == Album.favorites) {
+        return stored?.favorite == true;
+      }
 
-    filtered.sort((a, b) {
-      final dateA = PhotoStore.getDate(a.encodedPath);
-      final dateB = PhotoStore.getDate(b.encodedPath);
+      if (widget.album == Album.screenshots) {
+        return stored?.isScreenshot == true && stored?.deletedAt == null;
+      }
+
+      return widget.album == Album.trash
+          ? stored?.deletedAt != null
+          : stored?.deletedAt == null;
+    }).toList();
+
+    filteredEntries.sort((a, b) {
+      final dateA = PhotoStore.getDate(a['path'] as String);
+      final dateB = PhotoStore.getDate(b['path'] as String);
       return dateA.compareTo(dateB);
     });
 
-    return filtered;
-  }
-
-
-  Future<List<Uint8List?>> _compressImages(List<Uint8List?> list) async {
-    final results = await Future.wait(list.map((origBytes) async {
-      if (origBytes == null) return null;
-
-      final origSize = origBytes.lengthInBytes / 1024;
-
-      final compressed = await FlutterImageCompress.compressWithList(
-        origBytes,
-        minWidth: 300,
-        minHeight: 300,
-        quality: 10,
-        format: CompressFormat.webp,
+    _searchIndex = filteredEntries.map((entry) {
+      final path = entry['path'] as String;
+      return _SearchEntry(
+        encodedPath: path,
+        mimetype: entry['mimetype'] as String,
+        searchableText: _buildSearchableText(path),
       );
-
-      final compSize = compressed.lengthInBytes / 1024;
-      log("Taille compressée ${compSize.toStringAsFixed(1)} KB - Réduit de ${((1 - compSize/origSize)*10).toStringAsFixed(1)}%");
-      return compressed;
-    }));
-
-    return results;
+    }).toList();
   }
+  //
+
+  String _buildSearchableText(String encodedPath) {
+    final photo = PhotoStore.get(encodedPath);
+
+    final date = PhotoStore.getDate(encodedPath);
+    final name = (photo?.name ?? '').toLowerCase();
+    final camera = (photo?.cameraModel ?? '').toLowerCase();
+
+    final year = date.year.toString();
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+
+    const monthNames = [
+      '',
+      'january',
+      'february',
+      'march',
+      'april',
+      'may',
+      'june',
+      'july',
+      'august',
+      'september',
+      'october',
+      'november',
+      'december',
+    ];
+
+    final monthName = monthNames[date.month];
+
+    return [
+      name,
+      camera,
+      year,
+      month,
+      day,
+      monthName,
+      "$year-$month-$day",
+      "$day-$month-$year",
+      "$year/$month/$day",
+      "$day/$month/$year",
+      "$monthName $year",
+      "$day $monthName $year",
+    ].join(' ').toLowerCase();
+  }
+
+
+  // Future<List<Uint8List?>> _compressImages(List<Uint8List?> list) async {
+  //   final results = await Future.wait(list.map((origBytes) async {
+  //     if (origBytes == null) return null;
+
+  //     final origSize = origBytes.lengthInBytes / 1024;
+
+  //     final compressed = await FlutterImageCompress.compressWithList(
+  //       origBytes,
+  //       minWidth: 300,
+  //       minHeight: 300,
+  //       quality: 10,
+  //       format: CompressFormat.webp,
+  //     );
+
+  //     final compSize = compressed.lengthInBytes / 1024;
+  //     log("Taille compressée ${compSize.toStringAsFixed(1)} KB - Réduit de ${((1 - compSize/origSize)*10).toStringAsFixed(1)}%");
+  //     return compressed;
+  //   }));
+
+  //   return results;
+  // }
 
 
   Future<void> _refresh() async {
-    final images = await _loadImagesWithoutSearch();
-
-    List<Uint8List?> thumbs;
-    List<Future<Uint8List?>?> thumbFutures;
-
-    if (detectBackend() == ServerBackend.copyparty) {
-      thumbs = List.filled(images.length, null, growable: true);
-      thumbFutures = images
-          .map((e) => CopypartyService.getThumbnail(e.encodedPath))
-          .toList();
-    } else {
-      thumbs = await _compressImages(images.map((e) => e.bytes).toList());
-      thumbFutures = List.filled(images.length, null, growable: true);
-    }
+    await _buildSearchIndex();
+    _applyFilter();
 
     if (!mounted) return;
-
-    _allData = _GalleryData(
-      images: images.map((e) => e.bytes).toList(),
-      thumbs: thumbs,
-      thumbFutures: thumbFutures,
-      mimetypes: images.map((e) => e.mimetype).toList(),
-      encodedPaths: images.map((e) => e.encodedPath).toList(),
-    );
-
-    _applyFilter();
+    setState(() {});
   }
 
   @override
@@ -568,7 +543,7 @@ class _LibraryPageState extends State<LibraryPage> {
           ConstrainedBox(
             constraints : const BoxConstraints(maxWidth: 95),
             child: Button(
-              enabled: _data?.images.isNotEmpty ?? false,
+              enabled: _filteredData?.encodedPaths.isNotEmpty ?? false,
               label: selectedMode ? "Cancel" : "Select",
               tint: Colors.white.withAlpha(10),
               glassConfig: const CNButtonConfig(
@@ -590,7 +565,7 @@ class _LibraryPageState extends State<LibraryPage> {
           if (_loading) {
             return SizedBox();
           }
-          if (_data == null) {
+          if (_filteredData == null) {
             return const Center(child: Text("Error loading images"));
           }
 
@@ -609,10 +584,9 @@ class _LibraryPageState extends State<LibraryPage> {
             }
           }
 
-          final data = _data!;
-          final images = data.images;
+          final data = _filteredData!;
           final mimetypes = data.mimetypes;          
-          if (images.isEmpty) {
+          if (data.encodedPaths.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -670,8 +644,8 @@ class _LibraryPageState extends State<LibraryPage> {
 
                         return _MediaTile(
                           index: index,
-                          bytes: data.thumbs[index], 
-                          thumbFuture: data.thumbFutures[index], 
+                          encodedPath: data.encodedPaths[index],
+                          mimetype: data.mimetypes[index],
                           selected: (selectedMode || widget.onlySelect) && selectedImages.contains(index), 
                           isVideo: data.mimetypes[index].startsWith('video/'), 
                           isFavorite: photo?.favorite == true, 
@@ -690,13 +664,8 @@ class _LibraryPageState extends State<LibraryPage> {
                               });
 
                               final paths = selectedImages.map((i) => data.encodedPaths[i]).toList();
-                              final thumbBytes = selectedImages.isNotEmpty 
-                                  ? (data.thumbs[selectedImages.first] ?? await data.thumbFutures[selectedImages.first])
-                                  : null;
-                                widget.onSelectedChanged?.call(paths, thumbBytes);
-
-                              widget.onSelectedChanged?.call(paths, thumbBytes);
-                              countSelected.value = selectedImages.length;
+                                
+                              widget.onSelectedChanged?.call(paths, null);
                               countSelected.value = selectedImages.length;
                             } else {
                               Navigator.push(
@@ -706,7 +675,7 @@ class _LibraryPageState extends State<LibraryPage> {
                                   transitionDuration: const Duration(milliseconds: 300),
                                   reverseTransitionDuration: const Duration(milliseconds: 300),
                                   pageBuilder: (_, __, ___) => ViewerPage(
-                                    images: data.images.toList(),
+                                    
                                     mimetype: mimetypes,
                                     index: index,
                                     encodedPaths: data.encodedPaths,
@@ -756,29 +725,27 @@ class _LibraryPageState extends State<LibraryPage> {
                                     }
                                   }
                                 ),
-                                if (mimetypes[index].startsWith("image/"))
-                                  MenuAction(
-                                    title: "Copy",
-                                    image: MenuImage.icon(CupertinoIcons.doc_on_doc),
-                                    callback: () => FlutterClipboard.copyImage(data.thumbs[index] ?? Uint8List(0))
-                                  ),
-                                if (PhotoStore.get(data.encodedPaths[index])?.editedFrom != null)
-                                  MenuAction(
-                                    title: "Revert to original",
-                                    image: MenuImage.icon(CupertinoIcons.arrow_counterclockwise_circle),
-                                    callback: () async {
-                                      await PhotoStore.revertEdit(data.encodedPaths[index]);
-                                      setState(() {
-                                        data.images.removeAt(index);
-                                        data.thumbs.removeAt(index);
-                                        data.thumbFutures.removeAt(index);
-                                        data.mimetypes.removeAt(index);
-                                        data.encodedPaths.removeAt(index);
-                                        elements = data.images.length;
-                                      });
-                                      _refresh();
-                                    },
-                                  ),
+                                // TODO
+                                // if (mimetypes[index].startsWith("image/"))
+                                  // MenuAction(
+                                  //   title: "Copy",
+                                  //   image: MenuImage.icon(CupertinoIcons.doc_on_doc),
+                                  //   callback: () async {
+                                  //     final thumb = data.thumbs[index] ?? await data.thumbFutures[index];
+                                  //     if (thumb != null) {
+                                  //       await FlutterClipboard.copyImage(thumb);
+                                  //     }
+                                  //   },
+                                  // ),
+                                  if (PhotoStore.get(data.encodedPaths[index])?.editedFrom != null)
+                                    MenuAction(
+                                      title: "Revert to original",
+                                      image: MenuImage.icon(CupertinoIcons.arrow_counterclockwise_circle),
+                                      callback: () async {
+                                        await PhotoStore.revertEdit(data.encodedPaths[index]);
+                                        await _refresh();
+                                      },
+                                    ),
                                 MenuAction(
                                   title: "Duplicate",
                                   image: MenuImage.icon(CupertinoIcons.plus_square_on_square),
@@ -815,15 +782,11 @@ class _LibraryPageState extends State<LibraryPage> {
                                     title: "Remove from album",
                                     image: MenuImage.icon(CupertinoIcons.xmark),
                                     callback: () {
-                                      PhotoStore.removeFromAlbum(path: data.encodedPaths[index], album: widget.albumName!);
-                                      setState(() {
-                                        _data!.images.removeAt(index);
-                                        _data!.thumbs.removeAt(index);
-                                        _data!.thumbFutures.removeAt(index);
-                                        _data!.mimetypes.removeAt(index);
-                                        _data!.encodedPaths.removeAt(index);
-                                        elements = _data!.images.length;
-                                      });
+                                      PhotoStore.removeFromAlbum(
+                                        path: data.encodedPaths[index],
+                                        album: widget.albumName!,
+                                      );
+                                      _removeLocally([index]);
                                     }
                                   ),
                                 MenuAction(
@@ -839,16 +802,9 @@ class _LibraryPageState extends State<LibraryPage> {
                                           content: "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
                                           principalButton: TextButton(
                                             child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
-                                            onPressed: () {
+                                           onPressed: () {
                                               PhotoStore.softDelete(data.encodedPaths[index]);
-                                              setState(() {
-                                                _data!.images.removeAt(index);
-                                                _data!.thumbs.removeAt(index);
-                                                _data!.thumbFutures.removeAt(index);
-                                                _data!.mimetypes.removeAt(index);
-                                                _data!.encodedPaths.removeAt(index);
-                                                elements = _data!.images.length;
-                                              });
+                                              _removeLocally([index]);
                                               Navigator.pop(context);
                                             }
                                           ),
@@ -865,13 +821,7 @@ class _LibraryPageState extends State<LibraryPage> {
                                   image: MenuImage.icon(CupertinoIcons.arrow_up_bin),
                                   callback: () {
                                     PhotoStore.restore(data.encodedPaths[index]);
-                                    setState(() {
-                                      _data!.images.removeAt(index);
-                                      _data!.thumbs.removeAt(index);
-                                      _data!.thumbFutures.removeAt(index);
-                                      _data!.mimetypes.removeAt(index);
-                                      _data!.encodedPaths.removeAt(index);
-                                    });
+                                    _removeLocally([index]);
                                   }
                                 ),
                                 MenuAction(
@@ -892,14 +842,7 @@ class _LibraryPageState extends State<LibraryPage> {
                                               await PhotoStore.hardDelete(data.encodedPaths[index]);
                                               if (!mounted) return;
                                               navigator.pop();
-                                              setState(() {
-                                                _data!.images.removeAt(index);
-                                                _data!.thumbs.removeAt(index);
-                                                _data!.thumbFutures.removeAt(index);
-                                                _data!.mimetypes.removeAt(index);
-                                                _data!.encodedPaths.removeAt(index);
-                                                elements = _data!.images.length;
-                                              });
+                                              _removeLocally([index]);
                                             }
                                           ),
                                         );
@@ -989,7 +932,7 @@ class _LibraryPageState extends State<LibraryPage> {
                                 scale: 0.85,
                                 showCopy: false,
                                 isViewer: false,
-                                isDownloaded: selectedImages.map((i) => data.encodedPaths[i]).every((p) => DownloadService.isDownloaded(p)),
+                                isDownloaded: selectedImages.every((i) => DownloadService.isDownloaded(data.encodedPaths[i])),
                                 isFavorite: false,
                                 onSelected: (action) async {
                                   final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
@@ -1069,16 +1012,8 @@ class _LibraryPageState extends State<LibraryPage> {
                                               PhotoStore.softDelete(path);
                                             }
                                           }
-                                          setState(() {
-                                            for (final i in sortedIndices) {
-                                              _data!.images.removeAt(i);
-                                              _data!.thumbs.removeAt(i);
-                                              _data!.mimetypes.removeAt(i);
-                                              _data!.encodedPaths.removeAt(i);
-                                            }
-                                            selectedImages.clear();
-                                            elements = _data!.images.length;
-                                          });
+
+                                          _removeLocally(selectedImages);
                                           Navigator.pop(context);
                                         },
                                       ),
@@ -1103,9 +1038,11 @@ class _LibraryPageState extends State<LibraryPage> {
   }
 }
 
-class _MediaTile extends StatelessWidget {
-  final Uint8List? bytes;
-  final Future<Uint8List?>? thumbFuture;
+
+// I wrote most of it myself, but part of the code was optimized using AI
+class _MediaTile extends StatefulWidget {
+  final String encodedPath;
+  final String mimetype;
   final bool selected;
   final bool isVideo;
   final bool isFavorite;
@@ -1113,10 +1050,11 @@ class _MediaTile extends StatelessWidget {
   final int? daysLeft;
   final VoidCallback onTap;
   final MenuProvider menuProvider;
+  final int index;
 
   const _MediaTile({
-    required this.bytes,
-    required this.thumbFuture,
+    required this.encodedPath,
+    required this.mimetype,
     required this.selected,
     required this.isVideo,
     required this.isFavorite,
@@ -1127,52 +1065,106 @@ class _MediaTile extends StatelessWidget {
     required this.index,
   });
 
-  final int index;
+  @override
+  State<_MediaTile> createState() => _MediaTileState();
+}
+
+class _MediaTileState extends State<_MediaTile> {
+  late Future<Uint8List?> _thumbFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _thumbFuture = _loadThumb();
+  }
+
+  Future<Uint8List?> _loadThumb() async {
+    final photo = PhotoStore.get(widget.encodedPath);
+    final isVideo = widget.mimetype.startsWith('video/');
+
+    if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
+      if (isVideo) {
+        return await VideoThumbnail.thumbnailData(
+          video: photo.localPath!,
+          imageFormat: ImageFormat.WEBP,
+          maxWidth: 300,
+          quality: 10,
+        );
+      }
+
+      final bytes = await File(photo.localPath!).readAsBytes();
+      return await FlutterImageCompress.compressWithList(
+        bytes,
+        minWidth: 300,
+        minHeight: 300,
+        quality: 10,
+        format: CompressFormat.webp,
+      );
+    }
+
+    if (!connectedToInternet) return null;
+
+    try {
+      if (detectBackend() == ServerBackend.copyparty) {
+        return await CopypartyService.getThumbnail(widget.encodedPath);
+      }
+
+      final bytes = await fetchImageBytes(widget.encodedPath, widget.mimetype);
+
+      if (isVideo) return bytes;
+
+      if (bytes == null) return null;
+
+      return await FlutterImageCompress.compressWithList(
+        bytes,
+        minWidth: 300,
+        minHeight: 300,
+        quality: 10,
+        format: CompressFormat.webp,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final opacity = selected
-      ? const AlwaysStoppedAnimation(0.8)
-      : const AlwaysStoppedAnimation(1.0);
+    final opacity = widget.selected
+        ? const AlwaysStoppedAnimation(0.8)
+        : const AlwaysStoppedAnimation(1.0);
+
     return SizedBox(
       width: MediaQuery.of(context).size.width / 3 - 2,
       height: MediaQuery.of(context).size.width / 3 - 2,
       child: GestureDetector(
-        onTap: onTap,
+        onTap: widget.onTap,
         child: ContextMenuWidget(
-          mobileMenuWidgetBuilder: DefaultMobileMenuWidgetBuilder(brightness: Brightness.dark),
-          menuProvider: menuProvider,
+          mobileMenuWidgetBuilder: DefaultMobileMenuWidgetBuilder(
+            brightness: Brightness.dark,
+          ),
+          menuProvider: widget.menuProvider,
           child: Stack(
             fit: StackFit.expand,
             children: [
-              if (thumbFuture != null)
-                FutureBuilder<Uint8List?>(
-                  future: thumbFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.data == null) {
-                      return Container(color: Colors.grey[900]);
-                    }
-                    return Hero(
-                      tag: "image_$index",
-                      child: Image.memory(snapshot.data!, fit: BoxFit.cover, opacity: opacity),
-                    );
-                  },
-                )
-              else if (bytes != null)
-                Hero(
-                  tag: "image_$index",
-                  child: Image.memory(
-                    bytes!,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: double.infinity,
-                    opacity: opacity,
-                  ),
-                )
-              else
-                Container(color: Colors.grey[900]),
+              FutureBuilder<Uint8List?>(
+                future: _thumbFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.data == null) {
+                    return Container(color: Colors.grey[900]);
+                  }
 
-              if (selected)
+                  return Hero(
+                    tag: "image_${widget.index}",
+                    child: Image.memory(
+                      snapshot.data!,
+                      fit: BoxFit.cover,
+                      opacity: opacity,
+                    ),
+                  );
+                },
+              ),
+
+              if (widget.selected)
                 Align(
                   alignment: Alignment.bottomRight,
                   child: Container(
@@ -1189,35 +1181,38 @@ class _MediaTile extends StatelessWidget {
                   ),
                 ),
 
-              if (trashMode) ...[
+              if (widget.trashMode) ...[
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.bottomCenter,
                       end: Alignment.topCenter,
                       stops: const [0.0, 0.3],
-                      colors: [Colors.black.withAlpha(190), Colors.transparent],
+                      colors: [Colors.black54, Colors.transparent],
                     ),
                   ),
                 ),
-                if (daysLeft != null)
+                if (widget.daysLeft != null)
                   Align(
                     alignment: Alignment.bottomCenter,
                     child: Text(
-                      "$daysLeft days",
+                      "${widget.daysLeft} days",
                       style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ),
               ],
 
-              if (isFavorite)
+              if (widget.isFavorite)
                 const Positioned(
-                  bottom: 5, left: 5,
+                  bottom: 5,
+                  left: 5,
                   child: Icon(CupertinoIcons.heart_fill, size: 18),
                 ),
-              if (isVideo)
+
+              if (widget.isVideo)
                 const Positioned(
-                  bottom: 5, right: 5,
+                  bottom: 5,
+                  right: 5,
                   child: Icon(CupertinoIcons.play_circle_fill, size: 18),
                 ),
             ],
@@ -1226,7 +1221,6 @@ class _MediaTile extends StatelessWidget {
       ),
     );
   }
-
 }
 
 
