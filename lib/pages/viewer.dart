@@ -16,12 +16,14 @@ import 'package:fover/src/services/download.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/utils/editor.dart';
+import 'package:fover/src/utils/requests.dart';
 import 'package:fover/src/widgets/adjust_date.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/dialog.dart';
 import 'package:fover/src/widgets/pop_menu.dart';
 import 'package:intl/intl.dart';
 import 'package:video_player/video_player.dart';
+import 'package:share_plus/share_plus.dart';
 
 bool focused = false;
 
@@ -367,26 +369,6 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     );
   }
 
-  Future<Uint8List?> fetchFullBytes(int index) async {
-    final photo = PhotoStore.get(widget.encodedPaths[index]);
-
-    if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
-      return await File(photo.localPath!).readAsBytes();
-    }
-
-    if (detectBackend() == ServerBackend.copyparty) {
-      final bytes = await CopypartyService.fetchFile(widget.encodedPaths[index]);
-      return Uint8List.fromList(bytes);
-    }
-
-    final response = await client?.fetch(
-      url: "v15/dl/${widget.encodedPaths[index]}",
-      parseJson: false,
-    );
-
-    return response?.data is Uint8List ? response!.data as Uint8List : null;
-}
-
   PreferredSizeWidget? _buildAppBar() {
     return  AppBar(
       key: const ValueKey('toolbar'),
@@ -472,7 +454,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                       }
                     break;
                   case PopMenuAction.copy:
-                    final bytes = await fetchFullBytes(currentIndex);
+                    final bytes = await fetchFullBytes(widget.encodedPaths[currentIndex]);
                     if (bytes == null) return;
                     await FlutterClipboard.copyImage(bytes);
                     break;
@@ -551,6 +533,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     );
   }
 
+
   Widget _buildBottomToolbar() {
     return Column(
       key: const ValueKey('toolbar'),
@@ -565,9 +548,22 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   icon: const Icon(CupertinoIcons.share),
                   glassIcon: CNSymbol('square.and.arrow.up', size: 18),
                   onPressed: () async {
-                    // final params = ShareParams(files: []);
-                    // await SharePlus.instance.share(params);
-                  },
+                    final bytes = await fetchFullBytes(widget.encodedPaths[currentIndex]);
+                    if (!mounted || bytes == null) return;
+
+                    await SharePlus.instance.share(
+                      ShareParams(
+                        previewThumbnail: XFile.fromData(bytes),
+                        files: [
+                          XFile.fromData(
+                            bytes,
+                            mimeType: widget.mimetype[currentIndex],
+                            name: PhotoStore.get(widget.encodedPaths[currentIndex])?.name ?? "media"
+                          )
+                        ]
+                      )
+                    );
+                  }
                 ),
                 _buildMediaControls(),
                 Button.iconOnly(
@@ -722,7 +718,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
             icon: const CNSymbol('slider.horizontal.3', size: 22),
             onPressed: () async {
               setState(() => focused = true);
-              final bytes = await fetchFullBytes(currentIndex);
+              final bytes = await fetchFullBytes(widget.encodedPaths[currentIndex]);
               if (!mounted) return;
               setState(() => focused = false);
   
