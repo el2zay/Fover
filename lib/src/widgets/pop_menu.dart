@@ -79,7 +79,7 @@ class PopMenu extends StatelessWidget {
           if (!isViewer) 
             CNPopupMenuItem(
               label: 'Share',
-              icon: CNSymbol('plus.square.on.square', size: 20),
+              icon: CNSymbol('square.and.arrow.up', size: 20),
             ),
           if (!isViewer)
             CNPopupMenuItem(
