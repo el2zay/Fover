@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fover/pages/library.dart';
+import 'package:hive_ce/hive.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -12,8 +13,8 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   FocusNode searchFocus = FocusNode();
   TextEditingController searchController = TextEditingController();
-
   bool _hasSearched = false;
+  final historyBox = Hive.box('searchHistory');
 
   static const List<Map<String, dynamic>> _exploreItems = [
     {
@@ -183,7 +184,27 @@ class _SearchPageState extends State<SearchPage> {
             },
           ),
         ),
-        Text("Recent Searches", style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600))
+        if (historyBox.isNotEmpty)...[
+          Text("Recent Searches", style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
+          SizedBox(height: 5),
+          Expanded(
+            child: ListView.builder(
+              physics: NeverScrollableScrollPhysics(),
+              itemCount: historyBox.length,
+              itemBuilder: (context, index) {
+                final item = historyBox.getAt(historyBox.length - 1 - index);
+                return ListTile(
+                  title: Text(item, style: TextStyle(color: Colors.white.withAlpha(230), fontSize: 20, fontWeight: FontWeight.w500)),
+                  dense: true,
+                  onTap: () {
+                    searchController.text = item;
+                    _onSearch(item);
+                  }
+                );
+              }
+            ),
+          )
+        ]
       ]
     );
   }
@@ -196,6 +217,19 @@ class _SearchPageState extends State<SearchPage> {
       onChanged: (query) {
         setState(() {});
         _onSearch(query);
+      },
+      onSubmitted: (value) {
+        final cleaned = value.trim();
+          if (cleaned.isNotEmpty) {
+          final existing = historyBox.values.toList();
+          final dupIndex = existing.indexWhere((e) => e.toLowerCase() == cleaned.toLowerCase());
+          if (dupIndex != -1) historyBox.deleteAt(dupIndex);
+
+          while (historyBox.length >= 8) {
+            historyBox.deleteAt(0);
+          }
+          historyBox.add(cleaned);
+        }
       },
       decoration: InputDecoration(
         contentPadding: EdgeInsets.symmetric(horizontal: 0),

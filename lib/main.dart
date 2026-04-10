@@ -66,6 +66,7 @@ void main() async {
   await initializeDateFormatting('en', null);
   await Hive.initFlutter();
   await Hive.openBox('settings');
+  await Hive.openBox('searchHistory');
 
   ExtendedImageGesturePageView;
   clearMemoryImageCache();
