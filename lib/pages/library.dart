@@ -22,6 +22,7 @@ import 'package:fover/src/widgets/button.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:fover/src/widgets/dialog.dart';
 import 'package:fover/src/widgets/pop_menu.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:super_context_menu/super_context_menu.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
@@ -858,7 +859,22 @@ class LibraryPageState extends State<LibraryPage> {
                                 MenuAction(
                                   title: "Share",
                                   image: MenuImage.icon(CupertinoIcons.share),
-                                  callback: () {}
+                                  callback: () async {
+                                    final bytes = await fetchFullBytes(data.encodedPaths[index]);
+                                    if (bytes == null) return;
+
+                                    await SharePlus.instance.share(
+                                      ShareParams(
+                                        files: [
+                                          XFile.fromData(
+                                            bytes,
+                                            mimeType: mimetypes[index],
+                                            name: PhotoStore.get(data.encodedPaths[index])?.name ?? 'media',
+                                          )
+                                        ]
+                                      )
+                                    );
+                                  }
                                 ),
                                 MenuAction(
                                   title: "Hide",
@@ -1056,6 +1072,25 @@ class LibraryPageState extends State<LibraryPage> {
                                     case PopMenuAction.revert:
                                       break;
                                     case PopMenuAction.share:
+                                      final xFiles = <XFile>[];
+
+                                      for (final i in selectedImages) {
+                                        final encodedPath = data.encodedPaths[i];
+                                        final bytes = await fetchFullBytes(encodedPath);
+                                        if (bytes == null) continue;
+
+                                        xFiles.add(XFile.fromData(
+                                          bytes,
+                                          mimeType: data.mimetypes[i],
+                                          name: PhotoStore.get(encodedPath)?.name ?? 'media'
+                                        ));
+                                      }
+                                      if (xFiles.isEmpty) break;
+                                      await SharePlus.instance.share(
+                                        ShareParams(
+                                          files: xFiles
+                                        )
+                                      );
                                       break;
                                     case PopMenuAction.favorite:
                                       for (final i in selectedImages) {
