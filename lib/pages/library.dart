@@ -235,7 +235,7 @@ class LibraryPageState extends State<LibraryPage> {
       _loading = false;
     });
 
-    if ((_filteredData?.encodedPaths.isEmpty ?? false)) {
+  if ((_filteredData?.encodedPaths.isNotEmpty ?? false) && widget.searchText.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_scrollController.hasClients) {
           _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
@@ -342,6 +342,7 @@ class LibraryPageState extends State<LibraryPage> {
     final date = PhotoStore.getDate(encodedPath);
     final name = (photo?.name ?? '').toLowerCase();
     final camera = (photo?.cameraModel ?? '').toLowerCase();
+    final description = (photo?.description ?? '').toLowerCase();
 
     final year = date.year.toString();
     final month = date.month.toString().padLeft(2, '0');
@@ -368,6 +369,7 @@ class LibraryPageState extends State<LibraryPage> {
     return [
       name,
       camera,
+      description,
       year,
       month,
       day,
@@ -551,9 +553,7 @@ class LibraryPageState extends State<LibraryPage> {
                 },
               ),
             ),
-
-
-          SizedBox(width: 10),
+          SizedBox(width: 15),
           if (widget.album != Album.trash && widget.album != Album.favorites &&widget.album != Album.screenshots && connectedToInternet)...[
              widget.albumName == null ?
               Button.iconOnly(
