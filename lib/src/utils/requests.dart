@@ -165,9 +165,35 @@ Future<List<dynamic>> fetchPhotosDir() async {
             imageBytes = imageResponse!.data as Uint8List;
           }
         }
+        
+        if (entry['mimetype'].contains('image/')) {
 
-        if (imageBytes != null) {
-          exifData = await readExifFromBytes(imageBytes);
+          try {
+            if (detectBackend() == ServerBackend.copyparty) {
+              imageBytes = await CopypartyService.fetchFileRange(entry['path']);
+            } else {
+              final isHeic = entry['mimetype'] == 'image/heic';
+              final range = isHeic ? 'bytes=0-524287' : 'bytes=0-65536';
+              final imageResponse = await client?.fetch(
+                url: "v15/dl/${entry['path']}",
+                parseJson: false,
+                headers: {'Range': range},
+              );
+              if (imageResponse?.data is Uint8List) {
+                imageBytes = imageResponse!.data as Uint8List;
+              }
+            }
+          } catch (e) {
+            log('⚠️ Fetch failed for ${entry['name']}: $e');
+          }
+
+          if (imageBytes != null) {
+            try {
+              exifData = await readExifFromBytes(imageBytes);
+            } catch (e) {
+              log('⚠️ EXIF parse failed for ${entry['name']}: $e');
+            }
+          }
         }
       }
 
