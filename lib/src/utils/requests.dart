@@ -165,7 +165,7 @@ Future<List<dynamic>> fetchPhotosDir() async {
             imageBytes = imageResponse!.data as Uint8List;
           }
         }
-        
+
         if (entry['mimetype'].contains('image/')) {
 
           try {
@@ -391,3 +391,23 @@ Future<Uint8List?> fetchImageBytes(String path, String mimetype) async {
 }
 
 
+  // A ne pas déplacer dans FreeboxService
+  Future<Uint8List?> fetchFullBytes(String encodedPath) async {
+    final photo = PhotoStore.get(encodedPath);
+
+    if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
+      return await File(photo.localPath!).readAsBytes();
+    }
+
+    if (detectBackend() == ServerBackend.copyparty) {
+      final bytes = await CopypartyService.fetchFile(encodedPath);
+      return Uint8List.fromList(bytes);
+    }
+
+    final response = await client?.fetch(
+      url: "v15/dl/$encodedPath",
+      parseJson: false,
+    );
+
+    return response?.data is Uint8List ? response!.data as Uint8List : null;
+}
