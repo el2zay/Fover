@@ -22,6 +22,8 @@ import 'package:fover/src/widgets/button.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:fover/src/widgets/dialog.dart';
 import 'package:fover/src/widgets/pop_menu.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:super_context_menu/super_context_menu.dart';
@@ -101,6 +103,16 @@ class LibraryPageState extends State<LibraryPage> {
 
   List<_SearchEntry> _searchIndex = [];
   String get _heroPrefix => widget.searchText.isEmpty ? 'library' : 'search';
+
+ static const formatMap = <String, FileFormat>{
+    'image/jpeg': Formats.jpeg,
+    'image/png': Formats.png,
+    'image/heic': Formats.heic,
+    'image/gif': Formats.gif,
+    'image/webp': Formats.webp,
+    'video/mp4': Formats.mp4,
+    'video/quicktime': Formats.mov,
+};
 
   @override
   void initState() {
@@ -667,7 +679,48 @@ class LibraryPageState extends State<LibraryPage> {
           )
         ] : null,
       ) : null,
-      body: Builder(
+      body: DropRegion(
+        formats: Formats.standardFormats,
+        onDropOver: (event) {
+          final canAccept = event.session.items.any((item) => 
+            formatMap.values.any((format) => item.canProvide(format))
+          );
+
+          return canAccept ? DropOperation.copy : DropOperation.none;
+        },
+        onPerformDrop: (event) async {
+          for (final item in event.session.items) {
+            final reader = item.dataReader!;
+
+            for (final entry in formatMap.entries) {
+              if (!reader.canProvide(entry.value)) continue;
+
+              reader.getFile(entry.value, (file) async {
+                final bytes = await file.readAll();
+                final mimetype = entry.key;
+                final ext = mimetype.split('/').last;
+                final filename =  file.fileName ??'IMG_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.$ext';
+
+                switch (detectBackend()) {
+                  case ServerBackend.freebox:
+                    // TODO à implémenter
+                    break;
+                  case ServerBackend.copyparty:
+                    await CopypartyService.uploadBytes(
+                      bytes: bytes,
+                      filename: filename,
+                    );
+
+                    break;
+                  default:
+                    break;
+                }
+                await _refresh();
+              });
+            }
+          }
+        },
+        child: Builder(
         builder: (context) {
           if (_loading) {
             return SizedBox();
@@ -762,19 +815,10 @@ class LibraryPageState extends State<LibraryPage> {
                             if (existingData != null && existingData.contains(encodedPath)) {
                               return null;
                             }
+
                             final items = DragItem(
                               localData: encodedPath
                             );
-
-                            const formatMap = <String, DataFormat<Uint8List>>{
-                              'image/jpeg': Formats.jpeg,
-                              'image/png': Formats.png,
-                              'image/heic': Formats.heic,
-                              'image/gif': Formats.gif,
-                              'image/webp': Formats.webp,
-                              'video/mp4': Formats.mp4,
-                              'video/quicktime': Formats.mov,
-                            };
 
                             final format = formatMap[mimetype] 
                               ?? (mimetype.startsWith('image/') ? Formats.jpeg : null)
@@ -1216,6 +1260,7 @@ class LibraryPageState extends State<LibraryPage> {
             ],
           );
         },
+        ),
       ),
     );
   }
