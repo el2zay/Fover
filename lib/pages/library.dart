@@ -683,41 +683,46 @@ class LibraryPageState extends State<LibraryPage> {
         formats: Formats.standardFormats,
         onDropOver: (event) {
           final canAccept = event.session.items.any((item) => 
-            formatMap.values.any((format) => item.canProvide(format))
+            item.localData != null || formatMap.values.any((format) => item.canProvide(format))
           );
 
           return canAccept ? DropOperation.copy : DropOperation.none;
         },
         onPerformDrop: (event) async {
           for (final item in event.session.items) {
-            final reader = item.dataReader!;
+            if (item.localData != null) {
+              final encodedPath = item.localData as String;
+              await PhotoStore.addToAlbum(path: encodedPath, album: widget.albumName!);
+            } else {
+              final reader = item.dataReader!;
 
-            for (final entry in formatMap.entries) {
-              if (!reader.canProvide(entry.value)) continue;
+              for (final entry in formatMap.entries) {
+                if (!reader.canProvide(entry.value)) continue;
 
-              reader.getFile(entry.value, (file) async {
-                final bytes = await file.readAll();
-                final mimetype = entry.key;
-                final ext = mimetype.split('/').last;
-                final filename =  file.fileName ??'IMG_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.$ext';
+                reader.getFile(entry.value, (file) async {
+                  final bytes = await file.readAll();
+                  final mimetype = entry.key;
+                  final ext = mimetype.split('/').last;
+                  final filename =  file.fileName ??'IMG_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.$ext';
 
-                switch (detectBackend()) {
-                  case ServerBackend.freebox:
-                    // TODO à implémenter
-                    break;
-                  case ServerBackend.copyparty:
-                    await CopypartyService.uploadBytes(
-                      bytes: bytes,
-                      filename: filename,
-                    );
+                  switch (detectBackend()) {
+                    case ServerBackend.freebox:
+                      // TODO à implémenter
+                      break;
+                    case ServerBackend.copyparty:
+                      await CopypartyService.uploadBytes(
+                        bytes: bytes,
+                        filename: filename,
+                      );
 
-                    break;
-                  default:
-                    break;
-                }
-                await _refresh();
-              });
+                      break;
+                    default:
+                      break;
+                  }
+                });
+              }
             }
+            await _refresh();
           }
         },
         child: Builder(
@@ -833,6 +838,7 @@ class LibraryPageState extends State<LibraryPage> {
                           allowedOperations: () => [DropOperation.copy],
                           child: DraggableWidget(
                             child: _MediaTile(
+                              key: ValueKey(data.encodedPaths[index]),
                               index: index,
                               encodedPath: data.encodedPaths[index],
                               mimetype: data.mimetypes[index],
@@ -1282,6 +1288,7 @@ class _MediaTile extends StatefulWidget {
   final String heroPrefix;
 
   const _MediaTile({
+    super.key,
     required this.encodedPath,
     required this.mimetype,
     required this.selected,
