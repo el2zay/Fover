@@ -174,6 +174,8 @@ class _AlbumsPageState extends State<AlbumsPage> {
 
   @override
   Widget build(BuildContext context) {
+    Color textColor = Theme.brightnessOf(context) == Brightness.dark ? Colors.white70 : Colors.black87;
+
     return Scaffold(
       appBar: BlurredAppBar(
         title: ("Albums"),
@@ -220,7 +222,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
                         icon: AnimatedRotation(
                           turns: isUnfolded ? 0.25 : 0,
                           duration: const Duration(milliseconds: 250),
-                          child: Icon(CupertinoIcons.chevron_right, size: 24, color: Colors.white70),
+                          child: Icon(CupertinoIcons.chevron_right, size: 24, color: textColor),
                         ),
                       ),
                       ],
@@ -304,13 +306,13 @@ class _AlbumsPageState extends State<AlbumsPage> {
                                     : albums[index]['key'] == 'videos' 
                                       ?  PhotoStore.videosCount.toString()
                                       : PhotoStore.screenshotsCount.toString(),
-                                  style: TextStyle(fontSize: 16, color: Colors.white70),
+                                  style: TextStyle(fontSize: 16, color: textColor),
                                 ),
                               )
                             else
                               Text(
                                 albums[index]['count'].toString(),
-                                style: TextStyle(fontSize: 16, color: Colors.white70),
+                                style: TextStyle(fontSize: 16, color: textColor),
                               ),
                             Icon(CupertinoIcons.chevron_forward, size: 20, color: Colors.white38),
                           ],
@@ -362,6 +364,7 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
 
   @override
   Widget build(BuildContext context) {
+    Color primary = Theme.of(context).primaryColor;
     Size size = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
@@ -418,7 +421,7 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
               builder: (context, bytes, _) {
                 return Container(
                   decoration: BoxDecoration(
-                    color: Colors.white10,
+                    color: primary.withAlpha(24),
                     borderRadius: BorderRadius.all(Radius.circular(20)),
                   ),
                   width: size.width * 0.5,
@@ -428,7 +431,7 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
                     ? Image.memory(widget.oldAlbum!.coverBytes!, fit: BoxFit.cover)
                     : bytes != null 
                       ? Image.memory(bytes, fit: BoxFit.cover)
-                      : Icon(CupertinoIcons.photo_fill, size: 40, color: Colors.white30),
+                      : Icon(CupertinoIcons.photo_fill, size: 40, color: primary.withAlpha(100)),
                   );
                 }
               ),
@@ -438,6 +441,7 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
               padding: EdgeInsetsGeometry.symmetric(horizontal: 120),
               child: Button(
                 label: "Add photos",
+                tint: primary,
                 onPressed: () {
                   showModalBottomSheet(
                     constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
@@ -501,9 +505,8 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
                 textCapitalization: TextCapitalization.sentences,
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
-                  fillColor: Colors.white10,
                   filled: true,
-                  hint: Text("Album name", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white38)),
+                  hint: Text("Album name", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: primary.withAlpha(100))),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(25)),
                     borderSide: BorderSide.none,
