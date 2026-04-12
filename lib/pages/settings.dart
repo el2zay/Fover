@@ -36,6 +36,8 @@ class _SettingsPageState extends State<SettingsPage> {
   }
   @override
   Widget build(BuildContext context) {
+    Color primary = Theme.of(context).primaryColor;
+    bool isDark = Theme.brightnessOf(context) == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
         title: Text("Settings", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
@@ -62,8 +64,14 @@ class _SettingsPageState extends State<SettingsPage> {
             SizedBox(height: 15),
             Center(child: Text("Freebox Server $model", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
           ],
-          Card(
-            color: Colors.white10,
+          Container(
+            // elevation: 0,
+            padding: EdgeInsets.only(bottom: 10),
+            margin: EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+              color: isDark ? Colors.white10 : Colors.black.withAlpha(10),
+            ),
             child: Padding(padding: EdgeInsetsGeometry.symmetric(horizontal: 20, vertical: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,17 +79,25 @@ class _SettingsPageState extends State<SettingsPage> {
                 children: [
                   Text(
                     "${formatSize(totalStorage - freeStorage)} used out of ${formatSize(totalStorage)}",
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white70
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: primary.withAlpha(200)
                    )
                   ),
                   SizedBox(height: 10),
-                  GradientProgressIndicator([
+                  GradientProgressIndicator(
+                    isDark ? [
                       Colors.green,
                       Colors.yellow,
                       Colors.orange,
                       Colors.red[500]!,
                       Colors.red[600]!,
                       Colors.red[700]!,
+                    ] : [
+                      Colors.green[500]!,
+                      Colors.yellow[700]!,
+                      Colors.orange[700]!,
+                      Colors.red[400]!,
+                      Colors.red[500]!,
+                      Colors.red[800]!,
                     ], storageUsed),
                 ],
               ),
