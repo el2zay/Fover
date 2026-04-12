@@ -177,6 +177,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
     return Scaffold(
       appBar: BlurredAppBar(
         title: ("Albums"),
+        isAlbum: true,
         actions: [
           Button.iconOnly(
             icon: Icon(CupertinoIcons.add), 
