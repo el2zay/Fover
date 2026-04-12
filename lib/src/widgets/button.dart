@@ -28,7 +28,6 @@ class Button extends StatelessWidget {
   final bool enabled;
   final VoidCallback onPressed;
 
-  // TODO :
   static Widget iconOnly({
     required VoidCallback onPressed,
     Icon? icon,
@@ -82,7 +81,7 @@ class Button extends StatelessWidget {
               backgroundColor: backgroundColor ?? Colors.white12,
               textStyle: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)
             ),
-            child: icon ?? Text(label ?? '', style: TextStyle(color: enabled ? textColor : Colors.grey[700])),
+            child: icon ?? Text(label ?? '', style: TextStyle(color: enabled ? Colors.black : Colors.grey[700])),
           );
   }
 }
