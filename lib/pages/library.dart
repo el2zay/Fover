@@ -23,7 +23,6 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:fover/src/widgets/dialog.dart';
 import 'package:fover/src/widgets/pop_menu.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:super_context_menu/super_context_menu.dart';
@@ -535,13 +534,13 @@ class LibraryPageState extends State<LibraryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      backgroundColor: Colors.black,
       extendBodyBehindAppBar: true,
       appBar: !widget.onlySelect && !widget.searchText.isNotEmpty ? BlurredAppBar(
         title: widget.albumName != null ? widget.albumName! : widget.album == Album.trash ? "Trash" : widget.album == Album.favorites ? "Favorites" : widget.album == Album.screenshots ? "Screenshots" : "Library",
         subtitle:  widget.album != Album.trash ? "$elements element${elements > 1 ? "s" : ""}" : null,
         isAlbum:  widget.album != Album.none || widget.albumName != null ,
         onBack: () => Navigator.of(context).pop(),
+        scrollController: _scrollController,
         actions: showButtons || !widget.onlySelect ? [
 
           if (widget.albumName == null)
@@ -555,9 +554,9 @@ class LibraryPageState extends State<LibraryPage> {
                 builder: (context, progress, _) {
                   if (progress == null || progress >= 1.0) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (_uploadOverlay != null) _dismissCard();
-                  });
-                  return const SizedBox.shrink();
+                      if (_uploadOverlay != null) _dismissCard();
+                    });
+                    return const SizedBox.shrink();
                   }
                   return CircularProgressIndicator(
                     value: progress,
@@ -664,10 +663,7 @@ class LibraryPageState extends State<LibraryPage> {
             child: Button(
               enabled: _filteredData?.encodedPaths.isNotEmpty ?? false,
               label: selectedMode ? "Cancel" : "Select",
-              tint: Colors.white.withAlpha(10),
-              glassConfig: const CNButtonConfig(
-                style: CNButtonStyle.prominentGlass,
-              ),
+              tint: Theme.of(context).primaryColor,
               onPressed: () {
                 setState(() {
                   selectedMode = !selectedMode;
@@ -1387,7 +1383,10 @@ class _MediaTileState extends State<_MediaTile> {
                 future: _thumbFuture,
                 builder: (context, snapshot) {
                   if (snapshot.data == null) {
-                    return Container(color: Colors.grey[900]);
+                    return Container(color: Theme.brightnessOf(context) == Brightness.dark 
+                      ? Colors.grey[900]
+                      : Colors.grey[400]
+                    );
                   }
                   return Hero(
                     tag: "${widget.heroPrefix}_image_${widget.index}",

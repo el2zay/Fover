@@ -1,20 +1,62 @@
 import 'dart:ui';
 
-import 'package:cupertino_native_better/cupertino_native.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:fover/src/widgets/button.dart';
 
-class BlurredAppBar extends StatelessWidget implements PreferredSizeWidget {
- const BlurredAppBar({super.key, required this.title, this.subtitle, required this.actions, this.showLeading = false});
 
+
+
+class BlurredAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String title;
   final String? subtitle;
   final List<Widget>? actions;
-  final bool showLeading;
+  final bool isAlbum;
+  final VoidCallback? onBack;
+  final ScrollController? scrollController;
+
+  const BlurredAppBar({
+    super.key, 
+    required this.title, 
+    this.subtitle, 
+    required this.actions, 
+    this.isAlbum = false,
+    this.onBack,
+    this.scrollController
+  });
 
   @override
-  AppBar build(BuildContext context) {
+  State<BlurredAppBar> createState() => _BlurredAppBarState();
+
+  @override
+  Size get preferredSize => Size.fromHeight(
+    subtitle != null ? kToolbarHeight + 10 : kToolbarHeight - 10
+  );
+}
+
+class _BlurredAppBarState extends State<BlurredAppBar> {
+  bool isAtTop = false;
+
+  @override
+  void didUpdateWidget(covariant BlurredAppBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.scrollController != widget.scrollController) {
+      oldWidget.scrollController?.removeListener(onScroll);
+      widget.scrollController?.addListener(onScroll);
+    }
+  }
+
+  void onScroll() {
+    final atTop = widget.scrollController!.offset < 10;
+    if (atTop != isAtTop) setState(() => isAtTop = atTop);
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = (isAtTop && !isDark) ? Colors.black : Colors.white;
+
     return AppBar(
       clipBehavior: Clip.none,
       elevation: 0,
@@ -27,57 +69,56 @@ class BlurredAppBar extends StatelessWidget implements PreferredSizeWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
+                colors: isDark ? [
                   Colors.black.withAlpha(150),
                   Colors.black.withAlpha(150),
                   Colors.black.withAlpha(25),
-                ],
+                ] : [
+                  Colors.white.withAlpha(25),
+                  Colors.white.withAlpha(25),
+                ]
               ),
             ),
           ),
         ),
       ),
-      leading: 
-      showLeading 
-      ? Transform.scale(
-        scale: 0.8,
-        child: Button.iconOnly(
-          onPressed: () => Navigator.pop(context),
-          icon: Icon(CupertinoIcons.back),
-          glassIcon: CNSymbol('chevron.left', size: 20),
-        ) 
-      ) : null,
-
       titleSpacing: 10,
-
       title: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 36,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        if (subtitle != null)
-          Text(
-              subtitle!, 
+            AnimatedDefaultTextStyle(
+              duration: Duration(milliseconds: 200),
               style: TextStyle(
-              color: Colors.white.withAlpha(230),
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+                color: widget.scrollController != null ? textColor : Theme.of(context).primaryColor,
+                fontSize: 36,
+                fontWeight: FontWeight.bold
+              ),
+              child: Text(
+                widget.title, 
+                style: TextStyle(
+                  color: widget.isAlbum ? Colors.black : null,
+                  fontSize: widget.isAlbum ? 20 : 36,
+                  fontWeight: FontWeight.bold
+                )
               ),
             ),
+          if (widget.subtitle != null)
+            AnimatedDefaultTextStyle(
+              duration: Duration(milliseconds: 200),
+              style: TextStyle(
+                color: widget.isAlbum 
+                  ? Theme.of(context).primaryColor
+                  : textColor.withAlpha(200),
+                fontSize: 18,
+                fontWeight: FontWeight.bold
+              ),
+              child: Text(widget.subtitle!), 
+            )
         ],
       ),
       backgroundColor: Colors.transparent,
-      actions: actions,
+      actions: widget.actions,
     );  
   }
-  
-  @override
-  Size get preferredSize => Size.fromHeight(subtitle != null ?  kToolbarHeight + 10 : kToolbarHeight - 10);
 }
