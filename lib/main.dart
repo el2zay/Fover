@@ -123,27 +123,23 @@ class _MainAppState extends State<MainApp> {
                   )
                 ]
               ),
-              child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                child: BottomNavigationBar(
-                  key: bottomNavKey,
-                  elevation: 0,
-                  backgroundColor: Colors.black.withAlpha(155),
-                  fixedColor: const Color.fromARGB(255, 52, 161, 250),
-                  type: BottomNavigationBarType.fixed,
-                  selectedFontSize: 13,
-                  unselectedFontSize: 13,
-                  currentIndex: _currentIndex,
-                  onTap: (value) {
-                    setState(() {
-                      _currentIndex = value;
-                    });
-                  },
-                  items: [
-                    BottomNavigationBarItem(icon: Icon(CupertinoIcons.photo), label: "Library"),
-                    BottomNavigationBarItem(icon: Icon(CupertinoIcons.collections), label: "Albums"),
-                    BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: "Search"),
-                  ]
-                ) 
+              child: BottomNavigationBar(
+                key: bottomNavKey,
+                elevation: 0,
+                type: BottomNavigationBarType.fixed,
+                selectedFontSize: 13,
+                unselectedFontSize: 13,
+                currentIndex: _currentIndex,
+                onTap: (value) {
+                  setState(() {
+                    _currentIndex = value;
+                  });
+                },
+                items: [
+                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.photo), label: "Library"),
+                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.collections), label: "Albums"),
+                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: "Search"),
+                ]
               ) 
             ) : 
           is26OrNewer && (box.get("appToken") != null || box.get("copypartyUrl") != null)
@@ -186,9 +182,63 @@ class _MainAppState extends State<MainApp> {
             ) : null
         ),
       ),
+      themeMode: ThemeMode.system,
       theme: ThemeData(
+        brightness: Brightness.light,
+        primaryColor: Colors.black,
+        scaffoldBackgroundColor: Colors.white,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        splashFactory: NoSplash.splashFactory,
+        appBarTheme: const AppBarTheme(
+          elevation: 0,
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            surfaceTintColor: Colors.white,
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+          ),
+        ),
+        textSelectionTheme: TextSelectionThemeData(
+          cursorColor: CupertinoColors.activeBlue,
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: ButtonStyle(
+            overlayColor: WidgetStatePropertyAll(Colors.transparent)
+          )
+        ),
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          selectedItemColor:  Colors.blue,
+          unselectedItemColor: Colors.grey[600]
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          hintStyle: TextStyle(color: Colors.black),
+          prefixIconColor: Colors.black87,
+          suffixIconColor: Colors.black87,
+          fillColor: Colors.black.withAlpha(10),
+
+        ),
+        extensions: [
+          PullDownButtonTheme(
+            itemTheme: PullDownMenuItemTheme(
+              destructiveColor: CupertinoColors.destructiveRed,
+            ),
+            dividerTheme: PullDownMenuDividerTheme(
+              dividerColor: Colors.white.withAlpha(30), 
+              largeDividerColor: Colors.white.withAlpha(15),
+            ),
+          ),
+        ]
+      ),
+      darkTheme: ThemeData(
         brightness: Brightness.dark,
-        colorScheme: ColorScheme.dark(primary: Colors.white),
+        primaryColor: Colors.white,
         scaffoldBackgroundColor: Colors.black,
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
@@ -214,7 +264,16 @@ class _MainAppState extends State<MainApp> {
         textButtonTheme: TextButtonThemeData(
           style: ButtonStyle(
             overlayColor: WidgetStatePropertyAll(Colors.transparent)
-          )
+          ),
+        ),
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          selectedItemColor: const Color.fromARGB(255, 52, 161, 250),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          hintStyle: TextStyle(color: Colors.white70),
+          prefixIconColor: Colors.white70,
+          suffixIconColor: Colors.white54,
+          fillColor: Colors.white12,
         ),
         extensions: [
           PullDownButtonTheme(
