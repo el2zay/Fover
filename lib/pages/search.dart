@@ -92,7 +92,10 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                   child: _hasSearched
                       ? LibraryPage(searchText: _query)
-                      : _buildSuggestions(),
+                      : Padding(
+                        padding: EdgeInsetsGeometry.all(12),
+                        child: _buildSuggestions(),
+                      ),
                 ),
               ),
               Positioned(
@@ -176,7 +179,7 @@ class _SearchPageState extends State<SearchPage> {
                   spacing: 8,
                   children: [
                     SizedBox(width: 3),
-                    Icon(_exploreItems[index]['icon'], color: Colors.white.withAlpha(200), size: 24),
+                    Icon(_exploreItems[index]['icon'], color: Theme.of(context).primaryColor.withAlpha(200), size: 24),
                     Text(_exploreItems[index]['title'], style: TextStyle(fontSize: 17))
                   ],
                 )
@@ -194,7 +197,7 @@ class _SearchPageState extends State<SearchPage> {
               itemBuilder: (context, index) {
                 final item = historyBox.getAt(historyBox.length - 1 - index);
                 return ListTile(
-                  title: Text(item, style: TextStyle(color: Colors.white.withAlpha(230), fontSize: 20, fontWeight: FontWeight.w500)),
+                  title: Text(item, style: TextStyle(color:  Theme.of(context).primaryColor.withAlpha(200), fontSize: 20, fontWeight: FontWeight.w500)),
                   dense: true,
                   onTap: () {
                     searchController.text = item;
@@ -233,12 +236,11 @@ class _SearchPageState extends State<SearchPage> {
       },
       decoration: InputDecoration(
         contentPadding: EdgeInsets.symmetric(horizontal: 0),
-        prefixIcon: Icon(CupertinoIcons.search, color: Colors.white70, size: 18),
+        prefixIcon: Icon(CupertinoIcons.search, size: 18),
         hintText: "Search in Fover",
-        hintStyle: TextStyle(color: Colors.white70),
         suffixIcon: searchController.text.isNotEmpty
           ? IconButton(
-            icon: const Icon(CupertinoIcons.xmark_circle_fill, color: Colors.white54, size: 18),
+            icon: const Icon(CupertinoIcons.xmark_circle_fill, size: 18),
             onPressed: () {
               searchController.clear();
               _onSearch('');
@@ -248,7 +250,6 @@ class _SearchPageState extends State<SearchPage> {
           borderRadius: BorderRadius.circular(15),
           borderSide: BorderSide.none,
         ),
-        fillColor: Colors.white12,
         filled: true
       ),
     );
