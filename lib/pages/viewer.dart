@@ -373,9 +373,11 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     return  AppBar(
       key: const ValueKey('toolbar'),
       centerTitle: true,
+      
       backgroundColor: Colors.transparent,
       leading: Row(
         children: [
+          SizedBox(width: 10),
           Button.iconOnly(
             glassConfig: const CNButtonConfig(),
             padding: const EdgeInsets.all(8),
@@ -404,7 +406,6 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   Text(
                     DateFormat('d MMMM yyyy', 'en').format(PhotoStore.getDate(widget.encodedPaths[currentIndex])),
                     style: TextStyle(
-                      color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -412,7 +413,6 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   Text(
                     DateFormat("HH:mm").format(PhotoStore.getDate(widget.encodedPaths[currentIndex])),
                     style: TextStyle(
-                      color: Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -426,7 +426,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
       actionsPadding: const EdgeInsets.only(right: 15),
       actions: [
         CupertinoTheme(
-          data: const CupertinoThemeData(brightness: Brightness.dark),
+          data: CupertinoThemeData(brightness: Theme.brightnessOf(context)),
           child: Transform.scale(
             scale: 1.2,
             child: PopMenu(
