@@ -189,7 +189,8 @@ class _AlbumsPageState extends State<AlbumsPage> {
                 }
               ).then((_) {});
             },
-          )
+          ),
+          SizedBox(width: 10),
         ],
       ),
       body: SingleChildScrollView(
@@ -264,6 +265,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
                         ),
                         Button(
                           label: "Reorder",
+                          tint: Theme.of(context).primaryColor,
                           onPressed: () async {
                             await Navigator.push(
                               context,
