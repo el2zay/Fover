@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'dart:io';
 import 'dart:async';
 
+import 'package:app_settings/app_settings.dart';
 import 'package:clipboard/clipboard.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
@@ -131,55 +132,81 @@ class LibraryPageState extends State<LibraryPage> {
   }
 
   Future pickImages() async {
-    final provider = DefaultAssetPickerProvider(
-      maxAssets: 100,
-      requestType: RequestType.common,
-    );
+    try {
+      await AssetPicker.permissionCheck(
+        requestOption: const PermissionRequestOption(
+          iosAccessLevel: IosAccessLevel.readWrite,
+        )
+      );
 
-    final delegate = FoverPickerDelegate(
-      provider: provider, 
-      initialPermission: await AssetPicker.permissionCheck(),
-    );
-    
+      final provider = DefaultAssetPickerProvider(
+        maxAssets: 100,
+        requestType: RequestType.common,
+      );
 
+      final delegate = FoverPickerDelegate(
+        provider: provider, 
+        initialPermission: await AssetPicker.permissionCheck(),
+      );
+      
     // Generated with AI
-    if (!mounted) return;
-    final List<AssetEntity>? assets = await AssetPicker.pickAssetsWithDelegate<
-      AssetEntity,
-      AssetPathEntity,
-      DefaultAssetPickerProvider,
-      FoverPickerDelegate
-    >(
-      context,
-      delegate: delegate,
-      useRootNavigator: false,
-    );
-    //
+      if (!mounted) return;
+      final List<AssetEntity>? assets = await AssetPicker.pickAssetsWithDelegate<
+        AssetEntity,
+        AssetPathEntity,
+        DefaultAssetPickerProvider,
+        FoverPickerDelegate>(
+        context,
+        delegate: delegate,
+        useRootNavigator: false,
+      );
+      //
 
 
-    if (assets == null || assets.isEmpty) return;
+      if (assets == null || assets.isEmpty) return;
 
-    List<File> files = [];
-    final List<String> fileNames = [];
-    for (final asset in assets) {
-      final file = await asset.originFile;
+      List<File> files = [];
+      final List<String> fileNames = [];
+      for (final asset in assets) {
+        final file = await asset.originFile;
 
-      if (file != null) {
+        if (file != null) {
           files.add(file);
           fileNames.add(_realFileName(file.path, asset.title));
         }
-    }
+      }
 
-    switch (detectBackend()) {
-      case ServerBackend.freebox:
-        await uploadLocalFiles(files: files, filenames: fileNames);
-      case ServerBackend.copyparty:
-        await CopypartyService.uploadLocalFiles(files: files, filenames: fileNames);
-      default:
-        break;
-    }
-    await _refresh();
+      switch (detectBackend()) {
+        case ServerBackend.freebox:
+          await uploadLocalFiles(files: files, filenames: fileNames);
+        case ServerBackend.copyparty:
+          await CopypartyService.uploadLocalFiles(files: files, filenames: fileNames);
+        default:
+          break;
+      }
 
+      await _refresh();
+    } catch (e) {
+      final content = e.toString().contains("PermissionState.denied") 
+        ? "Fover does not have permission to access your gallery." 
+        : e.toString().replaceAll("Exception", "");
+      showGeneralDialog(
+        barrierDismissible: false,
+        // ignore: use_build_context_synchronously
+        context: context, 
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return MyDialog(
+            content: content, 
+            principalButton: TextButton(
+              onPressed: () {
+                AppSettings.openAppSettings(type: AppSettingsType.appLocale);
+              }, 
+              child: Text("Grant access",  style: TextStyle(fontSize: 16, color: CupertinoColors.activeBlue))
+            )
+          );
+        }
+      );
+    }
   }
 
   static String _realFileName(String path, String? title) {
