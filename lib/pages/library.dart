@@ -950,7 +950,6 @@ class LibraryPageState extends State<LibraryPage> {
                                         }
                                       }
                                     ),
-                                    // TODO
                                     if (mimetypes[index].startsWith("image/"))
                                       MenuAction(
                                         title: "Copy",
@@ -1117,13 +1116,13 @@ class LibraryPageState extends State<LibraryPage> {
                             child: _isRefreshing
                                 ? const CupertinoActivityIndicator(
                                     key: ValueKey('spinning'),
-                                    color: Colors.white,
+                                    // color: Colors.white,
                                     radius: 10,
                                   )
                                 : CupertinoActivityIndicator.partiallyRevealed(
                                     key: const ValueKey('progress'),
                                     progress: _pullUpProgress,
-                                    color: Colors.white,
+                                    // color: Colors.white,
                                     radius: 10,
                                   ),
                           ),
@@ -1132,8 +1131,8 @@ class LibraryPageState extends State<LibraryPage> {
                             child: Text(
                               _isRefreshing ? 'Refreshing...' : _pullUpProgress >= 1.0 ? 'Release to refresh' : 'Pull up to refresh',
                               key: ValueKey(_isRefreshing ? 'refreshing' : _pullUpProgress >= 1.0 ? 'release' : 'pull'),
-                              style: const TextStyle(
-                                color: Colors.white70,
+                              style: TextStyle(
+                                color: Theme.of(context).primaryColor.withAlpha(200),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -1291,8 +1290,7 @@ class LibraryPageState extends State<LibraryPage> {
               ),
             ],
           );
-        },
-        ),
+        }),
       ),
     );
   }
