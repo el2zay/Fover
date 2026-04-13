@@ -109,77 +109,89 @@ class _MainAppState extends State<MainApp> {
               SearchPage()
             ],
           ),
-          bottomNavigationBar: (box.get("appToken") != null || box.get("copypartyUrl") != null) 
-          // bottomNavigationBar: true
-            ? Container(
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.transparent,
-                    spreadRadius: 2,
-                    blurRadius: 5,
-                    offset: Offset(0, 3),
-                  )
-                ]
-              ),
-              child: BottomNavigationBar(
-                key: bottomNavKey,
-                elevation: 0,
-                type: BottomNavigationBarType.fixed,
-                selectedFontSize: 13,
-                unselectedFontSize: 13,
-                currentIndex: _currentIndex,
-                onTap: (value) {
-                  setState(() {
-                    _currentIndex = value;
-                  });
-                },
-                items: [
-                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.photo), label: "Library"),
-                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.collections), label: "Albums"),
-                  BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: "Search"),
-                ]
-              ) 
-            ) : 
-          is26OrNewer && (box.get("appToken") != null || box.get("copypartyUrl") != null)
-            ? CNTabBar(
-              tint: Colors.blue,
-              iconSize: 18,
-              items: [
-                CNTabBarItem(
-                  label: 'Library',
-                  icon: CNSymbol('photo.fill.on.rectangle.fill'),
-                ),
-                CNTabBarItem(
-                  label: 'Albums',
-                  icon: CNSymbol('rectangle.stack.fill'),
-                ),
-              ],
-              currentIndex: _currentIndex,
-              onTap: (i) => setState(() => _currentIndex = i),
-              searchItem: CNTabBarSearchItem(
-                placeholder: 'Search in Fover',
-                automaticallyActivatesSearch: true,
-                onSearchChanged: (query) {
-                  searchQuery.value = query;
-                },
-                onSearchSubmit: (query) {
-                  searchQuery.value = query;
-                },
-                onSearchActiveChanged: (isActive) {
-                  if (!isActive) searchQuery.value = "";
-                },
-                style: const CNTabBarSearchStyle(
-                  iconSize: 20,
-                  buttonSize: 44,
-                  searchBarHeight: 44,
-                  animationDuration: Duration(milliseconds: 400),
-                  showClearButton: true,
-                ),
-              ),
-              // searchController: _searchController, // Optional programmatic control
-            ) : null
+          bottomNavigationBar: ValueListenableBuilder(
+            valueListenable: showTabBar,
+            builder: (context, tabBarVisible, _) {
+              if (box.get("appToken") == null && box.get("copypartyUrl") == null) {
+                return const SizedBox.shrink();
+              }
+
+              // if (is26OrNewer) {
+              //   return CNTabBar(
+              //     tint: Colors.blue,
+              //     iconSize: 18,
+              //     items: [
+              //       CNTabBarItem(
+              //         label: 'Library',
+              //         icon: CNSymbol('photo.fill.on.rectangle.fill'),
+              //       ),
+              //       CNTabBarItem(
+              //         label: 'Albums',
+              //         icon: CNSymbol('rectangle.stack.fill'),
+              //       ),
+              //     ],
+              //     currentIndex: _currentIndex,
+              //     onTap: (i) => setState(() => _currentIndex = i),
+              //     searchItem: CNTabBarSearchItem(
+              //       placeholder: 'Search in Fover',
+              //       automaticallyActivatesSearch: true,
+              //       onSearchChanged: (query) {
+              //         searchQuery.value = query;
+              //       },
+              //       onSearchSubmit: (query) {
+              //         searchQuery.value = query;
+              //       },
+              //       onSearchActiveChanged: (isActive) {
+              //         if (!isActive) searchQuery.value = "";
+              //       },
+              //       style: const CNTabBarSearchStyle(
+              //         iconSize: 20,
+              //         buttonSize: 44,
+              //         searchBarHeight: 44,
+              //         animationDuration: Duration(milliseconds: 400),
+              //         showClearButton: true,
+              //       ),
+              //     ),
+              //   );
+              // }
+
+              return AnimatedSwitcher(
+                duration: Duration(milliseconds: 300),
+                child: tabBarVisible ? Container(
+                  key: const ValueKey('navbar'),
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.transparent,
+                        spreadRadius: 2,
+                        blurRadius: 5,
+                        offset: Offset(0, 3),
+                      )
+                    ]
+                  ),
+                  child: BottomNavigationBar(
+                    key: bottomNavKey,
+                    elevation: 0,
+                    type: BottomNavigationBarType.fixed,
+                    selectedFontSize: 13,
+                    unselectedFontSize: 13,
+                    currentIndex: _currentIndex,
+                    onTap: (value) {
+                      setState(() {
+                        _currentIndex = value;
+                      });
+                    },
+                    items: [
+                      BottomNavigationBarItem(icon: Icon(CupertinoIcons.photo), label: "Library"),
+                      BottomNavigationBarItem(icon: Icon(CupertinoIcons.collections), label: "Albums"),
+                      BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: "Search"),
+                    ]
+                  ) 
+                ) : SizedBox.shrink(key: const ValueKey('empty')),
+              );
+            }
+          ),
         ),
       ),
       themeMode: ThemeMode.system,
