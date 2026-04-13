@@ -692,10 +692,10 @@ class LibraryPageState extends State<LibraryPage> {
               label: selectedMode ? "Cancel" : "Select",
               tint: Theme.of(context).primaryColor,
               onPressed: () {
+                showTabBar.value = !showTabBar.value;
                 setState(() {
                   selectedMode = !selectedMode;
                   selectedImages.clear();
-                  showTabBar.value = false;
                 });
               },
             )
@@ -1144,16 +1144,17 @@ class LibraryPageState extends State<LibraryPage> {
                     ),
                   ),
                 ),
-              if (selectedImages.isNotEmpty)
                 Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
+                  bottom: 15,
+                  left: 35,
+                  right: 35,
                   child: SafeArea(
                     top: false,
                     child: Padding(
                       padding: EdgeInsetsGeometry.symmetric(horizontal: 15, vertical: 5),
-                      child: Row(
+                      child: AnimatedSwitcher(duration: Duration(milliseconds: 300),
+                        child: selectedImages.isNotEmpty ?
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             widget.album == Album.trash
@@ -1283,10 +1284,11 @@ class LibraryPageState extends State<LibraryPage> {
                               tint: Theme.of(context).scaffoldBackgroundColor,
                             ),
                           ],
-                        ),
+                        ) : null,
                     ),
                   ),
-                ),
+                ) ,
+              ),
             ],
           );
         },
