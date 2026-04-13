@@ -33,7 +33,7 @@ class MyDialog extends StatelessWidget {
                   color: Colors.transparent,
                   child: Text(
                     content,
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, color: Color.fromARGB(235, 255, 255, 255)),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w400),
                     textAlign: TextAlign.center,
                     ),
                   ),
