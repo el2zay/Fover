@@ -172,7 +172,7 @@ class _SearchPageState extends State<SearchPage> {
             itemBuilder: (context, index) {
               return Container(
                 decoration: BoxDecoration(
-                  color: Colors.white10,
+                  color: Theme.brightnessOf(context) == Brightness.light ? Colors.grey.withAlpha(20) : Colors.white10,
                   borderRadius: BorderRadius.all(Radius.circular(15))
                 ),
                 child: Row(
