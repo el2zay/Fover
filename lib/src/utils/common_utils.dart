@@ -1,7 +1,10 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:fover/main.dart';
 import 'package:fover/src/models/photo_entry.dart';
+import 'package:fover/src/services/copyparty_service.dart';
+import 'package:fover/src/services/photo_store.dart';
 
 DateTime? parseExifDate(String? raw) {
   if (raw == null) return null;
@@ -74,4 +77,24 @@ ServerBackend detectBackend() {
   if (box.get("appToken") != null) return ServerBackend.freebox;
   if (box.get("copypartyUrl") != null) return ServerBackend.copyparty;
   return ServerBackend.none;
+}
+
+Future<Uint8List?> fetchFullBytes(String encodedPath) async {
+    final photo = PhotoStore.get(encodedPath);
+
+    if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
+      return await File(photo.localPath!).readAsBytes();
+    }
+
+    if (detectBackend() == ServerBackend.copyparty) {
+      final bytes = await CopypartyService.fetchFile(encodedPath);
+      return Uint8List.fromList(bytes);
+    }
+
+    final response = await client?.fetch(
+      url: "v15/dl/$encodedPath",
+      parseJson: false,
+    );
+
+    return response?.data is Uint8List ? response!.data as Uint8List : null;
 }

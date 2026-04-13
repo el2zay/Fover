@@ -12,10 +12,10 @@ import 'package:fover/pages/onboarding/first.dart';
 import 'package:fover/pages/library.dart';
 import 'package:fover/pages/search.dart';
 import 'package:fover/src/services/copyparty_service.dart';
+import 'package:fover/src/services/freebox_service.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:freebox/freebox.dart';
-import 'package:fover/src/utils/requests.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:pull_down_button/pull_down_button.dart'; 
@@ -55,8 +55,8 @@ Future<void> initApp() async {
     if (connectedToInternet) {
       await PhotoStore.purgeExpired();
       await PhotoStore.existsOnServer();
-      if (box.get("appToken") != null ) model = await getFreeboxModel();
-      fetchPhotosDir();
+      if (box.get("appToken") != null ) model = await FreeboxService.getFreeboxModel();
+      FreeboxService.fetchPhotosDir();
     }
   }
 }

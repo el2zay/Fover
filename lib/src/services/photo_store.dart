@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:fover/main.dart';
 import 'package:fover/src/models/album_entry.dart';
 import 'package:fover/src/services/copyparty_service.dart';
+import 'package:fover/src/services/freebox_service.dart';
 import 'package:fover/src/utils/common_utils.dart';
-import 'package:fover/src/utils/requests.dart';
 import 'package:freebox/freebox.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:fover/src/models/photo_entry.dart';
@@ -190,7 +190,7 @@ class PhotoStore {
   static Future<void> hardDelete(String path) async {
     switch (detectBackend()) {
       case ServerBackend.freebox:
-        deleteLocalFile(path);
+        FreeboxService.deleteLocalFile(path);
       case ServerBackend.copyparty:
         await CopypartyService.deleteFile(path);
       default:

@@ -16,7 +16,6 @@ import 'package:fover/src/services/download.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/utils/editor.dart';
-import 'package:fover/src/utils/requests.dart';
 import 'package:fover/src/widgets/adjust_date.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/dialog.dart';

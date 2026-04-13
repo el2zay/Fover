@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:fover/src/utils/requests.dart';
 import 'package:flutter/material.dart';
+import 'package:fover/src/services/freebox_service.dart';
 
 class FreeboxConnectionPage extends StatefulWidget {
   const FreeboxConnectionPage({super.key});
@@ -17,7 +17,7 @@ class _FreeboxConnectionPageState extends State<FreeboxConnectionPage> {
 
   @override
   void initState() {
-    infos = signUp(context);
+    infos = FreeboxService.signUp(context);
     super.initState();
   }
 
