@@ -715,7 +715,11 @@ class LibraryPageState extends State<LibraryPage> {
           for (final item in event.session.items) {
             if (item.localData != null) {
               final encodedPath = item.localData as String;
-              await PhotoStore.addToAlbum(path: encodedPath, album: widget.albumName!);
+              try {
+                await PhotoStore.addToAlbum(path: encodedPath, album: widget.albumName!);
+              } catch (e) {
+                log("L'utilisateur n'est pas dans un album");
+              }
             } else {
               final reader = item.dataReader!;
 
@@ -1462,10 +1466,10 @@ class _MediaTileState extends State<_MediaTile> {
               ],
 
               if (widget.isFavorite)
-                const Positioned(
+                Positioned(
                   bottom: 5,
                   left: 5,
-                  child: Icon(CupertinoIcons.heart_fill, size: 18),
+                  child: Icon(CupertinoIcons.heart_fill, size: 18, color: Colors.white),
                 ),
 
               if (widget.isVideo)
