@@ -736,10 +736,14 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                 ),
               );
 
-             setState(() {
-              widget.encodedPaths[currentIndex] = newPath ?? "";
-            });
+              if (!mounted || newPath == null) return;
+
               widget.onRefresh?.call();
+
+              if (!mounted) return;
+              setState(() {
+                widget.encodedPaths[currentIndex] = newPath;
+              });
             },
             config: const CNButtonDataConfig(
               style: CNButtonStyle.prominentGlass,
