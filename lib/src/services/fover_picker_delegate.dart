@@ -126,6 +126,7 @@ class FoverPickerDelegate extends DefaultAssetPickerBuilderDelegate<DefaultAsset
         children: [
           SizedBox(width: 10),
           Button.iconOnly(
+            icon: Icon(CupertinoIcons.xmark),
             glassIcon: CNSymbol('xmark', size: 16),
             backgroundColor: CupertinoColors.transparent,
             onPressed: () => Navigator.pop(context),
@@ -138,8 +139,8 @@ class FoverPickerDelegate extends DefaultAssetPickerBuilderDelegate<DefaultAsset
           listenable: provider, 
           builder: (context, __) {
             return Button.iconOnly(
-              icon: Icon(CupertinoIcons.check_mark, size: 14),
-              glassIcon: CNSymbol('checkmark', size: 14),
+              icon: Icon(CupertinoIcons.check_mark, size: 20),
+              glassIcon: CNSymbol('checkmark', size: 14, color: provider.selectedAssets.isNotEmpty ? Colors.white70 : Colors.white38),
               enabled: provider.selectedAssets.isNotEmpty,
               tint: Colors.blue,
               glassConfig: const CNButtonConfig(
