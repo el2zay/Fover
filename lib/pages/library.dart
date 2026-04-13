@@ -947,17 +947,15 @@ class LibraryPageState extends State<LibraryPage> {
                                       }
                                     ),
                                     // TODO
-                                    // if (mimetypes[index].startsWith("image/"))
-                                      // MenuAction(
-                                      //   title: "Copy",
-                                      //   image: MenuImage.icon(CupertinoIcons.doc_on_doc),
-                                      //   callback: () async {
-                                      //     final thumb = data.thumbs[index] ?? await data.thumbFutures[index];
-                                      //     if (thumb != null) {
-                                      //       await FlutterClipboard.copyImage(thumb);
-                                      //     }
-                                      //   },
-                                      // ),
+                                    if (mimetypes[index].startsWith("image/"))
+                                      MenuAction(
+                                        title: "Copy",
+                                        image: MenuImage.icon(CupertinoIcons.doc_on_doc),
+                                        callback: () async {
+                                          final bytes = await fetchFullBytes(data.encodedPaths[index]);
+                                          if (bytes != null) await FlutterClipboard.copyImage(bytes);
+                                        },
+                                      ),
                                       if (PhotoStore.get(data.encodedPaths[index])?.editedFrom != null)
                                         MenuAction(
                                           title: "Revert to original",
@@ -1212,9 +1210,8 @@ class LibraryPageState extends State<LibraryPage> {
                                       break;
                                     case PopMenuAction.favorite:
                                       for (final i in selectedImages) {
-                                        await PhotoStore.update(path: data.encodedPaths[i], hidden: true);
+                                        await PhotoStore.update(path: data.encodedPaths[i], favorite: true);
                                       }
-                                      _removeLocally(selectedImages);
                                       break;
                                     case PopMenuAction.duplicate:
                                       for (final i in selectedImages) {
