@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cupertino_native_better/style/sf_symbol.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -129,6 +131,25 @@ class _SettingsPageState extends State<SettingsPage> {
           ListTile(
             leading: Icon(CupertinoIcons.exclamationmark_triangle),
             title: Text("Report a bug"),
+            onTap: () {
+              openUrl(
+                Uri.parse(
+                  "mailto:zayatelie27@gmail.com?subject=Fover — Bug Report on ${Platform.operatingSystem} ${Platform.operatingSystemVersion}"
+                )
+              );
+            },
+            trailing: Icon(CupertinoIcons.chevron_forward),
+          ),
+          ListTile(
+            leading: Icon(Icons.lightbulb_outline),
+            title: Text("Make a suggestion"),
+            onTap: () {
+              openUrl(
+                Uri.parse(
+                  "mailto:zayatelie27@gmail.com?subject=Fover — Suggestion"
+                )
+              );
+            },
             trailing: Icon(CupertinoIcons.chevron_forward),
           ),
           ListTile(
