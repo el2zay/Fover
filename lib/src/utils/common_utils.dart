@@ -5,6 +5,7 @@ import 'package:fover/main.dart';
 import 'package:fover/src/models/photo_entry.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/photo_store.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 DateTime? parseExifDate(String? raw) {
   if (raw == null) return null;
@@ -97,4 +98,11 @@ Future<Uint8List?> fetchFullBytes(String encodedPath) async {
     );
 
     return response?.data is Uint8List ? response!.data as Uint8List : null;
+}
+
+Future<void> openUrl(Uri url) async {
+  if (await canLaunchUrl(url)) {
+    await launchUrl(url);
+  }
+
 }
