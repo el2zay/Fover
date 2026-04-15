@@ -21,6 +21,7 @@ import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/dialog.dart';
 import 'package:fover/src/widgets/pop_menu.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -61,7 +62,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   bool showInfo = false;
   final _sheetController = DraggableScrollableController();
   late double _imageFocusScale = PhotoStore.isLandscape(widget.encodedPaths[currentIndex]) ? 1 : 0.73;
-  bool _isDisposed = false;
+  bool _isDisposed = false;  
 
 
   @override
@@ -716,33 +717,57 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
           CNButtonData.icon(
             icon: const CNSymbol('slider.horizontal.3', size: 22),
             onPressed: () async {
-              setState(() => focused = true);
-              final bytes = await fetchFullBytes(widget.encodedPaths[currentIndex]);
+              setState(()=> focused = true);
+              final isVideo = widget.mimetype[currentIndex].startsWith('video');
+              String? localVideoPath;
+
+              if (isVideo) {
+                final photo = PhotoStore.get(widget.encodedPaths[currentIndex]);
+                final dir = await getTemporaryDirectory();
+                final tmpFile = 
+                  File('${dir.path}/edit_tmp_${DateTime.now().millisecondsSinceEpoch}.mp4');
+
+                final bytes = await fetchFullBytes(widget.encodedPaths[currentIndex]);
+                if (!mounted || bytes == null) return;
+                await tmpFile.writeAsBytes(bytes);
+                localVideoPath = tmpFile.path;
+              }
+
+              final bytes = isVideo ? null : await fetchFullBytes(widget.encodedPaths[currentIndex]);
               if (!mounted) return;
               setState(() => focused = false);
-  
-              if (bytes == null) return;
-              final newPath = await Navigator.push<String>(
+              if (!isVideo && bytes == null) return;
+
+              final newPath = await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => PopScope(
-                    canPop: false, 
+                    canPop: false,
                     child: PhotoEditorPage(
-                      bytes: bytes,
-                      encodedPath: widget.encodedPaths[currentIndex],
-                    ),
-                  ),
-                ),
+                      bytes: bytes ?? Uint8List(0), 
+                      encodedPath: widget.encodedPaths[currentIndex], 
+                      localVideoPath: localVideoPath, 
+                      isVideo: isVideo
+                    )
+                  )
+                )
               );
 
-              if (!mounted || newPath == null) return;
+              if (localVideoPath != null) {
+                try {
+                  File(localVideoPath).deleteSync();
+                } catch (_) {
 
-              widget.onRefresh?.call();
+                }
 
-              if (!mounted) return;
-              setState(() {
-                widget.encodedPaths[currentIndex] = newPath;
-              });
+                if (!mounted || newPath == null) return;
+                widget.onRefresh?.call();
+                if (!mounted) return;
+                setState(() {
+                  widget.encodedPaths[currentIndex] = newPath;
+                });
+              
+              }
             },
             config: const CNButtonDataConfig(
               style: CNButtonStyle.prominentGlass,
