@@ -17,6 +17,10 @@ class MyDialog extends StatelessWidget {
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
+        constraints: BoxConstraints(
+          minWidth: 0,
+          maxWidth: 350
+        ),
         child: LiquidGlassContainer(
           config: LiquidGlassConfig(
             shape: CNGlassEffectShape.rect,
