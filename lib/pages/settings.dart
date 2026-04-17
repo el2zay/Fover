@@ -55,128 +55,129 @@ class _SettingsPageState extends State<SettingsPage> {
           ],
         ),
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(height: 20),
-          if (model != null)...[
-            Center(
-              child: Image.asset("assets/illustrations/freebox/${model!.toLowerCase()}.png", height: 45)
-            ),
-            SizedBox(height: 15),
-            Center(child: Text("Freebox Server $model", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
-          ],
-          Container(
-            // elevation: 0,
-            padding: EdgeInsets.only(bottom: 10),
-            margin: EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.all(Radius.circular(10)),
-              color: isDark ? Colors.white10 : Colors.black.withAlpha(10),
-            ),
-            child: Padding(padding: EdgeInsetsGeometry.symmetric(horizontal: 20, vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "${formatSize(totalStorage - freeStorage)} used out of ${formatSize(totalStorage)}",
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: primary.withAlpha(200)
-                   )
-                  ),
-                  SizedBox(height: 10),
-                  GradientProgressIndicator(
-                    isDark ? [
-                      Colors.green,
-                      Colors.yellow,
-                      Colors.orange,
-                      Colors.red[500]!,
-                      Colors.red[600]!,
-                      Colors.red[700]!,
-                    ] : [
-                      Colors.green[500]!,
-                      Colors.yellow[700]!,
-                      Colors.orange[700]!,
-                      Colors.red[400]!,
-                      Colors.red[500]!,
-                      Colors.red[800]!,
-                    ], storageUsed),
-                ],
+      body: SafeArea(
+        child: ListView(
+          children: [
+            SizedBox(height: 20),
+            if (model != null)...[
+              Center(
+                child: Image.asset("assets/illustrations/freebox/${model!.toLowerCase()}.png", height: 45)
               ),
-            )
-          ),
-          SizedBox(height: 5),
-          if (detectBackend() == ServerBackend.freebox)
+              SizedBox(height: 15),
+              Center(child: Text("Freebox Server $model", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
+            ],
+            Container(
+              // elevation: 0,
+              padding: EdgeInsets.only(bottom: 10),
+              margin: EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+                color: isDark ? Colors.white10 : Colors.black.withAlpha(10),
+              ),
+              child: Padding(padding: EdgeInsetsGeometry.symmetric(horizontal: 20, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "${formatSize(totalStorage - freeStorage)} used out of ${formatSize(totalStorage)}",
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: primary.withAlpha(200)
+                    )
+                    ),
+                    SizedBox(height: 10),
+                    GradientProgressIndicator(
+                      isDark ? [
+                        Colors.green,
+                        Colors.yellow,
+                        Colors.orange,
+                        Colors.red[500]!,
+                        Colors.red[600]!,
+                        Colors.red[700]!,
+                      ] : [
+                        Colors.green[500]!,
+                        Colors.yellow[700]!,
+                        Colors.orange[700]!,
+                        Colors.red[400]!,
+                        Colors.red[500]!,
+                        Colors.red[800]!,
+                      ], storageUsed),
+                  ],
+                ),
+              )
+            ),
+            SizedBox(height: 5),
+            if (detectBackend() == ServerBackend.freebox)
+              ListTile(
+                leading: Icon(CupertinoIcons.folder),
+                title: Text("Change the photo folder"),
+                trailing: Icon(CupertinoIcons.chevron_forward),
+              ),
             ListTile(
-              leading: Icon(CupertinoIcons.folder),
-              title: Text("Change the photo folder"),
+              leading: Icon(CupertinoIcons.bell),
+              title: Text("Notifications"),
               trailing: Icon(CupertinoIcons.chevron_forward),
             ),
-          ListTile(
-            leading: Icon(CupertinoIcons.bell),
-            title: Text("Notifications"),
-            trailing: Icon(CupertinoIcons.chevron_forward),
-          ),
-          ListTile(
-            leading: Icon(CupertinoIcons.globe),
-            title: Text("Language"),
-            trailing: Icon(CupertinoIcons.chevron_forward),
-          ),
-          ListTile(
-            leading: Icon(CupertinoIcons.ellipsis_circle),
-            title: Text("Peronalize the context menu"),
-            trailing: Icon(CupertinoIcons.chevron_forward),
-            onTap: () {},
-          ),
-          ListTile(
-            leading: Icon(CupertinoIcons.exclamationmark_triangle),
-            title: Text("Report a bug"),
-            onTap: () {
-              openUrl(
-                Uri.parse(
-                  "mailto:zayatelie27@gmail.com?subject=Fover — Bug Report on ${Platform.operatingSystem} ${Platform.operatingSystemVersion}"
-                )
-              );
-            },
-            trailing: Icon(CupertinoIcons.chevron_forward),
-          ),
-          ListTile(
-            leading: Icon(Icons.lightbulb_outline),
-            title: Text("Make a suggestion"),
-            onTap: () {
-              openUrl(
-                Uri.parse(
-                  "mailto:zayatelie27@gmail.com?subject=Fover — Suggestion"
-                )
-              );
-            },
-            trailing: Icon(CupertinoIcons.chevron_forward),
-          ),
-          ListTile(
-            leading: Icon(Icons.logout, color: Colors.red[600]),
-            title: Text("Log out", style: TextStyle(color: Colors.red)),
-            onTap: () {
-              // TODO freebox
-              showGeneralDialog(
-                context: context, 
-                 pageBuilder: (context, animation, secondaryAnimation) {
-                  return MyDialog(
-                    content: "Are you sure you want to log out?",
-                    principalButton: TextButton(
-                      child: Text("Log out", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        CopypartyService.disconnect();
-                        Phoenix.rebirth(context);
-                      }
-                    ),
-                  );
-                }
-              );
-            },
-          ),
-        ]
-      ),
+            ListTile(
+              leading: Icon(CupertinoIcons.globe),
+              title: Text("Language"),
+              trailing: Icon(CupertinoIcons.chevron_forward),
+            ),
+            ListTile(
+              leading: Icon(CupertinoIcons.ellipsis_circle),
+              title: Text("Peronalize the context menu"),
+              trailing: Icon(CupertinoIcons.chevron_forward),
+              onTap: () {},
+            ),
+            ListTile(
+              leading: Icon(CupertinoIcons.exclamationmark_triangle),
+              title: Text("Report a bug"),
+              onTap: () {
+                openUrl(
+                  Uri.parse(
+                    "mailto:zayatelie27@gmail.com?subject=Fover — Bug Report on ${Platform.operatingSystem} ${Platform.operatingSystemVersion}"
+                  )
+                );
+              },
+              trailing: Icon(CupertinoIcons.chevron_forward),
+            ),
+            ListTile(
+              leading: Icon(Icons.lightbulb_outline),
+              title: Text("Make a suggestion"),
+              onTap: () {
+                openUrl(
+                  Uri.parse(
+                    "mailto:zayatelie27@gmail.com?subject=Fover — Suggestion"
+                  )
+                );
+              },
+              trailing: Icon(CupertinoIcons.chevron_forward),
+            ),
+            ListTile(
+              leading: Icon(Icons.logout, color: Colors.red[600]),
+              title: Text("Log out", style: TextStyle(color: Colors.red)),
+              onTap: () {
+                // TODO freebox
+                showGeneralDialog(
+                  context: context, 
+                  pageBuilder: (context, animation, secondaryAnimation) {
+                    return MyDialog(
+                      content: "Are you sure you want to log out?",
+                      principalButton: TextButton(
+                        child: Text("Log out", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          CopypartyService.disconnect();
+                          Phoenix.rebirth(context);
+                        }
+                      ),
+                    );
+                  }
+                );
+              },
+            ),
+          ]
+        ),
+      )
     );
   }
 }
