@@ -105,55 +105,60 @@ class _MainAppState extends State<MainApp> {
             index: _currentIndex,
             children:  [
               LibraryPage(onlySelect: false),
-              AlbumsPage(),
+              SafeArea(child: AlbumsPage()),
               SearchPage()
             ],
           ),
           bottomNavigationBar: ValueListenableBuilder(
+            key: bottomNavKey,
             valueListenable: showTabBar,
             builder: (context, tabBarVisible, _) {
               if (box.get("appToken") == null && box.get("copypartyUrl") == null) {
                 return const SizedBox.shrink();
               }
 
-              // if (is26OrNewer) {
-              //   return CNTabBar(
-              //     tint: Colors.blue,
-              //     iconSize: 18,
-              //     items: [
-              //       CNTabBarItem(
-              //         label: 'Library',
-              //         icon: CNSymbol('photo.fill.on.rectangle.fill'),
-              //       ),
-              //       CNTabBarItem(
-              //         label: 'Albums',
-              //         icon: CNSymbol('rectangle.stack.fill'),
-              //       ),
-              //     ],
-              //     currentIndex: _currentIndex,
-              //     onTap: (i) => setState(() => _currentIndex = i),
-              //     searchItem: CNTabBarSearchItem(
-              //       placeholder: 'Search in Fover',
-              //       automaticallyActivatesSearch: true,
-              //       onSearchChanged: (query) {
-              //         searchQuery.value = query;
-              //       },
-              //       onSearchSubmit: (query) {
-              //         searchQuery.value = query;
-              //       },
-              //       onSearchActiveChanged: (isActive) {
-              //         if (!isActive) searchQuery.value = "";
-              //       },
-              //       style: const CNTabBarSearchStyle(
-              //         iconSize: 20,
-              //         buttonSize: 44,
-              //         searchBarHeight: 44,
-              //         animationDuration: Duration(milliseconds: 400),
-              //         showClearButton: true,
-              //       ),
-              //     ),
-              //   );
-              // }
+              if (is26OrNewer) {
+                return CNTabBar(
+                  tint: Colors.blue,
+                  iconSize: 18,
+                  items: [
+                    CNTabBarItem(
+                      label: 'Library',
+                      icon: CNSymbol('photo.fill.on.rectangle.fill'),
+                    ),
+                    CNTabBarItem(
+                      label: 'Albums',
+                      icon: CNSymbol('rectangle.stack.fill'),
+                    ),
+                  ],
+                  currentIndex: _currentIndex,
+                  onTap: (i) => setState(() => _currentIndex = i),
+                  searchItem: CNTabBarSearchItem(
+                    onSearchChanged: (query) {
+                      searchQuery.value = query;
+                    },
+                    onSearchSubmit: (query) {
+                      searchQuery.value = query;
+                    },
+                    onSearchActiveChanged: (isActive) { 
+                      // Ouvrir searchpage si on clique sur la barre de recherche, même sans taper de texte
+
+                      if (isActive) {
+                        setState(() {
+                          _currentIndex = 2;
+                        });
+                      }
+                    },
+                    style: const CNTabBarSearchStyle(
+                      iconSize: 20,
+                      buttonSize: 44,
+                      searchBarHeight: 44,
+                      animationDuration: Duration(milliseconds: 400),
+                      showClearButton: true,
+                    ),
+                  ),
+                );
+              }
 
               return AnimatedSwitcher(
                 duration: Duration(milliseconds: 300),
