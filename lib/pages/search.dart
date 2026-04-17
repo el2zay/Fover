@@ -81,79 +81,80 @@ class _SearchPageState extends State<SearchPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: AnimatedPadding(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  padding: EdgeInsets.only(
-                    top: _hasSearched ? 62 : 120
-                  ),
-                  child: _hasSearched
-                      ? LibraryPage(searchText: _query)
-                      : Padding(
-                        padding: EdgeInsetsGeometry.all(12),
-                        child: _buildSuggestions(),
-                      ),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: AnimatedPadding(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                padding: EdgeInsets.only(
+                  top: _hasSearched ? 62 : 120
                 ),
-              ),
-              Positioned(
-                top: _hasSearched ?  -40 : 0,
-                bottom: 0,
-                left: 10,
-                right: 10,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 350),
-                  curve: Curves.easeOutCubic,
-                  transform: Matrix4.translationValues(
-                    0,
-                    _hasSearched ? -18 : 0,
-                    0,
+                child: _hasSearched
+                  ? LibraryPage(searchText: _query)
+                  : Padding(
+                    padding: EdgeInsetsGeometry.all(12),
+                    child: _buildSuggestions(),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AnimatedOpacity(
-                        duration: const Duration(milliseconds: 250),
-                        curve: Curves.easeOut,
-                        opacity: _hasSearched ? 0 : 1,
-                        child: AnimatedSlide(
-                          duration: const Duration(milliseconds: 350),
-                          curve: Curves.easeOutCubic,
-                          offset: _hasSearched ? const Offset(0, -0.35) : Offset.zero,
-                          child: const Padding(
-                            padding: EdgeInsets.only(bottom: 10),
-                            child: Text(
-                              'Search',
-                              style: TextStyle(
-                                fontSize: 34,
-                                fontWeight: FontWeight.w700,
-                              ),
+              ),
+            ),
+            Positioned(
+              top: _hasSearched ?  -40 : 0,
+              bottom: 0,
+              left: 10,
+              right: 10,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 350),
+                curve: Curves.easeOutCubic,
+                transform: Matrix4.translationValues(
+                  0,
+                  _hasSearched ? -18 : 0,
+                  0,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 10),
+                    AnimatedOpacity(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOut,
+                      opacity: _hasSearched ? 0 : 1,
+                      child: AnimatedSlide(
+                        duration: const Duration(milliseconds: 350),
+                        curve: Curves.easeOutCubic,
+                        offset: _hasSearched ? const Offset(0, -0.35) : Offset.zero,
+                        child: const Padding(
+                          padding: EdgeInsets.only(bottom: 10),
+                          child: Text(
+                            'Search',
+                            style: TextStyle(
+                              fontSize: 34,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
                       ),
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 350),
-                        curve: Curves.easeOutCubic,
-                        margin: EdgeInsets.only(top: _hasSearched ? 0 : 4),
-                        child: searchField(),
-                      ),
-                    ],
-                  ),
+                    ),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 350),
+                      curve: Curves.easeOutCubic,
+                      margin: EdgeInsets.only(top: _hasSearched ? 0 : 4),
+                      child: searchField(),
+                    ),
+                  ],
                 ),
-              )
-            ],
-          ),
+              ),
+            )
+          ],
         ),
+      ),
     );
   }
 
   Widget _buildSuggestions() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return ListView(
+      // mainAxisAlignment: MainAxisAlignment.start,
+      // crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(height: 15),
         Text("Explore", style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
@@ -190,23 +191,14 @@ class _SearchPageState extends State<SearchPage> {
         if (historyBox.isNotEmpty)...[
           Text("Recent Searches", style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
           SizedBox(height: 5),
-          Expanded(
-            child: ListView.builder(
-              physics: NeverScrollableScrollPhysics(),
-              itemCount: historyBox.length,
-              itemBuilder: (context, index) {
-                final item = historyBox.getAt(historyBox.length - 1 - index);
-                return ListTile(
-                  title: Text(item, style: TextStyle(color:  Theme.of(context).primaryColor.withAlpha(200), fontSize: 20, fontWeight: FontWeight.w500)),
-                  dense: true,
-                  onTap: () {
-                    searchController.text = item;
-                    _onSearch(item);
-                  }
-                );
-              }
-            ),
-          )
+          ...historyBox.values.toList().reversed.map((item) => ListTile(
+            title: Text(item, style: TextStyle(color:  Theme.of(context).primaryColor.withAlpha(200), fontSize: 20, fontWeight: FontWeight.w500)),
+            dense: true,
+            onTap: () {
+              searchController.text = item;
+              _onSearch(item);
+            }
+          ))
         ]
       ]
     );
