@@ -41,6 +41,7 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).primaryColor;
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -77,7 +78,7 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
               ),
               RichText(
                 text: TextSpan(
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: primary),
                   children: [
                     TextSpan(
                       text: "Click ",
@@ -118,7 +119,7 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
               Container(
                 margin: EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(10),
+                  color: primary.withAlpha(10),
                   borderRadius: BorderRadius.circular(20)
                 ),
                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 25),
@@ -222,7 +223,7 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
                       );
                     }
                   },
-                  child: Text("Continue", style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+                  child: Text("Continue", style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600)),
                 )
               )
             ],
@@ -263,7 +264,7 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
       },
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(fontSize: 15, color: Colors.white.withAlpha(200)),
+        hintStyle: TextStyle(fontSize: 15, color: Theme.of(context).primaryColor.withAlpha(200)),
         fillColor: Colors.grey.withAlpha(10),
         filled: true,
         enabledBorder: OutlineInputBorder(
