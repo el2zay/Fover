@@ -89,6 +89,14 @@ class MainApp extends StatefulWidget {
 class _MainAppState extends State<MainApp> {
   int _currentIndex = 0;
 
+  // TODO a retirer
+  @override
+  void initState() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint(WidgetsBinding.instance.buildOwner!.globalKeyCount.toString());
+    });
+  super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,13 +118,12 @@ class _MainAppState extends State<MainApp> {
             ],
           ),
           bottomNavigationBar: ValueListenableBuilder(
-            key: bottomNavKey,
+            // key: bottomNavKey,
             valueListenable: showTabBar,
             builder: (context, tabBarVisible, _) {
               if (box.get("appToken") == null && box.get("copypartyUrl") == null) {
                 return const SizedBox.shrink();
               }
-
               if (is26OrNewer) {
                 return CNTabBar(
                   tint: Colors.blue,
@@ -163,7 +170,6 @@ class _MainAppState extends State<MainApp> {
               return AnimatedSwitcher(
                 duration: Duration(milliseconds: 300),
                 child: tabBarVisible ? BottomNavigationBar(
-                  key: bottomNavKey,
                   elevation: 0,
                   type: BottomNavigationBarType.fixed,
                   selectedFontSize: 13,
