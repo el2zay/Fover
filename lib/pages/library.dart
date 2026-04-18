@@ -457,6 +457,19 @@ class LibraryPageState extends State<LibraryPage> {
     setState(() {});
   }
 
+  // fonction qui permet de scroll tout en bas
+  void scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    });
+  }
+
   OverlayEntry? _uploadOverlay;
   final _cardVisible = ValueNotifier<bool>(false);
   bool alreadyPressed = false;
@@ -464,6 +477,7 @@ class LibraryPageState extends State<LibraryPage> {
   void _dismissCard() {
     _cardVisible.value = false;
   }
+
 
   void _showUploadOverlay(bool alreadyPressed) {
     if (_cardVisible.value) {

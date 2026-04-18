@@ -28,7 +28,6 @@ String? model;
 late bool connectedToInternet;
 final ValueNotifier<double> tabBarHeight = ValueNotifier(kBottomNavigationBarHeight);
 
-
 Future<void> initApp() async {
   await PhotoStore.init();
 
@@ -88,6 +87,7 @@ class MainApp extends StatefulWidget {
 
 class _MainAppState extends State<MainApp> {
   int _currentIndex = 0;
+  final GlobalKey<LibraryPageState> libraryKey = GlobalKey<LibraryPageState>();
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +104,7 @@ class _MainAppState extends State<MainApp> {
             : IndexedStack(
             index: _currentIndex,
             children:  [
-              LibraryPage(onlySelect: false),
+              LibraryPage(key: libraryKey, onlySelect: false),
               SafeArea(child: AlbumsPage()),
               SearchPage()
             ],
@@ -129,7 +129,12 @@ class _MainAppState extends State<MainApp> {
                     ),
                   ],
                   currentIndex: _currentIndex,
-                  onTap: (i) => setState(() => _currentIndex = i),
+                  onTap: (i) {
+                    if (i == 0 && _currentIndex == 0) {
+                      libraryKey.currentState?.scrollToBottom();
+                    }
+                    setState(() => _currentIndex = i);
+                  },
                   searchItem: CNTabBarSearchItem(
                     onSearchChanged: (query) {
                       searchQuery.value = query;
