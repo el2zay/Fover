@@ -21,6 +21,9 @@ PODS:
     - SDWebImageWebPCoder
   - flutter_native_splash (2.4.3):
     - Flutter
+  - geolocator_apple (1.2.0):
+    - Flutter
+    - FlutterMacOS
   - irondash_engine_context (0.0.1):
     - Flutter
   - libwebp (1.5.0):
@@ -41,6 +44,8 @@ PODS:
   - Mantle (2.2.0):
     - Mantle/extobjc (= 2.2.0)
   - Mantle/extobjc (2.2.0)
+  - package_info_plus (0.4.5):
+    - Flutter
   - photo_manager (3.9.0):
     - Flutter
     - FlutterMacOS
@@ -84,8 +89,10 @@ DEPENDENCIES:
   - Flutter (from `Flutter`)
   - flutter_image_compress_common (from `.symlinks/plugins/flutter_image_compress_common/ios`)
   - flutter_native_splash (from `.symlinks/plugins/flutter_native_splash/ios`)
+  - geolocator_apple (from `.symlinks/plugins/geolocator_apple/darwin`)
   - irondash_engine_context (from `.symlinks/plugins/irondash_engine_context/ios`)
   - local_auth_darwin (from `.symlinks/plugins/local_auth_darwin/darwin`)
+  - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - photo_manager (from `.symlinks/plugins/photo_manager/darwin`)
   - pro_image_editor (from `.symlinks/plugins/pro_image_editor/ios`)
   - pro_video_editor (from `.symlinks/plugins/pro_video_editor/ios`)
@@ -123,10 +130,14 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_image_compress_common/ios"
   flutter_native_splash:
     :path: ".symlinks/plugins/flutter_native_splash/ios"
+  geolocator_apple:
+    :path: ".symlinks/plugins/geolocator_apple/darwin"
   irondash_engine_context:
     :path: ".symlinks/plugins/irondash_engine_context/ios"
   local_auth_darwin:
     :path: ".symlinks/plugins/local_auth_darwin/darwin"
+  package_info_plus:
+    :path: ".symlinks/plugins/package_info_plus/ios"
   photo_manager:
     :path: ".symlinks/plugins/photo_manager/darwin"
   pro_image_editor:
@@ -158,10 +169,12 @@ SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_image_compress_common: 1697a328fd72bfb335507c6bca1a65fa5ad87df1
   flutter_native_splash: c32d145d68aeda5502d5f543ee38c192065986cf
+  geolocator_apple: ab36aa0e8b7d7a2d7639b3b4e48308394e8cef5e
   irondash_engine_context: 8e58ca8e0212ee9d1c7dc6a42121849986c88486
   libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
   local_auth_darwin: c3ee6cce0a8d56be34c8ccb66ba31f7f180aaebb
   Mantle: c5aa8794a29a022dfbbfc9799af95f477a69b62d
+  package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   photo_manager: 25fd77df14f4f0ba5ef99e2c61814dde77e2bceb
   pro_image_editor: 3dedac450f82a389877286fa9eb08852cefb04ea
   pro_video_editor: 44ef9a6d48dbd757ed428cf35396dd05f35c7830
