@@ -14,6 +14,7 @@ import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/freebox_service.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
+import 'package:fover/src/utils/requests.dart';
 import 'package:freebox/freebox.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -55,7 +56,7 @@ Future<void> initApp() async {
       await PhotoStore.purgeExpired();
       await PhotoStore.existsOnServer();
       if (box.get("appToken") != null ) model = await FreeboxService.getFreeboxModel();
-      FreeboxService.fetchPhotosDir();
+      fetchPhotosDir();
     }
   }
 }

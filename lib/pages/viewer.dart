@@ -16,6 +16,7 @@ import 'package:fover/src/services/download.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/utils/editor.dart';
+import 'package:fover/src/utils/requests.dart';
 import 'package:fover/src/widgets/adjust_date.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/dialog.dart';
@@ -722,7 +723,6 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
               String? localVideoPath;
 
               if (isVideo) {
-                final photo = PhotoStore.get(widget.encodedPaths[currentIndex]);
                 final dir = await getTemporaryDirectory();
                 final tmpFile = 
                   File('${dir.path}/edit_tmp_${DateTime.now().millisecondsSinceEpoch}.mp4');
@@ -943,10 +943,12 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                         infoBox(photo.exposureValue != null ? "${photo.exposureValue} ev" : "—"),
                         infoBox(photo.focus != null ? "ƒ${photo.focus}" : "—"),
                       ],
-                    )
+                    ),
                   ],
                 ),
-              )
+              ),
+              Text("A retirer : Coordonnées GPS de l'image si disponible : "),
+              Text("${photo.latitude}, ${photo.longitude}")
             ]
           )
         );

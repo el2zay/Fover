@@ -17,6 +17,7 @@ import 'package:fover/src/services/fover_picker_delegate.dart';
 import 'package:fover/src/services/freebox_service.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
+import 'package:fover/src/utils/requests.dart';
 import 'package:fover/src/widgets/albums_list.dart';
 import 'package:fover/src/widgets/blurred_app_bar.dart';
 import 'package:fover/src/widgets/button.dart';
@@ -328,7 +329,7 @@ class LibraryPageState extends State<LibraryPage> {
     List<Map<String, dynamic>> entries;
 
     if (connectedToInternet) {
-      entries = (await FreeboxService.fetchPhotosDir()).cast<Map<String, dynamic>>();
+      entries = (await fetchPhotosDir()).cast<Map<String, dynamic>>();
     } else {
       entries = PhotoStore.getAll()
           .where((p) => p.localPath != null && File(p.localPath!).existsSync())
@@ -547,7 +548,6 @@ class LibraryPageState extends State<LibraryPage> {
                               )
                             ),
                             onPressed: () {
-                              print('ici');
                               _dismissCard();
                               CopypartyService.cancelUpload();
                             }
@@ -1385,7 +1385,7 @@ class _MediaTileState extends State<_MediaTile> {
         return await CopypartyService.getThumbnail(widget.encodedPath);
       }
 
-      final bytes = await FreeboxService.fetchImageBytes(widget.encodedPath, widget.mimetype);
+      final bytes = await fetchImageBytes(widget.encodedPath, widget.mimetype);
 
       if (isVideo) return bytes;
 
