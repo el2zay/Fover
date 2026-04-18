@@ -176,19 +176,20 @@ Future<List<dynamic>> fetchPhotosDir() async {
           buffer.dispose();
         } catch (_) {}
       }
-
       await PhotoStore.addPhoto(
         path: entry['path'], 
         name: entry['name'], 
         date: parseExifDate(exifData['Image DateTime']?.printable) ?? DateTime.now(), 
         size: entry['size'] ?? 0, 
         mimetype: entry['mimetype'],
-        latitude: exifData['GPS GPSLatitude'] != null && exifData['GPS GPSLatitudeRef'] != null
-          ? parseGps(exifData['GPS GPSLatitude']!.printable, exifData['GPS GPSLatitudeRef']!.printable)
-          : null,
-        longitude: exifData['GPS GPSLongitude'] != null && exifData['GPS GPSLongitudeRef'] != null
-          ? parseGps(exifData['GPS GPSLongitude']!.printable, exifData['GPS GPSLongitudeRef']!.printable)
-          : null,
+        latitude: parseGpsFromTag(
+          exifData['GPS GPSLatitude'],
+          exifData['GPS GPSLatitudeRef'],
+        ),
+        longitude: parseGpsFromTag(
+          exifData['GPS GPSLongitude'],
+          exifData['GPS GPSLongitudeRef'],
+        ),
         cameraBrand: exifData['Image Make']?.printable ?? "Unknown",
         cameraModel: exifData['Image Model']?.printable,
         height: height,

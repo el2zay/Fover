@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 import 'dart:ui';
 
@@ -17,25 +18,38 @@ DateTime? parseExifDate(String? raw) {
   }
 }
 
-double? parseGps(String value, String ref) {
+double? parseGpsFromTag(dynamic rawTag, dynamic rawRef) {
+  if (rawTag == null || rawRef == null) return null;
+
   try {
-    final parts = value.split(', ');
-    
-    double parseFraction(String fraction) {
-      final nums = fraction.split('/');
-      return double.parse(nums[0]) / double.parse(nums[1]);
+    final raw = rawTag.printable
+        .replaceAll('[', '')
+        .replaceAll(']', '')
+        .trim();
+
+    final parts = raw.split(',').map((p) => p.trim()).toList();
+
+    double parseRatio(String s) {
+      if (s.contains('/')) {
+        final nums = s.split('/');
+        final den = double.parse(nums[1]);
+        if (den == 0) return 0;
+        return double.parse(nums[0]) / den;
+      }
+      return double.parse(s);
     }
 
-    final degrees = parseFraction(parts[0]);
-    final minutes = parseFraction(parts[1]);
-    final seconds = parseFraction(parts[2]);
+    final degrees = parseRatio(parts[0]);
+    final minutes = parseRatio(parts[1]);
+    final seconds = parseRatio(parts[2]);
 
-    double decimal = degrees + (minutes / 60) + (seconds / 3600);
-
+    final ref = rawRef.printable.trim().toUpperCase();
+    var decimal = degrees + (minutes / 60) + (seconds / 3600);
     if (ref == 'S' || ref == 'W') decimal = -decimal;
 
     return decimal;
-  } catch (_) {
+  } catch (e) {
+    log('parseGps error: $e | tag=$rawTag');
     return null;
   }
 }
