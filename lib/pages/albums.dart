@@ -314,7 +314,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
                                 albums[index]['count'].toString(),
                                 style: TextStyle(fontSize: 16, color: textColor),
                               ),
-                            Icon(CupertinoIcons.chevron_forward, size: 20, color: Colors.white38),
+                            Icon(CupertinoIcons.chevron_forward, size: 20, color: Theme.of(context).primaryColor.withAlpha(100)),
                           ],
                         ),
                         onTap: albums[index]['onTap'],

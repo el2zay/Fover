@@ -68,7 +68,10 @@ class _AdjustDateState extends State<AdjustDate> {
                     Text("Original", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     Text(
                       DateFormat('d MMMM yyyy — hh:mm', 'en').format(widget.initialDate),
-                      style: TextStyle(fontSize: 14, color: Colors.white70)
+                      style: TextStyle(
+                        fontSize: 14, 
+                        color: Theme.of(context).primaryColor.withAlpha(150)
+                      )
                     ),
                   ],
                 ),
