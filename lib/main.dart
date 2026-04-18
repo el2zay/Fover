@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
@@ -102,6 +101,7 @@ class _MainAppState extends State<MainApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      navigatorObservers: [CNTabBarRouteObserver()],
       home: Padding(
         padding: Platform.isAndroid ? EdgeInsets.only(top: 15, left: 5, right: 5) : EdgeInsets.zero,
         // ignore: sort_child_properties_last
