@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fover/pages/library.dart';
+import 'package:fover/src/utils/common_utils.dart';
 import 'package:hive_ce/hive.dart';
 
 class SearchPage extends StatefulWidget {
@@ -153,22 +154,22 @@ class _SearchPageState extends State<SearchPage> {
 
   Widget _buildSuggestions() {
     return ListView(
-      // mainAxisAlignment: MainAxisAlignment.start,
-      // crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(height: 15),
         Text("Explore", style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
         SizedBox(
-          height: 190,
+          height: ((_exploreItems.length / 2).ceil() * 44) + 
+                  ((_exploreItems.length / 2).ceil() - 1) * 8 + 50,
           child: GridView.builder(
-            padding: EdgeInsets.only(top:10),
+            padding: EdgeInsets.only(top: 10),
             itemCount: _exploreItems.length,
             physics: NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
-              childAspectRatio: 13/3
+              childAspectRatio: 13/3,
+              mainAxisExtent: 44
             ),
             itemBuilder: (context, index) {
               return Container(
