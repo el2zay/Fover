@@ -1100,7 +1100,7 @@ class LibraryPageState extends State<LibraryPage> {
               ),
               if (!widget.searchText.isNotEmpty && _pullUpProgress > 0 || _isRefreshing)
                 Positioned(
-                  bottom: bottomNavKey.currentContext != null ? MediaQuery.of(context).size.height - (bottomNavKey.currentContext!.findRenderObject() as RenderBox).localToGlobal(Offset.zero).dy + 10 : 20,
+                  bottom:  MediaQuery.of(context).padding.bottom + 10,
                   left: 0,
                   right: 0,
                   child: Center(

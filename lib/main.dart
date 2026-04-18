@@ -26,7 +26,8 @@ final ValueNotifier<bool> showTabBar = ValueNotifier(false);
 final ValueNotifier<String> searchQuery = ValueNotifier('');
 String? model;
 late bool connectedToInternet;
-final GlobalKey bottomNavKey = GlobalKey();
+final ValueNotifier<double> tabBarHeight = ValueNotifier(kBottomNavigationBarHeight);
+
 
 Future<void> initApp() async {
   await PhotoStore.init();
@@ -88,15 +89,6 @@ class MainApp extends StatefulWidget {
 class _MainAppState extends State<MainApp> {
   int _currentIndex = 0;
 
-  // TODO a retirer
-  @override
-  void initState() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      debugPrint(WidgetsBinding.instance.buildOwner!.globalKeyCount.toString());
-    });
-  super.initState();
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -118,12 +110,10 @@ class _MainAppState extends State<MainApp> {
             ],
           ),
           bottomNavigationBar: ValueListenableBuilder(
-            // key: bottomNavKey,
             valueListenable: showTabBar,
             builder: (context, tabBarVisible, _) {
-              if (box.get("appToken") == null && box.get("copypartyUrl") == null) {
-                return const SizedBox.shrink();
-              }
+              if (!tabBarVisible) return const SizedBox.shrink();
+              
               if (is26OrNewer) {
                 return CNTabBar(
                   tint: Colors.blue,
@@ -231,7 +221,6 @@ class _MainAppState extends State<MainApp> {
           prefixIconColor: Colors.black87,
           suffixIconColor: Colors.black87,
           fillColor: Colors.black.withAlpha(10),
-
         ),
         extensions: [
           PullDownButtonTheme(
