@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'package:apple_maps_flutter/apple_maps_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fover/main.dart';
 import 'package:fover/src/models/album_entry.dart';
@@ -402,6 +403,15 @@ static List<PhotoEntry> getAll() =>
     if (w == 0 || h == 0) return false;
     return w > h;
   }
+
+  static List<PhotoEntry> getGeotagged() =>
+    _photoBox.values.where((e) =>
+      e.deletedAt == null &&
+      e.isOldVersion != true &&
+      e.latitude != null &&
+      e.longitude != null,
+    ).toList();
+
   static ValueListenable<Box<PhotoEntry>>? _listenable;
 
   static ValueListenable<Box<PhotoEntry>> get listenable {
