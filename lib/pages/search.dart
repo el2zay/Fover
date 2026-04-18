@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fover/pages/library.dart';
-import 'package:fover/src/utils/common_utils.dart';
 import 'package:hive_ce/hive.dart';
 
 class SearchPage extends StatefulWidget {

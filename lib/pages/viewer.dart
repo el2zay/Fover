@@ -3,6 +3,7 @@
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:apple_maps_flutter/apple_maps_flutter.dart';
 import 'package:clipboard/clipboard.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:extended_image/extended_image.dart';
@@ -20,6 +21,7 @@ import 'package:fover/src/utils/requests.dart';
 import 'package:fover/src/widgets/adjust_date.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/dialog.dart';
+import 'package:fover/src/widgets/photo_map.dart';
 import 'package:fover/src/widgets/pop_menu.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
@@ -824,6 +826,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     final primary = Theme.of(context).primaryColor;
     final photo = PhotoStore.get(widget.encodedPaths[currentIndex])!;
     final descriptionController = TextEditingController(text: photo.description);
+
     return DraggableScrollableSheet(
       initialChildSize: 0.3,
       minChildSize: 0,
@@ -947,8 +950,33 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   ],
                 ),
               ),
-              Text("A retirer : Coordonnées GPS de l'image si disponible : "),
-              Text("${photo.latitude}, ${photo.longitude}")
+              // Text("A retirer : Coordonnées GPS de l'image si disponible : "),
+              // Text("${photo.latitude}, ${photo.longitude}")
+              SizedBox(height: 10),
+              if (photo.longitude != null || Platform.isIOS)
+                ClipRRect(
+                  borderRadius: BorderRadiusGeometry.all(Radius.circular(20)),
+                  child: SizedBox(
+                    height: 220,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        showModalBottomSheet(
+                          isDismissible: false,
+                          enableDrag: false,
+                          isScrollControlled: true,
+                          context: context, 
+                          builder: (context) {
+                            return PhotoMap(photo: photo, fullscreen: true);
+                          }
+                        );
+                      },
+                      child: AbsorbPointer(child:  PhotoMap(
+                        photo: photo, 
+                      )),
+                    ),
+                  ),
+                ),
             ]
           )
         );
