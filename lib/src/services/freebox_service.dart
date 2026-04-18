@@ -3,13 +3,9 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_phoenix/flutter_phoenix.dart';
-import 'package:fover/src/services/copyparty_service.dart';
-import 'package:fover/src/utils/common_utils.dart';
 import 'package:freebox/freebox.dart';
 import 'package:fover/main.dart';
 import 'dart:developer';
-import 'package:path_provider/path_provider.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
 
 
 class FreeboxService {
