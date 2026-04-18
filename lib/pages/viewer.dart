@@ -821,7 +821,8 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   }
 
   DraggableScrollableSheet _buildInfoSheet(BuildContext context) {
-    final photo = PhotoStore.get(widget.encodedPaths[currentIndex])! ;
+    final primary = Theme.of(context).primaryColor;
+    final photo = PhotoStore.get(widget.encodedPaths[currentIndex])!;
     final descriptionController = TextEditingController(text: photo.description);
     return DraggableScrollableSheet(
       initialChildSize: 0.3,
@@ -841,7 +842,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.black,
+            color: Theme.of(context).scaffoldBackgroundColor,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: ListView(
@@ -855,7 +856,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.white24,
+                      color: primary.withAlpha(80),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -866,13 +867,13 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                 controller: descriptionController,
                 decoration: InputDecoration(
                   hintText: "Add a description",
-                  hintStyle: TextStyle(color: Colors.white38, fontSize: 16, fontWeight: FontWeight.w500),
+                  hintStyle: TextStyle(color: primary.withAlpha(100), fontSize: 16, fontWeight: FontWeight.w500),
                   border: InputBorder.none,
                 ),
                 onSubmitted: (value) async {
                   await PhotoStore.update(path: widget.encodedPaths[currentIndex], description: value);
                 },
-                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+                style: TextStyle(color: primary, fontSize: 16, fontWeight: FontWeight.w500),
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -917,7 +918,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                 margin: EdgeInsets.symmetric(vertical: 20),
                 padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(20),
+                  color: primary.withAlpha(20),
                   borderRadius: BorderRadius.circular(10)
                 ),
                 child: Column(
@@ -931,10 +932,10 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                       widget.mimetype[currentIndex].startsWith('video/')
                         ? formatSize(photo.size)
                         : "${getMP(photo)} MP • ${photo.width} x ${photo.height} • ${formatSize(photo.size)}",
-                      style: TextStyle(fontSize: 13, color: Colors.white70)
+                      style: TextStyle(fontSize: 13, color: primary.withAlpha(150))
                     ),
                     SizedBox(height: 10),
-                    Divider(color: Colors.white24, height: 0),
+                    Divider(color: primary.withAlpha(80), height: 0),
                     Row(
                       children: [
                         infoBox(photo.iso != null ? "ISO ${photo.iso}" : "—"),
@@ -958,7 +959,14 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Center(
-          child: Text(value, style: const TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.w600)),
+          child: Text(
+            value, 
+            style: TextStyle(
+              fontSize: 12, 
+              color: Theme.of(context).primaryColor.withAlpha(200),
+              fontWeight: FontWeight.w600
+            )
+          ),
         ),
       ),
     );
