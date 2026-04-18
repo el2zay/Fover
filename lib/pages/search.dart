@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fover/pages/library.dart';
+import 'package:fover/src/widgets/photo_map.dart';
 import 'package:hive_ce/hive.dart';
 
 class SearchPage extends StatefulWidget {
@@ -171,19 +172,30 @@ class _SearchPageState extends State<SearchPage> {
               mainAxisExtent: 44
             ),
             itemBuilder: (context, index) {
-              return Container(
-                decoration: BoxDecoration(
-                  color: Theme.brightnessOf(context) == Brightness.light ? Colors.grey.withAlpha(20) : Colors.white10,
-                  borderRadius: BorderRadius.all(Radius.circular(15))
+              return GestureDetector(
+                onTap: () => showModalBottomSheet(
+                  isDismissible: false,
+                  enableDrag: false,
+                  isScrollControlled: true,
+                  context: context, 
+                  builder: (context) {
+                    return PhotoMap(photo: null, fullscreen: true);
+                  }
                 ),
-                child: Row(
-                  spacing: 8,
-                  children: [
-                    SizedBox(width: 3),
-                    Icon(_exploreItems[index]['icon'], color: Theme.of(context).primaryColor.withAlpha(200), size: 24),
-                    Text(_exploreItems[index]['title'], style: TextStyle(fontSize: 17))
-                  ],
-                )
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.brightnessOf(context) == Brightness.light ? Colors.grey.withAlpha(20) : Colors.white10,
+                    borderRadius: BorderRadius.all(Radius.circular(15))
+                  ),
+                  child: Row(
+                    spacing: 8,
+                    children: [
+                      SizedBox(width: 3),
+                      Icon(_exploreItems[index]['icon'], color: Theme.of(context).primaryColor.withAlpha(200), size: 24),
+                      Text(_exploreItems[index]['title'], style: TextStyle(fontSize: 17))
+                    ],
+                  )
+                ),
               );
             },
           ),
