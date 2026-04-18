@@ -50,8 +50,7 @@ class _PhotoMapState extends State<PhotoMap> {
             zoom: 13,
             target: widget.photo != null 
               ? LatLng(widget.photo!.latitude!, widget.photo!.longitude!)
-              // : myLocation() ?? const LatLng(48.8584, 2.2945)
-              : myLocation() ?? const LatLng(0,0)
+              : myLocation() ?? const LatLng(48.8584, 2.2945)
 
           ),
         ),
