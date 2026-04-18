@@ -117,6 +117,7 @@ class LibraryPageState extends State<LibraryPage> {
   @override
   void initState() {
     super.initState();
+    showTabBar.value = true;
     _load();
   }
 
