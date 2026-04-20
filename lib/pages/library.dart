@@ -88,6 +88,7 @@ class _SearchEntry {
 
 class LibraryPageState extends State<LibraryPage> {
   bool showButtons = false;
+  bool _isAtTop = true;
   _GalleryData? _allData;
   _GalleryData? _filteredData;
 
@@ -118,6 +119,11 @@ class LibraryPageState extends State<LibraryPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      setState(() => _isAtTop = _scrollController.offset < 10);
+    });
+
     showTabBar.value = true;
     _load();
   }
@@ -583,8 +589,8 @@ class LibraryPageState extends State<LibraryPage> {
         isAlbum:  widget.album != Album.none || widget.albumName != null ,
         onBack: () => Navigator.of(context).pop(),
         scrollController: _scrollController,
+        initiallyAtTop: _isAtTop,
         actions: showButtons || !widget.onlySelect ? [
-
           if (widget.albumName == null)
             GestureDetector(
               onTap: () {

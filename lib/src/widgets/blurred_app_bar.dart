@@ -8,6 +8,7 @@ class BlurredAppBar extends StatefulWidget implements PreferredSizeWidget {
   final bool isAlbum;
   final VoidCallback? onBack;
   final ScrollController? scrollController;
+  final bool initiallyAtTop;
 
   const BlurredAppBar({
     super.key, 
@@ -16,7 +17,8 @@ class BlurredAppBar extends StatefulWidget implements PreferredSizeWidget {
     required this.actions, 
     this.isAlbum = false,
     this.onBack,
-    this.scrollController
+    this.scrollController,
+    this.initiallyAtTop = false
   });
 
   @override
@@ -29,19 +31,35 @@ class BlurredAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _BlurredAppBarState extends State<BlurredAppBar> {
-  bool isAtTop = false;
+  late bool isAtTop = widget.initiallyAtTop;
+  
+  @override
+  void initState() {
+    super.initState();
+    widget.scrollController?.addListener(onScroll);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) onScroll();
+    });
+  }
 
   @override
   void didUpdateWidget(covariant BlurredAppBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-
     if (oldWidget.scrollController != widget.scrollController) {
       oldWidget.scrollController?.removeListener(onScroll);
       widget.scrollController?.addListener(onScroll);
     }
   }
 
+  @override 
+  void dispose() {
+    widget.scrollController?.removeListener(onScroll);
+    super.dispose();
+  }
+
   void onScroll() {
+    if (widget.scrollController == null || !widget.scrollController!.hasClients) return;
     final atTop = widget.scrollController!.offset < 10;
     if (atTop != isAtTop) setState(() => isAtTop = atTop);
   }
