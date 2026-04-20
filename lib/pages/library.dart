@@ -1421,9 +1421,6 @@ class _MediaTileState extends State<_MediaTile> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: ContextMenuWidget(
-          mobileMenuWidgetBuilder: DefaultMobileMenuWidgetBuilder(
-            brightness: Brightness.dark,
-          ),
           menuProvider: widget.menuProvider,
           child: Stack(
             fit: StackFit.expand,

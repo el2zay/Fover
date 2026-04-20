@@ -3,7 +3,6 @@
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:apple_maps_flutter/apple_maps_flutter.dart';
 import 'package:clipboard/clipboard.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:extended_image/extended_image.dart';
@@ -20,6 +19,7 @@ import 'package:fover/src/utils/editor.dart';
 import 'package:fover/src/utils/requests.dart';
 import 'package:fover/src/widgets/adjust_date.dart';
 import 'package:fover/src/widgets/button.dart';
+import 'package:fover/src/widgets/container.dart';
 import 'package:fover/src/widgets/dialog.dart';
 import 'package:fover/src/widgets/photo_map.dart';
 import 'package:fover/src/widgets/pop_menu.dart';
@@ -381,27 +381,22 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
       leading: Row(
         children: [
           SizedBox(width: 10),
-          Button.iconOnly(
-            glassConfig: const CNButtonConfig(),
-            padding: const EdgeInsets.all(8),
-            icon: const Icon(Icons.arrow_back_ios, size: 18),
-            glassIcon: CNSymbol('chevron.left', size: 18),
-            onPressed: () => Navigator.pop(context),
+          Flexible(
+            child: Button.iconOnly(
+              glassConfig: const CNButtonConfig(),
+              padding: const EdgeInsets.all(8),
+              icon: const Icon(Icons.arrow_back_ios, size: 18),
+              glassIcon: CNSymbol('chevron.left', size: 18),
+              onPressed: () => Navigator.pop(context),
+            ),
           ),
         ],
       ),
       title: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          LiquidGlassContainer(
-            config: LiquidGlassConfig(
-              effect: CNGlassEffect.regular,
-              shape: CNGlassEffectShape.rect,
-              cornerRadius: 20,
-              interactive: true,
-              tint: Colors.white.withAlpha(4),
-            ),
-            child: Padding(
+          MyContainer(
+            child:Padding(
               padding: EdgeInsets.symmetric(horizontal: 30, vertical: 6),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -953,7 +948,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
               // Text("A retirer : Coordonnées GPS de l'image si disponible : "),
               // Text("${photo.latitude}, ${photo.longitude}")
               SizedBox(height: 10),
-              if (photo.longitude != null || Platform.isIOS)
+              if (photo.longitude != null && Platform.isIOS)
                 ClipRRect(
                   borderRadius: BorderRadiusGeometry.all(Radius.circular(20)),
                   child: SizedBox(
@@ -971,9 +966,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                           }
                         );
                       },
-                      child: AbsorbPointer(child:  PhotoMap(
-                        photo: photo, 
-                      )),
+                      child: AbsorbPointer(child:PhotoMap(photo: photo)),
                     ),
                   ),
                 ),
@@ -1019,11 +1012,7 @@ class CupertinoVideoControls extends StatelessWidget {
               padding: EdgeInsetsGeometry.symmetric(horizontal: 10),
               child: Transform.scale(
                 scaleY: 1.15,
-                child: LiquidGlassContainer(
-                  config: LiquidGlassConfig(
-                    shape: CNGlassEffectShape.capsule,
-                    tint: Colors.black.withAlpha(70),
-                  ),
+                child: MyContainer(
                   child: ValueListenableBuilder<VideoPlayerValue>(
                     valueListenable: controller,
                     builder: (context, value, _) {
