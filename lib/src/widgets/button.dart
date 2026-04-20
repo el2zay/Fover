@@ -52,9 +52,10 @@ class Button extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               alignment: Alignment.centerRight,
               padding: padding ?? const EdgeInsets.all(12),
+              iconColor: Colors.white,
               iconSize: 25,
               shape: const CircleBorder(),
-              backgroundColor: backgroundColor ?? Colors.white12,
+              backgroundColor: backgroundColor ?? Colors.grey[800]?.withAlpha(150)
             ),
           );
   }
@@ -77,11 +78,13 @@ class Button extends StatelessWidget {
                 borderRadius: BorderRadius.circular(30),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              disabledBackgroundColor: backgroundColor ?? Colors.white12,
-              backgroundColor: backgroundColor ?? Colors.white12,
-              textStyle: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)
+              backgroundColor: backgroundColor ?? Colors.grey[800]?.withAlpha(150),
+              textStyle: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: textColor)
             ),
-            child: icon ?? Text(label ?? '', style: TextStyle(color: enabled ? Colors.black : Colors.grey[700])),
+            child: icon ?? Text(
+              label ?? '', 
+              style: TextStyle(color: enabled ? textColor ??Colors.white : Colors.grey[700], fontWeight: FontWeight.normal)
+              ),
           );
   }
 }
