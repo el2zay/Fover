@@ -22,26 +22,86 @@ It won't take more than 10 minutes.
 mkdir -p Fover/FoverServer
 ```
 
+### Without HEIC support (fast setup)
+
 2. Create a docker-compose.yml file in the "Fover" directory with the following content:
 ```yaml
 services:
   copyparty:
     image: copyparty/ac:latest
     container_name: copyparty
-    restart: unless-stopped # Restart the container unless it is explicitly stopped
+    restart: unless-stopped
     ports:
       - "3923:3923"
     volumes:
-      - /path/to/Fover/FoverServer:/mnt/photos # Change /path/to to the absolute path of the Fover directory on your machine
+      - /path/to/Fover/FoverServer:/mnt/photos
       - /opt/copyparty/config:/cfg
     command: >
-      -v /mnt/photos:photos:r,you
+      -v /mnt/photos:photos:rwdgr,you
       -a you:yourPassword
       -e2dsa
       --no-robots
-
     # Change "you" to your username and "yourPassword" to a secure password
 ```
+
+### With HEIC support
+2. Create a docker-compose.yml file in the "Fover" directory with the following content:
+
+```yaml
+services:
+  copyparty:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: copyparty
+    restart: unless-stopped
+    ports:
+      - "3923:3923"
+    volumes:
+      - /home/freebox/Fover/FoverServer:/mnt/photos
+      - /opt/copyparty/config:/cfg
+    command:
+      - "-v"
+      - "/mnt/photos:photos:rwdgr,you"
+      - "--th-size"
+      - "300x300"
+      - "--th-ff-jpg"
+      - "--th-poke"
+      - "1"
+      - "--th-dec"
+      - "vips"
+      - "-a"
+      - "you:yourPassword"
+      - "-e2dsa"
+      - "-e2ts"
+      - "--no-robots"
+    # Change "you" to your username and "yourPassword" to a secure password
+
+```
+
+Create a Dockerfile in the same directory with the following content:
+
+```Dockerfile
+FROM debian:bookworm-slim
+
+RUN apt-get update && \
+    apt-get install -y \
+    bash \
+    python3 \
+    python3-pip \
+    libvips \
+    libvips-tools \
+    libheif1 \
+    libheif-examples && \
+    rm -f /usr/lib/python3.*/EXTERNALLY-MANAGED && \
+    pip3 install --no-cache-dir copyparty pyvips && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+ENTRYPOINT ["copyparty"]
+CMD []
+```
+
 
 3. Start the Copyparty server with the following command in the "Fover" directory:
 ```bash
@@ -104,21 +164,7 @@ Select **Cloudflared**, give it a name (e.g. `fover-tunnel`), and save. Copy the
 
 ```yaml
 services:
-  copyparty:
-    image: ghcr.io/9001/copyparty
-    container_name: copyparty
-    restart: unless-stopped
-    ports:
-      - "3923:3923"
-    volumes:
-      - /path/to/Fover/FoverServer:/mnt/photos
-      - /opt/copyparty/config:/cfg
-    command: >
-      -v /mnt/photos:photos:r,you
-      -a you:yourPassword
-      -e2dsa
-      --no-robots
-      --xff-hdr cf-connecting-ip
+  # Your existing copyparty service
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -129,7 +175,6 @@ services:
 ```
 
 > Replace `your_token_here` with the token displayed in the Cloudflare dashboard.
-
 
 **3. Configure the public hostname**
 
