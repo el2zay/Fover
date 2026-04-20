@@ -38,7 +38,7 @@ class _PhotoMapState extends State<PhotoMap> {
     super.initState();
     _initialTarget = widget.photo != null
       ? LatLng(widget.photo!.latitude!, widget.photo!.longitude!)
-      : const LatLng(48.8584, 0.2945);
+      : myLocation() ?? const LatLng(48.8584, 2.2945);
   }
 
   LatLng? myLocation() {
