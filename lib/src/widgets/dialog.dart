@@ -1,6 +1,7 @@
 import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fover/src/widgets/container.dart';
 
 class MyDialog extends StatelessWidget {
   final String content;
@@ -21,11 +22,7 @@ class MyDialog extends StatelessWidget {
           minWidth: 0,
           maxWidth: 350
         ),
-        child: LiquidGlassContainer(
-          config: LiquidGlassConfig(
-            shape: CNGlassEffectShape.rect,
-            cornerRadius: 20,
-          ),
+        child: MyContainer(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
