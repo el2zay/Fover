@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:apple_maps_flutter/apple_maps_flutter.dart';
 import 'package:cupertino_native_better/cupertino_native.dart' show CNSymbol;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:fover/pages/viewer.dart';
 import 'package:fover/src/models/photo_entry.dart';
 import 'package:fover/src/services/copyparty_service.dart';
@@ -14,6 +17,7 @@ import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart' as ll;
 
 class PhotoMap extends StatefulWidget {
   final PhotoEntry? photo;
@@ -41,13 +45,43 @@ class _PhotoMapState extends State<PhotoMap> {
       : myLocation() ?? const LatLng(48.8584, 2.2945);
   }
 
+  Future _fetchLocation() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return null;
+      }
+    }
+
+    final bool granted = permission == LocationPermission.whileInUse || permission == LocationPermission.always;
+
+    if (!granted) return null;
+
+    final position = await Geolocator.getCurrentPosition();
+    final latlng = LatLng(position.latitude, position.longitude);
+    _mapController?.animateCamera(CameraUpdate.newLatLng(latlng));
+
+    return latlng;
+  }
+
   LatLng? myLocation() {
-    Geolocator.getCurrentPosition().then((position) {
-      _mapController?.animateCamera(CameraUpdate.newLatLng(
-        LatLng(position.latitude, position.longitude)
-      ));
-      return LatLng(position.latitude, position.longitude);
+    _fetchLocation().then((latlng) {
+      if (latlng == null) return null;
+      if (mounted) {
+        setState(() {
+          _initialTarget = latlng;
+        });
+      }
+
+    }).catchError((e) {
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to get location: ${e.toString()}"))
+      );
     });
+
     return null;
   }
 
@@ -55,30 +89,7 @@ class _PhotoMapState extends State<PhotoMap> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        AppleMap(
-          key: ValueKey('photo_map'),
-          annotations: _annotations ?? {},
-          myLocationEnabled: true,
-          myLocationButtonEnabled: false,
-          onMapCreated: (controller) { 
-            _mapController = controller;
-            if (!_mapReady) {
-              _mapReady = true;
-              _buildAnnotations();
-            }
-          },
-          initialCameraPosition: CameraPosition(
-            zoom: 13,
-            target: _initialTarget
-          ),
-          onCameraMove: (position) {
-            _zoomDebounce?.cancel();
-            _currentZoom = position.zoom;
-            _zoomDebounce = Timer(const Duration(milliseconds: 400), () {
-              _buildAnnotations();
-            });
-          },
-        ),
+        _buildMap(),
         // TODO rendre responsive
         if (widget.fullscreen)...[
           Positioned(
@@ -86,7 +97,7 @@ class _PhotoMapState extends State<PhotoMap> {
             left: 16,
             child: Button.iconOnly(
               glassIcon: CNSymbol('xmark', size: 16),
-              icon: const Icon(Icons.close, size: 16,),
+              icon: const Icon(Icons.close, size: 20),
               onPressed: () => Navigator.pop(context),
             ),
           ),
@@ -95,12 +106,51 @@ class _PhotoMapState extends State<PhotoMap> {
             right: 16,
             child: Button.iconOnly(
               glassIcon: CNSymbol('location', size: 16),  
+              icon: Icon(CupertinoIcons.location, size: 20),
               onPressed: () => myLocation()
             ),
           )
         ]
       ],
     );
+  }
+
+  Widget _buildMap() {
+    return Platform.isIOS 
+      ? AppleMap(
+        key: ValueKey('photo_map'),
+        annotations: _annotations ?? {},
+        myLocationEnabled: true,
+        myLocationButtonEnabled: false,
+        onMapCreated: (controller) { 
+          _mapController = controller;
+          if (!_mapReady) {
+            _mapReady = true;
+            _buildAnnotations();
+          }
+        },
+        initialCameraPosition: CameraPosition(
+          zoom: 13,
+          target: _initialTarget
+        ),
+        onCameraMove: (position) {
+          _zoomDebounce?.cancel();
+          _currentZoom = position.zoom;
+          _zoomDebounce = Timer(const Duration(milliseconds: 400), () {
+            _buildAnnotations();
+          });
+        },
+      ) : FlutterMap(
+        options: MapOptions(
+          initialCenter: ll.LatLng(48.8566, 2.3522),
+        ),
+        children: [
+          TileLayer(
+            urlTemplate: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+            subdomains: ['a', 'b', 'c', 'd'],
+          )
+        ],
+      );
   }
 
   Future<void> _buildAnnotations() async {
