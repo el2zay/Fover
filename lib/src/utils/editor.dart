@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -9,7 +10,9 @@ import 'package:flutter/material.dart';
 import 'package:fover/src/services/photo_store.dart' show PhotoStore;
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/widgets/button.dart';
+import 'package:fover/src/widgets/container.dart';
 import 'package:fover/src/widgets/dialog.dart';
+import 'package:ios_color_picker/show_ios_color_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 import 'package:pro_video_editor/pro_video_editor.dart';
@@ -41,6 +44,8 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
   TrimDurationSpan? _tempSpan;
   late final _editorKey = GlobalKey<ProImageEditorState>();
   bool _didComplete = false;
+  final _iosColorPickerController = IOSColorPickerController();
+  Color _currentColor = Colors.white;
 
   @override
   void initState() {
@@ -52,6 +57,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
   void dispose() {
     _videoController?.dispose();
     _proVideoController?.dispose();
+    _iosColorPickerController.dispose();
     super.dispose();
   }
 
@@ -148,6 +154,76 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
     }
   }
 
+  void applyPenStyle(PaintEditorState editor) {
+    editor.setMode(PaintMode.freeStyle);
+    editor.setStrokeWidth(3.0);
+    editor.setOpacity(1.0);
+
+  }
+
+  void applyMarkerStyle(PaintEditorState editor) {
+    editor.setMode(PaintMode.freeStyle);
+    editor.setStrokeWidth(18.0);
+    editor.setOpacity(0.45);
+  }
+
+  void applyCrayonStyle(PaintEditorState editor) {
+    editor.setMode(PaintMode.freeStyle);
+    editor.setStrokeWidth(5.0);
+    editor.setOpacity(0.75);
+  }
+
+  OverlayEntry? _eraserOverlay;
+  final _eraserKey = GlobalKey();
+
+  void _showEraserSizePicker(PaintEditorState paintEditor) {
+    final box = _eraserKey.currentContext!.findRenderObject() as RenderBox;
+    final offset = box.localToGlobal(Offset.zero);
+
+    _eraserOverlay = OverlayEntry(
+      builder: (_) => Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _dismissEraserOverlay,
+              behavior: HitTestBehavior.opaque,
+              child: const ColoredBox(color: Colors.transparent),
+            ),
+          ),
+          Positioned(
+            left: offset.dx - 60,
+            top: offset.dy - 80,
+            child: Listener(
+              onPointerDown: (e) {},
+              behavior: HitTestBehavior.opaque,
+              child: Material(
+                color: Colors.transparent,
+                child: _EraserSizePicker(
+                  onSizeSelected: (s) {
+                    setState(() {
+                      paintEditor.setMode(PaintMode.eraser);
+                      paintEditor.setStrokeWidth(s);
+                    });
+                    _dismissEraserOverlay();
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    Overlay.of(context).insert(_eraserOverlay!);
+  }
+
+  void _dismissEraserOverlay() {
+    _eraserOverlay?.remove();
+    _eraserOverlay = null;
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
     if (widget.isVideo && _proVideoController == null) {
@@ -170,6 +246,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
           SubEditorMode.cropRotate,
           SubEditorMode.tune,
           SubEditorMode.filter,
+          SubEditorMode.paint
         ],
         widgets: MainEditorWidgets(
           closeWarningDialog: (editor) async => true,
@@ -252,10 +329,11 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                     maxWidth: MediaQuery.of(context).size.width * 0.6,
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _toolBtn(context, CupertinoIcons.dial, 'Adjust', editor.openTuneEditor),
                       _toolBtn(context, CupertinoIcons.color_filter, 'Filters', editor.openFilterEditor),
+                      _toolBtn(context, CupertinoIcons.pencil, 'Markup', editor.openPaintEditor),
                       _toolBtn(context, CupertinoIcons.crop_rotate, 'Crop', editor.openCropRotateEditor),
                     ],
                   ),
@@ -392,6 +470,166 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
               rebuildStream: rebuildStream,
               onCancel: filterEditor.close,
               onDone: filterEditor.done,
+            ),
+          ],
+        ),
+      ),
+      paintEditor: PaintEditorConfigs(
+        tools: [
+          PaintMode.freeStyle,
+          PaintMode.line,
+        ],
+        style: PaintEditorStyle(
+          background: Theme.of(context).scaffoldBackgroundColor,
+          bottomBarBackground: Colors.transparent,
+        ),
+        widgets: PaintEditorWidgets(
+          colorPicker: (editorState, rebuildStream, currentColor, setColor) => ReactiveWidget(
+            stream: rebuildStream,
+            builder: (_) => SizedBox()
+          ),
+          appBar: (paintEditor, rebuildStream) => ReactiveAppbar(
+          stream: rebuildStream,
+            builder: (_) => PreferredSize(
+              preferredSize: Size.zero,
+              child: const SizedBox.shrink(),
+            ),
+          ),
+          bottomBar: (_, rebuildStream) => ReactiveWidget(
+            stream: rebuildStream,
+            builder: (_) => const SizedBox.shrink(),
+          ),
+          bodyItems: (paintEditor, rebuildStream) => [
+            _buildSubAppBar(
+              rebuildStream: rebuildStream,
+              onCancel: paintEditor.close,
+              onDone: paintEditor.done,
+              editor: paintEditor,
+            ),
+            ReactiveWidget(
+              stream: rebuildStream,
+              builder: (_) => Positioned(
+                bottom: 0, 
+                left: 0, 
+                right: 0,
+                child: SafeArea(
+                  child: Container(
+                    color: Colors.black.withAlpha(120),
+                    padding: EdgeInsetsGeometry.symmetric(horizontal: 30, vertical: 5),
+                    child: MyContainer(
+                      child: Padding(
+                        padding: EdgeInsetsGeometry.symmetric(vertical: 10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            GestureDetector(
+                              onTap: () => setState(() => applyPenStyle(paintEditor)),
+                              child: Image.asset(
+                                "assets/icons/editor/pen.png",
+                                height: 60,
+                              )
+                            ),
+                            GestureDetector(
+                              onTap: () => setState(() => applyCrayonStyle(paintEditor)),
+                              child: Image.asset(
+                                "assets/icons/editor/crayon.png",
+                                height: 60,
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() => applyMarkerStyle(paintEditor));
+                              },
+                              child: Image.asset(
+                                "assets/icons/editor/marker.png",
+                                height: 60,
+                              ),
+                            ),
+                            GestureDetector(
+                              key: _eraserKey,
+                              onTap: () => setState(() => paintEditor.setMode(PaintMode.eraser)),
+                              onLongPress: () => _showEraserSizePicker(paintEditor),
+                              child: Image.asset(
+                                "assets/icons/editor/eraser.png",
+                                height: 60,
+                              ),
+                            ),
+                            // SizedBox(width: 5),
+                            Row(
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    _iosColorPickerController.showNativeIosColorPicker(
+                                      startingColor: _currentColor,
+                                      darkMode: Theme.of(context).brightness == Brightness.dark,
+                                      onColorChanged: (color) {
+                                        setState(() => _currentColor = color);
+                                        paintEditor.setColor(color);
+                                      }
+                                    );
+                                  },
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      Container(
+                                        height: 28,
+                                        width: 28,
+                                        decoration: BoxDecoration(
+                                          // color: Colors.white,
+                                          gradient: SweepGradient(
+                                            transform: GradientRotation(-pi / 2),
+                                            colors: [
+                                              Colors.yellow,
+                                              Colors.orange,
+                                              Colors.red,
+                                              Colors.pink,
+                                              Colors.purple,
+                                              Colors.blue,
+                                              Colors.green,
+                                              Colors.yellow
+                                            ]
+                                          ),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      Container(
+                                        height: 19,
+                                        width: 19,
+                                        decoration: BoxDecoration(
+                                          color: _currentColor,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              spreadRadius: 0.8,
+                                              color: Colors.black
+                                            )
+                                          ],
+                                          shape: BoxShape.circle
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(width: 15),
+                                CupertinoButton.tinted(
+                                  sizeStyle: CupertinoButtonSize.small,
+                                  padding: EdgeInsets.all(5),
+                                  borderRadius: BorderRadius.all(Radius.circular(30)),
+                                  child: Icon(
+                                    CupertinoIcons.plus, 
+                                    size: 22,
+                                    color: Theme.of(context).primaryColor,
+                                  ), 
+                                  onPressed: () {}
+                                ),
+                              ],
+                            )],
+                        )
+                      ),
+                    )
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -660,6 +898,58 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+int _selectedIndex = 0;
+class _EraserSizePicker extends StatelessWidget {
+  const _EraserSizePicker({required this.onSizeSelected});
+  final ValueChanged<double> onSizeSelected;
+  @override
+  Widget build(BuildContext context) {
+    return MyContainer(
+      child: Padding(
+        padding: EdgeInsetsGeometry.symmetric(horizontal: 20, vertical: 15),
+        child: Column(
+          children: [
+            // Text(
+            //   "Eraser Size",
+            //   style: TextStyle(
+            //     color: Colors.white,
+            //     fontSize: 16,
+            //     fontWeight: FontWeight.bold,
+            //   ),
+            // ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              spacing: 14,
+              children: List.generate(5, (i) {
+                final size = 15 + i * 4.0;
+                return GestureDetector(
+                  onTap: () { 
+                    onSizeSelected(size);
+                    _selectedIndex = i;
+                  },
+                  child: Container(
+                    height: size,
+                    width: size,
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: i == _selectedIndex ? Colors.white : Colors.white54,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ],
         ),
       ),
     );
