@@ -692,6 +692,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.5"
+  ios_color_picker:
+    dependency: "direct main"
+    description:
+      name: ios_color_picker
+      sha256: d75ca85230ff618654b29982a9a08883603030f334e8323889d56c5f106edf07
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.2"
   irondash_engine_context:
     dependency: transitive
     description:
@@ -1201,6 +1209,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  smooth_page_indicator:
+    dependency: transitive
+    description:
+      name: smooth_page_indicator
+      sha256: b21ebb8bc39cf72d11c7cfd809162a48c3800668ced1c9da3aade13a32cf6c1c
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.1"
   source_gen:
     dependency: transitive
     description:
@@ -1337,6 +1353,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.9.1"
+  super_tooltip:
+    dependency: transitive
+    description:
+      name: super_tooltip
+      sha256: "1fa2855cf7fdd493aea7f8b1e456e76767a1b68d38f1137ba7fb751f7772cade"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.1"
   synchronized:
     dependency: transitive
     description:

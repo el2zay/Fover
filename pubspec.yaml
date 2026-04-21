@@ -9,14 +9,14 @@ environment:
 dependencies:
   freebox:
     path: packages/freebox/
-    
+
   flutter:
     sdk: flutter
   cupertino_native_better: ^1.4.3
   cupertino_icons: ^1.0.8
   # freebox: ^1.0.3
   flutter_phoenix: ^1.1.1
-  super_drag_and_drop: ^0.9.1 
+  super_drag_and_drop: ^0.9.1
   super_context_menu: ^0.9.1
   cached_network_image: ^3.4.1
   share_plus: ^12.0.1
@@ -48,6 +48,7 @@ dependencies:
   geolocator: ^14.0.2
   flutter_map: ^8.3.0
   latlong2: ^0.9.1
+  ios_color_picker: ^2.0.2
 
 dev_dependencies:
   hive_ce_generator: ^1.11.1
@@ -60,12 +61,13 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icons/
+    - assets/icons/editor/
     - assets/illustrations/
     - assets/illustrations/freebox/
-  
+
 flutter_native_splash:
-  color: '#FFFFFF'
-  color_dark: '#000000'
+  color: "#FFFFFF"
+  color_dark: "#000000"
 
   image: assets/icon.png
   image_dark: assets/dark_icon.png
