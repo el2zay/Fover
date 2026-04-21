@@ -39,7 +39,7 @@ dependencies:
   http_parser: ^4.1.2
   mime: ^2.0.0
   wechat_assets_picker: ^10.1.1
-  pro_image_editor: ^12.0.13
+  pro_image_editor: ^12.4.3
   dio: ^5.9.2
   video_player: ^2.11.1
   pro_video_editor: ^1.14.4
