@@ -18,6 +18,7 @@ import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/utils/editor.dart';
 import 'package:fover/src/utils/requests.dart';
 import 'package:fover/src/widgets/adjust_date.dart';
+import 'package:fover/src/widgets/adjust_location.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/container.dart';
 import 'package:fover/src/widgets/dialog.dart';
@@ -521,7 +522,23 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                     });
                     break;
                   case PopMenuAction.adjustLocation:
-                    break;
+                    setState(() {
+                      focused = true;
+                    });
+
+                    showModalBottomSheet(
+                      barrierColor: Colors.transparent,
+                      isScrollControlled: true,
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.93,
+                      ),
+                      context: context, 
+                      builder: (context) {
+                        return AdjustLocation(
+                          photo: PhotoStore.get(widget.encodedPaths[currentIndex])!
+                        );
+                      }
+                  );
                 }
               },
             )
