@@ -46,6 +46,8 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
   bool _didComplete = false;
   final _iosColorPickerController = IOSColorPickerController();
   Color _currentColor = Colors.white;
+  int _currentTool = 0;
+  PaintEditorState? _paintEditor;
 
   @override
   void initState() {
@@ -158,19 +160,22 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
     editor.setMode(PaintMode.freeStyle);
     editor.setStrokeWidth(3.0);
     editor.setOpacity(1.0);
+    setState(() => _currentTool = 0);
 
-  }
-
-  void applyMarkerStyle(PaintEditorState editor) {
-    editor.setMode(PaintMode.freeStyle);
-    editor.setStrokeWidth(18.0);
-    editor.setOpacity(0.45);
   }
 
   void applyCrayonStyle(PaintEditorState editor) {
     editor.setMode(PaintMode.freeStyle);
     editor.setStrokeWidth(5.0);
     editor.setOpacity(0.75);
+    setState(() => _currentTool = 1);
+  }
+
+    void applyMarkerStyle(PaintEditorState editor) {
+    editor.setMode(PaintMode.freeStyle);
+    editor.setStrokeWidth(18.0);
+    editor.setOpacity(0.45);
+    setState(() => _currentTool = 2);
   }
 
   OverlayEntry? _eraserOverlay;
@@ -202,7 +207,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                   onSizeSelected: (s) {
                     setState(() {
                       paintEditor.setMode(PaintMode.eraser);
-                      paintEditor.setStrokeWidth(s);
+                      paintEditor.eraserRadius = s;
                     });
                     _dismissEraserOverlay();
                   },
@@ -475,10 +480,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
         ),
       ),
       paintEditor: PaintEditorConfigs(
-        tools: [
-          PaintMode.freeStyle,
-          PaintMode.line,
-        ],
+        eraserSize: 15,
         style: PaintEditorStyle(
           background: Theme.of(context).scaffoldBackgroundColor,
           bottomBarBackground: Colors.transparent,
@@ -489,7 +491,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
             builder: (_) => SizedBox()
           ),
           appBar: (paintEditor, rebuildStream) => ReactiveAppbar(
-          stream: rebuildStream,
+            stream: rebuildStream,
             builder: (_) => PreferredSize(
               preferredSize: Size.zero,
               child: const SizedBox.shrink(),
@@ -499,139 +501,142 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
             stream: rebuildStream,
             builder: (_) => const SizedBox.shrink(),
           ),
-          bodyItems: (paintEditor, rebuildStream) => [
-            _buildSubAppBar(
-              rebuildStream: rebuildStream,
-              onCancel: paintEditor.close,
-              onDone: paintEditor.done,
-              editor: paintEditor,
-            ),
-            ReactiveWidget(
-              stream: rebuildStream,
-              builder: (_) => Positioned(
-                bottom: 0, 
-                left: 0, 
-                right: 0,
-                child: SafeArea(
-                  child: Container(
-                    color: Colors.black.withAlpha(120),
-                    padding: EdgeInsetsGeometry.symmetric(horizontal: 30, vertical: 5),
-                    child: MyContainer(
-                      child: Padding(
-                        padding: EdgeInsetsGeometry.symmetric(vertical: 10),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            GestureDetector(
-                              onTap: () => setState(() => applyPenStyle(paintEditor)),
-                              child: Image.asset(
-                                "assets/icons/editor/pen.png",
-                                height: 60,
-                              )
-                            ),
-                            GestureDetector(
-                              onTap: () => setState(() => applyCrayonStyle(paintEditor)),
-                              child: Image.asset(
-                                "assets/icons/editor/crayon.png",
-                                height: 60,
+          bodyItems: (paintEditor, rebuildStream) {
+            _paintEditor = paintEditor;
+            return [
+              _buildSubAppBar(
+                rebuildStream: rebuildStream,
+                onCancel: paintEditor.close,
+                onDone: paintEditor.done,
+                editor: paintEditor,
+              ),
+              ReactiveWidget(
+                stream: rebuildStream,
+                builder: (_) => Positioned(
+                  bottom: 0, 
+                  left: 0, 
+                  right: 0,
+                  child: SafeArea(
+                    child: Container(
+                      color: Colors.black.withAlpha(120),
+                      padding: EdgeInsetsGeometry.symmetric(horizontal: 30, vertical: 5),
+                      child: MyContainer(
+                        child: Padding(
+                          padding: EdgeInsetsGeometry.only(top: 10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              GestureDetector(
+                                onTap: () => setState(() => applyPenStyle(paintEditor)),
+                                child: Image.asset(
+                                  "assets/icons/editor/pen.png",
+                                  height: _currentTool == 0 ? 60 : 50,
+                                )
                               ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                setState(() => applyMarkerStyle(paintEditor));
-                              },
-                              child: Image.asset(
-                                "assets/icons/editor/marker.png",
-                                height: 60,
+                              GestureDetector(
+                                onTap: () => setState(() => applyCrayonStyle(paintEditor)),
+                                child: Image.asset(
+                                  "assets/icons/editor/crayon.png",
+                                  height: _currentTool == 1 ? 60 : 50,
+                                ),
                               ),
-                            ),
-                            GestureDetector(
-                              key: _eraserKey,
-                              onTap: () => setState(() => paintEditor.setMode(PaintMode.eraser)),
-                              onLongPress: () => _showEraserSizePicker(paintEditor),
-                              child: Image.asset(
-                                "assets/icons/editor/eraser.png",
-                                height: 60,
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() => applyMarkerStyle(paintEditor));
+                                  _currentTool = 2;
+                                },
+                                child: Image.asset(
+                                  "assets/icons/editor/marker.png",
+                                  height: _currentTool == 2 ? 60 : 50,
+                                ),
                               ),
-                            ),
-                            // SizedBox(width: 5),
-                            Row(
-                              children: [
-                                GestureDetector(
-                                  onTap: () {
-                                    _iosColorPickerController.showNativeIosColorPicker(
-                                      startingColor: _currentColor,
-                                      darkMode: Theme.of(context).brightness == Brightness.dark,
-                                      onColorChanged: (color) {
-                                        setState(() => _currentColor = color);
-                                        paintEditor.setColor(color);
-                                      }
-                                    );
-                                  },
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Container(
-                                        height: 28,
-                                        width: 28,
-                                        decoration: BoxDecoration(
-                                          // color: Colors.white,
-                                          gradient: SweepGradient(
-                                            transform: GradientRotation(-pi / 2),
-                                            colors: [
-                                              Colors.yellow,
-                                              Colors.orange,
-                                              Colors.red,
-                                              Colors.pink,
-                                              Colors.purple,
-                                              Colors.blue,
-                                              Colors.green,
-                                              Colors.yellow
-                                            ]
+                              GestureDetector(
+                                key: _eraserKey,
+                                onTap: () => setState(() => paintEditor.setMode(PaintMode.eraser)),
+                                onLongPress: () => _showEraserSizePicker(paintEditor),
+                                child: Image.asset(
+                                  "assets/icons/editor/eraser.png",
+                                  height: PaintMode.values.indexOf(paintEditor.paintMode) == PaintMode.eraser.index ? 55 : 50,
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      _iosColorPickerController.showNativeIosColorPicker(
+                                        startingColor: _currentColor,
+                                        darkMode: Theme.of(context).brightness == Brightness.dark,
+                                        onColorChanged: (color) {
+                                          setState(() => _currentColor = color);
+                                          paintEditor.setColor(color);
+                                        }
+                                      );
+                                    },
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        Container(
+                                          height: 28,
+                                          width: 28,
+                                          decoration: BoxDecoration(
+                                            gradient: SweepGradient(
+                                              transform: GradientRotation(-pi / 2),
+                                              colors: [
+                                                Colors.yellow,
+                                                Colors.orange,
+                                                Colors.red,
+                                                Colors.pink,
+                                                Colors.purple,
+                                                Colors.blue,
+                                                Colors.green,
+                                                Colors.yellow
+                                              ]
+                                            ),
+                                            shape: BoxShape.circle,
                                           ),
-                                          shape: BoxShape.circle,
                                         ),
-                                      ),
-                                      Container(
-                                        height: 19,
-                                        width: 19,
-                                        decoration: BoxDecoration(
-                                          color: _currentColor,
-                                          boxShadow: [
-                                            BoxShadow(
-                                              spreadRadius: 0.8,
-                                              color: Colors.black
-                                            )
-                                          ],
-                                          shape: BoxShape.circle
-                                        ),
-                                      )
-                                    ],
+                                        Container(
+                                          height: 19,
+                                          width: 19,
+                                          decoration: BoxDecoration(
+                                            color: _currentColor,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                spreadRadius: 0.8,
+                                                color: Colors.black
+                                              )
+                                            ],
+                                            shape: BoxShape.circle
+                                          ),
+                                        )
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                SizedBox(width: 15),
-                                CupertinoButton.tinted(
-                                  sizeStyle: CupertinoButtonSize.small,
-                                  padding: EdgeInsets.all(5),
-                                  borderRadius: BorderRadius.all(Radius.circular(30)),
-                                  child: Icon(
-                                    CupertinoIcons.plus, 
-                                    size: 22,
-                                    color: Theme.of(context).primaryColor,
-                                  ), 
-                                  onPressed: () {}
-                                ),
-                              ],
-                            )],
-                        )
-                      ),
-                    )
+                                  SizedBox(width: 15),
+                                  CupertinoButton.tinted(
+                                    sizeStyle: CupertinoButtonSize.small,
+                                    padding: EdgeInsets.all(5),
+                                    borderRadius: BorderRadius.all(Radius.circular(30)),
+                                    child: Icon(
+                                      CupertinoIcons.plus, 
+                                      size: 22,
+                                      color: Theme.of(context).primaryColor,
+                                    ), 
+                                    onPressed: () {}
+                                  ),
+                                ],
+                              )
+                            ],
+                          )
+                        ),
+                      )
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ];
+          }
         ),
       ),
       cropRotateEditor: CropRotateEditorConfigs(
@@ -772,16 +777,27 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
         navigator.pop(newPath);
       },
       videoEditorCallbacks: !widget.isVideo
-          ? null
-          : VideoEditorCallbacks(
-              onPause: _videoController!.pause,
-              onPlay: _videoController!.play,
-              onMuteToggle: (isMuted) => _videoController!.setVolume(isMuted ? 0 : 1),
-              onTrimSpanUpdate: (_) {
-                if (_videoController!.value.isPlaying) _proVideoController!.pause();
-              },
-              onTrimSpanEnd: _seekTo,
-            ),
+        ? null
+        : VideoEditorCallbacks(
+            onPause: _videoController!.pause,
+            onPlay: _videoController!.play,
+            onMuteToggle: (isMuted) => _videoController!.setVolume(isMuted ? 0 : 1),
+            onTrimSpanUpdate: (_) {
+              if (_videoController!.value.isPlaying) _proVideoController!.pause();
+            },
+            onTrimSpanEnd: _seekTo,
+          ),
+
+      paintEditorCallbacks: PaintEditorCallbacks(
+        onInit: () {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_paintEditor != null) { 
+              applyPenStyle(_paintEditor!);
+              setState(() => _currentTool = 0);
+            }
+          });
+        },
+      ),
     );
 
     return Container(
