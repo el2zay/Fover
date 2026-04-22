@@ -4,9 +4,13 @@
 import UIKit
 import Flutter
 import AVFoundation
+import MapKit
+import CoreLocation
+
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -18,12 +22,51 @@ import AVFoundation
       fatalError("rootViewController is not type FlutterViewController")
     }
 
-    let channel = FlutterMethodChannel(
+    // ── Canal MapKit / MKLocalSearch ──────────────────────────────
+    let mapChannel = FlutterMethodChannel(
+      name: "com.fover/mapsearch",
+      binaryMessenger: controller.binaryMessenger
+    )
+
+    mapChannel.setMethodCallHandler { call, result in
+      guard call.method == "searchAddress" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      guard let query = call.arguments as? String else {
+        result(FlutterError(code: "INVALID_ARGS", message: "Query manquant", details: nil))
+        return
+      }
+      let request = MKLocalSearch.Request()
+      request.naturalLanguageQuery = query
+      request.region = MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 0, longitude: 0),
+        span: MKCoordinateSpan(latitudeDelta: 180, longitudeDelta: 360)
+      )
+      // Chercher uniquement des adresses et points d'intérêt
+      request.resultTypes = [.address, .pointOfInterest]
+
+      MKLocalSearch(request: request).start { response, _ in
+        guard let items = response?.mapItems else { result([]); return }
+        let suggestions: [[String: Any]] = items.prefix(8).map { item in
+          [
+            "name":    item.name ?? "",
+            "address": item.placemark.title ?? "",
+            "lat":     item.placemark.coordinate.latitude,
+            "lon":     item.placemark.coordinate.longitude,
+          ]
+        }
+        result(suggestions)
+      }
+    }
+
+    // ── Canal vidéo / AVFoundation ────────────────────────────────
+    let videoChannel = FlutterMethodChannel(
       name: "fover/video_thumbnail",
       binaryMessenger: controller.binaryMessenger
     )
 
-    channel.setMethodCallHandler { call, result in
+    videoChannel.setMethodCallHandler { call, result in
       if call.method == "getFirstFrame",
          let args = call.arguments as? [String: Any],
          let path = args["path"] as? String {
@@ -36,15 +79,13 @@ import AVFoundation
         do {
           let cgImage = try generator.copyCGImage(at: .zero, actualTime: nil)
           let uiImage = UIImage(cgImage: cgImage)
-          print("cgImage: \(String(describing: cgImage))")
           if let jpegData = uiImage.jpegData(compressionQuality: 0.5) {
             result(FlutterStandardTypedData(bytes: jpegData))
           } else {
-            result(FlutterError(code: "ENCODE_ERROR", message: nil, details: nil))
+            result(FlutterError(code: "ENCODE_ERROR", message: "Encodage JPEG échoué", details: nil))
           }
         } catch {
           result(FlutterError(code: "FRAME_ERROR", message: error.localizedDescription, details: nil))
-          print("AVFoundation error: \(error)")
         }
 
       } else {
