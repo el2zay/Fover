@@ -59,6 +59,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
   void dispose() {
     _videoController?.dispose();
     _proVideoController?.dispose();
+    _dismissToolOverlay();
     _iosColorPickerController.dispose();
     super.dispose();
   }
@@ -178,39 +179,84 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
     setState(() => _currentTool = 2);
   }
 
-  OverlayEntry? _eraserOverlay;
+  OverlayEntry? _toolOverlay;
+  final _penKey = GlobalKey();
+  final _crayonKey = GlobalKey();
+  final _markerKey = GlobalKey();
   final _eraserKey = GlobalKey();
 
-  void _showEraserSizePicker(PaintEditorState paintEditor) {
-    final box = _eraserKey.currentContext!.findRenderObject() as RenderBox;
-    final offset = box.localToGlobal(Offset.zero);
+  int _penSizeIndex = 0;
+  int _crayonSizeIndex = 0;
+  int _markerSizeIndex = 0;
+  int _eraserSizeIndex = 0;
 
-    _eraserOverlay = OverlayEntry(
+  void _dismissToolOverlay() {
+    _toolOverlay?.remove();
+    _toolOverlay = null;
+  }
+
+  void _showStrokePicker({
+    required GlobalKey key,
+    required PaintEditorState paintEditor,
+    required List<double> sizes,
+    required int selectedIndex,
+    required void Function(double size, int index) onSelected,
+  }) {
+    _dismissToolOverlay();
+
+    final box = key.currentContext!.findRenderObject() as RenderBox;
+    final offset = box.localToGlobal(Offset.zero);
+    final btnWidth = box.size.width;
+
+    _toolOverlay = OverlayEntry(
       builder: (_) => Stack(
         children: [
           Positioned.fill(
             child: GestureDetector(
-              onTap: _dismissEraserOverlay,
+              onTap: _dismissToolOverlay,
               behavior: HitTestBehavior.opaque,
-              child: const ColoredBox(color: Colors.transparent),
+              child: const SizedBox.expand(),
             ),
           ),
           Positioned(
-            left: offset.dx - 60,
-            top: offset.dy - 80,
+            left: (offset.dx + btnWidth / 2) - (sizes.length * 30.0) / 2,
+            top: offset.dy - 75,
             child: Listener(
-              onPointerDown: (e) {},
+              onPointerDown: (_) {},
               behavior: HitTestBehavior.opaque,
               child: Material(
                 color: Colors.transparent,
-                child: _EraserSizePicker(
-                  onSizeSelected: (s) {
-                    setState(() {
-                      paintEditor.setMode(PaintMode.eraser);
-                      paintEditor.eraserRadius = s;
-                    });
-                    _dismissEraserOverlay();
-                  },
+                child: MyContainer(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: List.generate(sizes.length, (i) {
+                        final s = sizes[i];
+                        final isSelected = i == selectedIndex;
+                        return GestureDetector(
+                          onTap: () {
+                            onSelected(s, i);
+                            _toolOverlay?.markNeedsBuild();
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 7),
+                            height: s,
+                            width: s,
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isSelected ? Colors.white : Colors.white54,
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -219,12 +265,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
       ),
     );
 
-    Overlay.of(context).insert(_eraserOverlay!);
-  }
-
-  void _dismissEraserOverlay() {
-    _eraserOverlay?.remove();
-    _eraserOverlay = null;
+    Overlay.of(context).insert(_toolOverlay!);
   }
 
 
@@ -503,6 +544,10 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
           ),
           bodyItems: (paintEditor, rebuildStream) {
             _paintEditor = paintEditor;
+            const _penSizes    = [2.0, 4.0, 6.0, 9.0, 13.0];
+            const _crayonSizes = [3.0, 5.0, 8.0, 12.0, 16.0];
+            const _markerSizes = [10.0, 16.0, 22.0, 30.0, 40.0];
+            const _eraserSizes = [15.0, 20.0, 28.0, 36.0, 46.0];
             return [
               _buildSubAppBar(
                 rebuildStream: rebuildStream,
@@ -528,24 +573,68 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               GestureDetector(
-                                onTap: () => setState(() => applyPenStyle(paintEditor)),
+                                key: _penKey,
+                                onTap: () {
+                                  applyPenStyle(paintEditor);
+                                  paintEditor.setStrokeWidth(_penSizes[_penSizeIndex]);
+                                },
+                                onLongPress: () => _showStrokePicker(
+                                  key: _penKey,
+                                  paintEditor: paintEditor,
+                                  sizes: const [10, 14, 18, 22, 26],
+                                  selectedIndex: _penSizeIndex,
+                                  onSelected: (s, i) {
+                                    setState(() => _penSizeIndex = i);
+                                    applyPenStyle(paintEditor);
+                                    paintEditor.setStrokeWidth(_penSizes[i]);
+                                    _dismissToolOverlay();
+                                  },
+                                ),
                                 child: Image.asset(
                                   "assets/icons/editor/pen.png",
                                   height: _currentTool == 0 ? 60 : 50,
-                                )
+                                ),
                               ),
                               GestureDetector(
-                                onTap: () => setState(() => applyCrayonStyle(paintEditor)),
+                                key: _crayonKey,
+                                onTap: () {
+                                  applyCrayonStyle(paintEditor);
+                                  paintEditor.setStrokeWidth(_crayonSizes[_crayonSizeIndex]);
+                                },
+                                onLongPress: () => _showStrokePicker(
+                                  key: _crayonKey, 
+                                  paintEditor: paintEditor, 
+                                  sizes: const [10, 14, 18, 22, 26],
+                                  selectedIndex: _crayonSizeIndex, 
+                                  onSelected: (size, index) {
+                                    setState(() => _crayonSizeIndex = index);
+                                    applyCrayonStyle(paintEditor);
+                                    paintEditor.setStrokeWidth(_crayonSizes[index]);
+                                  }
+                                ),
                                 child: Image.asset(
                                   "assets/icons/editor/crayon.png",
                                   height: _currentTool == 1 ? 60 : 50,
                                 ),
                               ),
                               GestureDetector(
+                                key: _markerKey,
                                 onTap: () {
-                                  setState(() => applyMarkerStyle(paintEditor));
-                                  _currentTool = 2;
+                                  applyMarkerStyle(paintEditor);
+                                  paintEditor.setStrokeWidth(_markerSizes[_markerSizeIndex]);
                                 },
+                                onLongPress: () =>  _showStrokePicker(
+                                  key: _markerKey,
+                                  paintEditor: paintEditor,
+                                  sizes: const [10, 14, 18, 22, 26],
+                                  selectedIndex: _markerSizeIndex,
+                                  onSelected: (s, i) {
+                                    setState(() => _markerSizeIndex = i);
+                                    applyMarkerStyle(paintEditor);
+                                    paintEditor.setStrokeWidth(_markerSizes[i]);
+                                    _dismissToolOverlay();
+                                  },
+                                ),
                                 child: Image.asset(
                                   "assets/icons/editor/marker.png",
                                   height: _currentTool == 2 ? 60 : 50,
@@ -553,8 +642,19 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                               ),
                               GestureDetector(
                                 key: _eraserKey,
-                                onTap: () => setState(() => paintEditor.setMode(PaintMode.eraser)),
-                                onLongPress: () => _showEraserSizePicker(paintEditor),
+                                onTap: () => paintEditor.setMode(PaintMode.eraser),
+                                onLongPress: () => _showStrokePicker(
+                                  key: _eraserKey,
+                                  paintEditor: paintEditor,
+                                  sizes: const [10, 14, 18, 22, 26],
+                                  selectedIndex: _eraserSizeIndex,
+                                  onSelected: (s, i) {
+                                    setState(() => _eraserSizeIndex = i);
+                                    paintEditor.setMode(PaintMode.eraser);
+                                    paintEditor.eraserRadius = _eraserSizes[i] / 2;
+                                    _dismissToolOverlay();
+                                  },
+                                ),
                                 child: Image.asset(
                                   "assets/icons/editor/eraser.png",
                                   height: PaintMode.values.indexOf(paintEditor.paintMode) == PaintMode.eraser.index ? 55 : 50,
@@ -793,6 +893,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (_paintEditor != null) { 
               applyPenStyle(_paintEditor!);
+              _paintEditor!.setColor(_currentColor);
               setState(() => _currentTool = 0);
             }
           });
