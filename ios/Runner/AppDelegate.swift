@@ -6,7 +6,7 @@ import Flutter
 import AVFoundation
 import MapKit
 import CoreLocation
-
+import Vision
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -90,6 +90,37 @@ import CoreLocation
 
       } else {
         result(FlutterMethodNotImplemented)
+      }
+    }
+
+    // OCR
+    let ocrChannel = FlutterMethodChannel(
+      name: "com.fover/ocr",
+      binaryMessenger: controller.binaryMessenger
+    )
+
+    ocrChannel.setMethodCallHandler { call, result in
+      guard call.method == "extractText",
+            let bytes = call.arguments as? FlutterStandardTypedData
+      else { result(FlutterMethodNotImplemented); return }
+
+      DispatchQueue.global(qos: .userInitiated).async {
+        guard let image = UIImage(data: bytes.data),
+              let cgImage = image.cgImage
+        else { result(""); return }
+
+        let request = VNRecognizeTextRequest { req, err in
+          guard err == nil else { result(""); return }
+          let text = (req.results as? [VNRecognizedTextObservation] ?? [])
+            .compactMap { $0.topCandidates(1).first?.string }
+            .joined(separator: "\n")
+          result(text)
+        }
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = true
+        request.recognitionLanguages = ["fr-FR", "en-US"]
+
+        try? VNImageRequestHandler(cgImage: cgImage, options: [:]).perform([request])
       }
     }
 
