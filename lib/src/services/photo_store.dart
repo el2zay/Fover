@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:fover/main.dart';
 import 'package:fover/src/models/album_entry.dart';
@@ -387,10 +388,10 @@ class PhotoStore {
 
   static PhotoEntry? get(String path) => _photoBox.get(path);
 
-static List<PhotoEntry> getAll() =>
+  static List<PhotoEntry> getAll() =>
     _photoBox.values.where((e) =>
       e.deletedAt == null &&
-      e.isOldVersion != true // ← doit être présent
+      e.isOldVersion != true
     ).toList();
 
   static int get favoritesCount => 
