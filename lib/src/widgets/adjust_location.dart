@@ -27,13 +27,13 @@ class _AdjustLocationState extends State<AdjustLocation> {
   Timer? _debounce;
 
   static const _channel = MethodChannel('com.fover/mapsearch');
-  
+
   Future<void> searchAddress(String query) async { 
     if (query.length < 3) { 
       setState(() => suggestions = []); return;
     }
     try { 
-      if (Platform.isIOS && Platform.isMacOS) {
+      if (Platform.isIOS || Platform.isMacOS) {
         final List results = await _channel.invokeMethod('searchAddress', query);
         setState(() { 
           suggestions = results.map((e) => { 
