@@ -8,6 +8,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fover/src/models/photo_entry.dart';
+import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:http/http.dart' as http;
 
@@ -26,14 +27,13 @@ class _AdjustLocationState extends State<AdjustLocation> {
   Timer? _debounce;
 
   static const _channel = MethodChannel('com.fover/mapsearch');
-
-  // TODO : regex pour détecter les coordonnées gps
+  
   Future<void> searchAddress(String query) async { 
     if (query.length < 3) { 
       setState(() => suggestions = []); return;
     }
     try { 
-      if (Platform.isIOS || Platform.isMacOS) {
+      if (Platform.isIOS && Platform.isMacOS) {
         final List results = await _channel.invokeMethod('searchAddress', query);
         setState(() { 
           suggestions = results.map((e) => { 
@@ -44,6 +44,17 @@ class _AdjustLocationState extends State<AdjustLocation> {
           }).toList(); 
         }); 
       } else {
+          final match = RegExp(r'^\s*([+-]?\d+(?:\.\d+)?)\s*[, ]\s*([+-]?\d+(?:\.\d+)?)\s*$').firstMatch(query);
+
+        if (match != null) {
+          return setState(() {
+            suggestions = [{
+              'display': 'Coordinates: ${match.group(1)}, ${match.group(2)}',
+              'lat': double.parse(match.group(1)!),
+              'lon': double.parse(match.group(2)!)
+            }];
+          });
+        }
         final response = await http.get(
             Uri.parse("https://photon.komoot.io/api/?q=${Uri.encodeComponent(query)}&limit=5"),
             headers: {
@@ -183,10 +194,12 @@ class _AdjustLocationState extends State<AdjustLocation> {
                   ),
                   title: Text(s['display'], style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
                   onTap: () {
-                    Navigator.pop(context, {
-                      'lat': s['lat'],
-                      'lon': s['lon']
-                    });
+                    PhotoStore.update(
+                      path: widget.photo.path,
+                      latitude: s['lat'],
+                      longitude: s['lon'],
+                    );
+                    Navigator.pop(context);
                   },
                 )).toList(),
               ),
