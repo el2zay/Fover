@@ -1,14 +1,13 @@
 import 'dart:async';
 
-import 'package:cupertino_native_better/cupertino_native_better.dart';
-import 'package:cupertino_native_better/style/sf_symbol.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:fover/main.dart';
 import 'package:fover/src/services/copyparty_service.dart';
-import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/dialog.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 class CopypartyLoginPage extends StatefulWidget {
   const CopypartyLoginPage({super.key});
@@ -87,27 +86,12 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
                       text: "here",
                       style: TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
                       recognizer: TapGestureRecognizer()
-                        ..onTap = () {
-                          showCupertinoSheet(
-                            context: context,
-                            enableDrag: true,
-                            builder: (context) {
-                              return Scaffold(
-                                backgroundColor: Colors.grey[900],
-                                appBar: AppBar(
-                                  leading: Transform.scale(
-                                    scale: 0.9,
-                                    child: Button.iconOnly(
-                                      glassIcon: CNSymbol('xmark', size: 14),
-                                      icon: Icon(CupertinoIcons.xmark),
-                                      onPressed: () => Navigator.pop(context)
-                                    ),
-                                  )
-                                ),
-                              );
-                            }
+                        ..onTap = () async {
+                          await launchUrl(
+                            Uri.parse("https://github.com/el2zay/Fover/#fover"),
+                            mode: LaunchMode.inAppWebView
                           );
-                      }
+                        }
                     ),
                     const TextSpan(
                       text: " to see the instructions.\nIt will take you no more than 10 minutes !",
