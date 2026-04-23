@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'package:apple_maps_flutter/apple_maps_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fover/main.dart';
 import 'package:fover/src/models/album_entry.dart';
@@ -145,7 +144,8 @@ class PhotoStore {
   static Future<void> update({
     required String path,
     String? description,
-    String? localisation,
+    double? latitude,
+    double? longitude,
     Map<String, String>? exif,
     String? detectedText,
     bool? hidden,
@@ -166,6 +166,12 @@ class PhotoStore {
       if (localPath != null) entry.localPath = localPath;
       if (editedForm != null) entry.editedFrom = editedForm;
       if (isOldVersion != null) entry.isOldVersion = isOldVersion;
+
+      if (latitude != null && longitude != null) {
+        entry.latitude = latitude;
+        entry.longitude = longitude;
+      }
+      
       await entry.save();
   }
 

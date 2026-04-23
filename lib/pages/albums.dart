@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:cupertino_native_better/cupertino_native_better.dart';
@@ -174,6 +175,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
 
   @override
   Widget build(BuildContext context) {
+    bool isLightAndroid = Theme.brightnessOf(context) == Brightness.light && Platform.isAndroid;
     Color textColor = Theme.brightnessOf(context) == Brightness.dark ? Colors.white70 : Colors.black87;
 
     return Scaffold(
@@ -181,7 +183,8 @@ class _AlbumsPageState extends State<AlbumsPage> {
         title: ("Albums"),
         actions: [
           Button.iconOnly(
-            icon: Icon(CupertinoIcons.add), 
+            icon: Icon(CupertinoIcons.add, color: isLightAndroid ? Colors.black : null),
+            backgroundColor: isLightAndroid ? Colors.grey[300] : null,
             glassIcon: CNSymbol('plus', size: 20),
             onPressed: () {
               log("Add Album Tapped");
@@ -267,6 +270,8 @@ class _AlbumsPageState extends State<AlbumsPage> {
                         ),
                         Button(
                           label: "Reorder",
+                          backgroundColor: isLightAndroid ? Colors.grey[300] : null,
+                          textColor: isLightAndroid ? Colors.black : null,
                           tint: Theme.of(context).primaryColor,
                           onPressed: () async {
                             await Navigator.push(
