@@ -1176,17 +1176,17 @@ class LibraryPageState extends State<LibraryPage> {
                     ),
                   ),
                 ),
-                Positioned(
-                  bottom: 15,
-                  left: 35,
-                  right: 35,
-                  child: SafeArea(
-                    top: false,
-                    child: Padding(
-                      padding: EdgeInsetsGeometry.symmetric(horizontal: 15, vertical: 5),
-                      child: AnimatedSwitcher(duration: Duration(milliseconds: 300),
-                        child: selectedImages.isNotEmpty ?
-                        Row(
+              Positioned(
+                bottom: 15,
+                left: 35,
+                right: 35,
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: EdgeInsetsGeometry.symmetric(horizontal: 15, vertical: 5),
+                    child: AnimatedSwitcher(duration: Duration(milliseconds: 300),
+                      child: selectedImages.isNotEmpty && !widget.onlySelect 
+                        ? Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             widget.album == Album.trash
@@ -1281,40 +1281,40 @@ class LibraryPageState extends State<LibraryPage> {
                                   }
                                 },
                               ),
-                            Button.iconOnly(
-                              onPressed: () {
-                                showGeneralDialog(
-                                  barrierDismissible: false,
-                                  context: context,
-                                  pageBuilder: (context, animation, secondaryAnimation) {
-                                    final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
-                                    return MyDialog(
-                                      content: widget.album == Album.trash 
-                                        ? "This action cannot be undone. The image will also be deleted from your server."
-                                        : "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
-                                      principalButton: TextButton(
-                                        child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
-                                        onPressed: () {
-                                          for (final path in selectedPaths) {
-                                            if (widget.album == Album.trash) {
-                                              PhotoStore.hardDelete(path);
-                                            } else {
-                                              PhotoStore.softDelete(path);
+                              Button.iconOnly(
+                                onPressed: () {
+                                  showGeneralDialog(
+                                    barrierDismissible: false,
+                                    context: context,
+                                    pageBuilder: (context, animation, secondaryAnimation) {
+                                      final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
+                                      return MyDialog(
+                                        content: widget.album == Album.trash 
+                                          ? "This action cannot be undone. The image will also be deleted from your server."
+                                          : "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
+                                        principalButton: TextButton(
+                                          child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
+                                          onPressed: () {
+                                            for (final path in selectedPaths) {
+                                              if (widget.album == Album.trash) {
+                                                PhotoStore.hardDelete(path);
+                                              } else {
+                                                PhotoStore.softDelete(path);
+                                              }
                                             }
-                                          }
 
-                                          _removeLocally(selectedImages);
-                                          Navigator.pop(context);
-                                        },
-                                      ),
-                                    );
-                                  }
-                                );
-                              },
-                              glassIcon: CNSymbol('trash', size: 20),
-                              icon: Icon(CupertinoIcons.trash, size: 20),
-                              tint: Theme.of(context).scaffoldBackgroundColor,
-                            ),
+                                            _removeLocally(selectedImages);
+                                            Navigator.pop(context);
+                                          },
+                                        ),
+                                      );
+                                    }
+                                  );
+                                },
+                                glassIcon: CNSymbol('trash', size: 20),
+                                icon: Icon(CupertinoIcons.trash, size: 20),
+                                tint: Theme.of(context).scaffoldBackgroundColor,
+                              ),
                           ],
                         ) : null,
                     ),
