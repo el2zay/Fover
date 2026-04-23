@@ -7,6 +7,7 @@ import 'package:exif/exif.dart';
 import 'package:fover/main.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/freebox_service.dart';
+import 'package:fover/src/services/ocr_service.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:path_provider/path_provider.dart';
@@ -198,8 +199,14 @@ Future<List<dynamic>> fetchPhotosDir() async {
         focalLength: parseExifDouble(exifData['EXIF FocalLengthIn35mmFilm']?.printable ?? exifData['EXIF FocalLength']?.printable)?.round(),
         exposureValue: parseExifDouble(exifData['EXIF ExposureBiasValue']?.printable)?.round(),
         focus: parseExifDouble(exifData['EXIF FNumber']?.printable.replaceAll('ƒ/', ''))?.round(),
-        isScreenshot: isScreenshot(exifData, parseExifDimension(exifData, false), parseExifDimension(exifData, true))      );
+        isScreenshot: isScreenshot(exifData, parseExifDimension(exifData, false), parseExifDimension(exifData, true))
+      );
     }
+
+    Future.microtask(() => OcrService.runOcrIfNeeded(
+      entry['path'], 
+      (entry['mimetype'] as String?) ?? 'image/jpeg',
+    ));
   }
   
   if (hasBeenEdited) {
