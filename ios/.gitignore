@@ -9,6 +9,9 @@
 .tags*
 **/.vagrant/
 **/DerivedData/
+*.xcbuildstate
+XCBuildData/
+*.xcworkspace/xcuserdata/
 Icon?
 **/Pods/
 **/.symlinks/
