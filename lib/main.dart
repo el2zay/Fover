@@ -113,53 +113,54 @@ class _MainAppState extends State<MainApp> {
           bottomNavigationBar: ValueListenableBuilder(
             valueListenable: showTabBar,
             builder: (context, tabBarVisible, _) {
-              if (!tabBarVisible) return const SizedBox.shrink();
-              
               if (is26OrNewer) {
-                return CNTabBar(
-                  tint: Colors.blue,
-                  iconSize: 18,
-                  items: [
-                    CNTabBarItem(
-                      label: 'Library',
-                      icon: CNSymbol('photo.fill.on.rectangle.fill'),
-                    ),
-                    CNTabBarItem(
-                      label: 'Albums',
-                      icon: CNSymbol('rectangle.stack.fill'),
-                    ),
-                  ],
-                  currentIndex: _currentIndex,
-                  onTap: (i) {
-                    if (i == 0 && _currentIndex == 0) {
-                      libraryKey.currentState?.scrollToBottom();
-                    }
-                    setState(() => _currentIndex = i);
-                  },
-                  searchItem: CNTabBarSearchItem(
-                    onSearchChanged: (query) {
-                      searchQuery.value = query;
-                    },
-                    onSearchSubmit: (query) {
-                      searchQuery.value = query;
-                    },
-                    onSearchActiveChanged: (isActive) { 
-                      // Ouvrir searchpage si on clique sur la barre de recherche, même sans taper de texte
-
-                      if (isActive) {
-                        setState(() {
-                          _currentIndex = 2;
-                        });
-                      }
-                    },
-                    style: const CNTabBarSearchStyle(
-                      iconSize: 20,
-                      buttonSize: 44,
-                      searchBarHeight: 44,
-                      animationDuration: Duration(milliseconds: 400),
-                      showClearButton: true,
-                    ),
-                  ),
+                return AnimatedSwitcher(
+                  duration: Duration(milliseconds: 200),
+                  child: tabBarVisible 
+                    ? CNTabBar(
+                      tint: Colors.blue,
+                      iconSize: 18,
+                      items: [
+                        CNTabBarItem(
+                          label: 'Library',
+                          icon: CNSymbol('photo.fill.on.rectangle.fill'),
+                        ),
+                        CNTabBarItem(
+                          label: 'Albums',
+                          icon: CNSymbol('rectangle.stack.fill'),
+                        ),
+                      ],
+                      currentIndex: _currentIndex,
+                      onTap: (i) {
+                        if (i == 0 && _currentIndex == 0) {
+                          libraryKey.currentState?.scrollToBottom();
+                        }
+                        setState(() => _currentIndex = i);
+                      },
+                      searchItem: CNTabBarSearchItem(
+                        onSearchChanged: (query) {
+                          searchQuery.value = query;
+                        },
+                        onSearchSubmit: (query) {
+                          searchQuery.value = query;
+                        },
+                        onSearchActiveChanged: (isActive) { 
+                          if (isActive) {
+                            setState(() {
+                              _currentIndex = 2;
+                            });
+                          }
+                        },
+                        style: const CNTabBarSearchStyle(
+                          iconSize: 20,
+                          buttonSize: 44,
+                          searchBarHeight: 44,
+                          animationDuration: Duration(milliseconds: 400),
+                          showClearButton: true,
+                        ),
+                      ),
+                    )
+                  : SizedBox.shrink(key: const ValueKey('empty'))
                 );
               }
 
