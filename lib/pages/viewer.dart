@@ -500,13 +500,15 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                     setState(() {
                       focused = true;
                     });
-                    showModalBottomSheet(
-                      barrierColor: Colors.transparent,
-                      isScrollControlled: true,
-                      constraints: BoxConstraints(
-                        minHeight: 0,
-                        maxHeight: MediaQuery.of(context).size.height * 0.93,
-                      ),
+                    showCupertinoSheet(
+                      // Impossible a drag
+                      enableDrag: false,
+                      // barrierColor: Colors.transparent,
+                      // isScrollControlled: true,
+                      // constraints: BoxConstraints(
+                      //   minHeight: 0,
+                      //   maxHeight: MediaQuery.of(context).size.height * 0.93,
+                      // ),
                       context: context,
                       builder: (context) {
                         return AdjustDate(
@@ -526,12 +528,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                       focused = true;
                     });
 
-                    showModalBottomSheet(
-                      barrierColor: Colors.transparent,
-                      isScrollControlled: true,
-                      constraints: BoxConstraints(
-                        maxHeight: MediaQuery.of(context).size.height * 0.93,
-                      ),
+                    showCupertinoSheet(
                       context: context, 
                       builder: (context) {
                         return AdjustLocation(
