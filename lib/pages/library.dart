@@ -11,7 +11,6 @@ import 'package:flutter/services.dart';
 import 'package:fover/main.dart';
 import 'package:fover/pages/settings.dart';
 import 'package:fover/pages/viewer.dart';
-import 'package:fover/src/models/photo_entry.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/download.dart';
 import 'package:fover/src/services/fover_picker_delegate.dart';
@@ -393,6 +392,7 @@ class LibraryPageState extends State<LibraryPage> {
     final name = (photo?.name ?? '').toLowerCase();
     final camera = (photo?.cameraModel ?? '').toLowerCase();
     final description = (photo?.description ?? '').toLowerCase();
+    final detectedText = (photo?.detectedText ?? '').toLowerCase();
 
     final year = date.year.toString();
     final month = date.month.toString().padLeft(2, '0');
@@ -420,6 +420,7 @@ class LibraryPageState extends State<LibraryPage> {
       name,
       camera,
       description,
+      detectedText,
       year,
       month,
       day,
