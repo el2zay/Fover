@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
+import 'dart:io';
 
 import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fover/src/models/photo_entry.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:http/http.dart' as http;
@@ -22,48 +25,59 @@ class _AdjustLocationState extends State<AdjustLocation> {
   bool isSearching = false;
   Timer? _debounce;
 
-  Future<void> searchAddress(String query) async {
-    if (query.length < 3) {
-      setState(() => suggestions = []);
-      return;
+  static const _channel = MethodChannel('com.fover/mapsearch');
+
+  // TODO : regex pour détecter les coordonnées gps
+  Future<void> searchAddress(String query) async { 
+    if (query.length < 3) { 
+      setState(() => suggestions = []); return;
     }
+    try { 
+      if (Platform.isIOS || Platform.isMacOS) {
+        final List results = await _channel.invokeMethod('searchAddress', query);
+        setState(() { 
+          suggestions = results.map((e) => { 
+            'display': '${e['name']} — ${e['address']}', 
+            'name': e['name'], 
+            'lat': e['lat'] as double, 
+            'lon': e['lon'] as double 
+          }).toList(); 
+        }); 
+      } else {
+        final response = await http.get(
+            Uri.parse("https://photon.komoot.io/api/?q=${Uri.encodeComponent(query)}&limit=5"),
+            headers: {
+              'User-Agent': 'Fover/1.0 (contact@tondomaine.com)',
+            },
+          );
 
+        if (response.statusCode != 200) {
+          debugPrint('Search error: HTTP ${response.statusCode}');
+          return;
+        }
 
-    try {
-      final response = await http.get(
-        Uri.parse("https://photon.komoot.io/api/?q=${Uri.encodeComponent(query)}&limit=5"),
-        headers: {
-          'User-Agent': 'Fover/1.0 (contact@tondomaine.com)',
-        },
-      );
+        final data = jsonDecode(response.body);
+        final features = data['features'] as List;
 
-      if (response.statusCode != 200) {
-        debugPrint('Search error: HTTP ${response.statusCode}');
-        return;
+        setState(() {
+          suggestions = features.map((f) {
+            final props = f['properties'];
+            final coords = f['geometry']['coordinates'];
+            return {
+              'display': [props['name'], props['city'], props['country']]
+                  .where((e) => e != null)
+                  .join(', '),
+              'lat': coords[1] as double,
+              'lon': coords[0] as double,
+            };
+          }).toList();
+        });
       }
-
-      final data = jsonDecode(response.body);
-      final features = data['features'] as List;
-
-      setState(() {
-        suggestions = features.map((f) {
-          final props = f['properties'];
-          final coords = f['geometry']['coordinates'];
-          return {
-            'display': [props['name'], props['city'], props['country']]
-                .where((e) => e != null)
-                .join(', '),
-            'lat': coords[1] as double,
-            'lon': coords[0] as double,
-          };
-        }).toList();
-      });
-    } on TimeoutException {
-      debugPrint('Search timeout');
-    } catch (e) {
-      debugPrint('Search error: $e');
-    }
+    } catch (e) { 
+      log("Search error : $e"); 
+    } 
   }
+
   @override
   void dispose() {
     _debounce?.cancel();
@@ -140,6 +154,7 @@ class _AdjustLocationState extends State<AdjustLocation> {
                             onPressed: () {
                               textController.clear();
                               setState(() {});
+                              suggestions.clear();
                             },
                           )
                         : null,
