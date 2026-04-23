@@ -1202,86 +1202,87 @@ class LibraryPageState extends State<LibraryPage> {
                                 icon: Icon(CupertinoIcons.arrow_up_bin, size: 20),
                                 tint: Theme.of(context).scaffoldBackgroundColor,
                               ) : PopMenu(
-                                scale: 0.85,
-                                showCopy: false,
-                                isViewer: false,
-                                isDownloaded: selectedImages.every((i) => DownloadService.isDownloaded(data.encodedPaths[i])),
-                                isFavorite: false,
-                                onSelected: (action) async {
-                                  final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
-                                  switch (action) {
-                                    case PopMenuAction.download:
-                                      for (final path in selectedPaths) {
-                                        final photo = PhotoStore.get(path);
-                                        if (DownloadService.isDownloaded(path)) {
-                                          DownloadService.remove(path);
-                                        } else {
-                                          DownloadService.download(encodedPath: path, filename: photo!.name);
+                                  scale: 0.85,
+                                  showCopy: false,
+                                  isViewer: false,
+                                  isDownloaded: selectedImages.every((i) => DownloadService.isDownloaded(data.encodedPaths[i])),
+                                  isFavorite: false,
+                                  onSelected: (action) async {
+                                    final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
+                                    switch (action) {
+                                      case PopMenuAction.download:
+                                        for (final path in selectedPaths) {
+                                          final photo = PhotoStore.get(path);
+                                          if (DownloadService.isDownloaded(path)) {
+                                            DownloadService.remove(path);
+                                          } else {
+                                            DownloadService.download(encodedPath: path, filename: photo!.name);
+                                          }
                                         }
-                                      }
-                                    break;
-                                    case PopMenuAction.copy:
-                                      break;
-                                    case PopMenuAction.revert:
-                                      break;
-                                    case PopMenuAction.share:
-                                      final xFiles = <XFile>[];
+                                        break;
+                                      case PopMenuAction.copy:
+                                        break;
+                                      case PopMenuAction.revert:
+                                        break;
+                                      case PopMenuAction.share:
+                                        final xFiles = <XFile>[];
 
-                                      for (final i in selectedImages) {
-                                        final encodedPath = data.encodedPaths[i];
-                                        final bytes = await fetchFullBytes(encodedPath);
-                                        if (bytes == null) continue;
+                                        for (final i in selectedImages) {
+                                          final encodedPath = data.encodedPaths[i];
+                                          final bytes = await fetchFullBytes(encodedPath);
+                                          if (bytes == null) continue;
 
-                                        xFiles.add(XFile.fromData(
-                                          bytes,
-                                          mimeType: data.mimetypes[i],
-                                          name: PhotoStore.get(encodedPath)?.name ?? 'media'
-                                        ));
-                                      }
-                                      if (xFiles.isEmpty) break;
-                                      await SharePlus.instance.share(
-                                        ShareParams(
-                                          files: xFiles
-                                        )
-                                      );
-                                      break;
-                                    case PopMenuAction.favorite:
-                                      for (final i in selectedImages) {
-                                        await PhotoStore.update(path: data.encodedPaths[i], favorite: true);
-                                      }
-                                      break;
-                                    case PopMenuAction.duplicate:
-                                      for (final i in selectedImages) {
-                                        await PhotoStore.duplicate(path: data.encodedPaths[i]);
-                                      }
-                                      _refresh();
-                                      break;
-                                    case PopMenuAction.hide:
-                                      for (final i in selectedImages) {
-                                        await PhotoStore.update(path: data.encodedPaths[i], hidden: true);
-                                      }
-                                      _removeLocally(selectedImages);
-                                      break;
-                                    case PopMenuAction.addToAlbum:
-                                      showModalBottomSheet(
-                                        context: context,
-                                        isScrollControlled: true,
-                                        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
-                                        builder: (context) {
-                                          return AddToAlbumSheet(
-                                            photoPath: selectedImages.map((i) => data.encodedPaths[i]).toList(),
-                                          );
+                                          xFiles.add(XFile.fromData(
+                                            bytes,
+                                            mimeType: data.mimetypes[i],
+                                            name: PhotoStore.get(encodedPath)?.name ?? 'media'
+                                          ));
                                         }
-                                      );
-                                      break;
-                                    case PopMenuAction.adjustDate:
-                                      break;
-                                    case PopMenuAction.adjustLocation:
-                                      break;
-                                  }
-                                },
+                                        if (xFiles.isEmpty) break;
+                                        await SharePlus.instance.share(
+                                          ShareParams(
+                                            files: xFiles
+                                          )
+                                        );
+                                        break;
+                                      case PopMenuAction.favorite:
+                                        for (final i in selectedImages) {
+                                          await PhotoStore.update(path: data.encodedPaths[i], favorite: true);
+                                        }
+                                        break;
+                                      case PopMenuAction.duplicate:
+                                        for (final i in selectedImages) {
+                                          await PhotoStore.duplicate(path: data.encodedPaths[i]);
+                                        }
+                                        _refresh();
+                                        break;
+                                      case PopMenuAction.hide:
+                                        for (final i in selectedImages) {
+                                          await PhotoStore.update(path: data.encodedPaths[i], hidden: true);
+                                        }
+                                        _removeLocally(selectedImages);
+                                        break;
+                                      case PopMenuAction.addToAlbum:
+                                        showModalBottomSheet(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
+                                          builder: (context) {
+                                            return AddToAlbumSheet(
+                                              photoPath: selectedImages.map((i) => data.encodedPaths[i]).toList(),
+                                            );
+                                          }
+                                        );
+                                        break;
+                                      case PopMenuAction.adjustDate:
+                                        break;
+                                      case PopMenuAction.adjustLocation:
+                                        break;
+                                    }
+                                  },
                               ),
                               Button.iconOnly(
+                                enabled: selectedImages.isNotEmpty,
                                 onPressed: () {
                                   showGeneralDialog(
                                     barrierDismissible: false,
