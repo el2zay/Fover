@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:fover/main.dart';
 import 'package:fover/pages/settings.dart';
 import 'package:fover/pages/viewer.dart';
+import 'package:fover/src/models/photo_entry.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/download.dart';
 import 'package:fover/src/services/fover_picker_delegate.dart';
@@ -912,8 +913,19 @@ class LibraryPageState extends State<LibraryPage> {
                                 });
 
                                 final paths = selectedImages.map((i) => data.encodedPaths[i]).toList();
-                                  
-                                widget.onSelectedChanged?.call(paths, null);
+                                Uint8List? thumb;
+                                if (selectedImages.isNotEmpty) {
+                                  final firstIndex = selectedImages.first;
+                                  final firstPath = data.encodedPaths[firstIndex];
+                                  final photo = PhotoStore.get(firstPath);
+                                  if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
+                                    thumb = await File(photo.localPath!).readAsBytes();
+                                  } else {
+                                    thumb = await fetchImageBytes(firstPath, data.mimetypes[firstIndex]);
+                                  }
+                                }
+
+                                widget.onSelectedChanged?.call(paths, thumb);
                                 countSelected.value = selectedImages.length;
                               } else {
                                 Navigator.push(
@@ -1357,12 +1369,12 @@ class _MediaTileState extends State<_MediaTile> {
   @override
   void initState() {
     super.initState();
-    _thumbFuture = _loadThumb();
+    _thumbFuture = loadThumb();
   }
 
-  Future<Uint8List?> _loadThumb() async {
+  Future<Uint8List?> loadThumb() async {
     final photo = PhotoStore.get(widget.encodedPath);
-    final isVideo = widget.mimetype.startsWith('video/');
+    bool isVideo = widget.mimetype.startsWith('video/');
 
     if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
       if (isVideo) {
