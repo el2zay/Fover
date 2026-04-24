@@ -831,6 +831,11 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     );
   }
 
+  String cleanName(String filename) {
+  final pattern = RegExp(r'-\d+\.\d+-[a-zA-Z0-9]+\.[a-zA-Z0-9]+$');
+  return filename.replaceFirst(pattern, '');
+  }
+
   DraggableScrollableSheet _buildInfoSheet(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
     final photo = PhotoStore.get(widget.encodedPaths[currentIndex])!;
@@ -924,7 +929,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   )
                 ],
               ),
-              Text(photo.name, style: TextStyle(color: Colors.grey)),
+              Text(cleanName(photo.name), style: TextStyle(color: Colors.grey)),
               Container(
                 margin: EdgeInsets.symmetric(vertical: 20),
                 padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
