@@ -76,7 +76,14 @@ class _AlbumsPageState extends State<AlbumsPage> {
   VoidCallback _onTapFor(String key, BuildContext context) {
     switch (key) {
       case 'videos':
-        return () => log("Videos tapped");
+        return () {
+          Navigator.push(
+            context,
+            CupertinoPageRoute(
+              builder: (_) => LibraryPage(album: Album.videos)
+            )
+          );
+        };
       case 'screenshots':
         return () {
           Navigator.push(
@@ -84,11 +91,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
             CupertinoPageRoute(
               builder: (_) => LibraryPage(album: Album.screenshots)
             )
-          ).then((_) {
-            Future.delayed(const Duration(milliseconds: 350), () {
-              if (context.mounted) setState(() {});
-            });
-          });
+          );
         };
       case 'favorites':
         return () {
@@ -97,11 +100,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
             CupertinoPageRoute(
               builder: (_) => LibraryPage(album: Album.favorites)
             )
-          ).then((_) {
-            Future.delayed(const Duration(milliseconds: 350), () {
-              if (context.mounted) setState(() {});
-            });
-          });
+          );
         };
 
       case 'hidden':
@@ -125,7 +124,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
         return () async {
           try {
             bool isAuthenticated = await auth.authenticate(
-              localizedReason: 'Please authenticate to access hidden photos',
+              localizedReason: 'Please authenticate to access recently deleted photos',
               biometricOnly: false,
             );
             if (isAuthenticated) {
