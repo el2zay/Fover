@@ -209,6 +209,7 @@ class _PhotoMapState extends State<PhotoMap> {
           encodedPaths: [cluster.photos.first.path],
           index: 0, 
           trashMode: false,
+          heroPrefix: '',
           onRefresh: () {}
         )
       ));
