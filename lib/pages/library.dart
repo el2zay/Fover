@@ -987,35 +987,28 @@ class LibraryPageState extends State<LibraryPage> {
                                 widget.onSelectedChanged?.call(paths, thumb);
                                 countSelected.value = selectedImages.length;
                               } else {
-                                Navigator.push(
-                                  context,
-                                  PageRouteBuilder(
-                                    opaque: true,
-                                    transitionDuration: const Duration(milliseconds: 300),
-                                    reverseTransitionDuration: const Duration(milliseconds: 300),
-                                    pageBuilder: (_, __, ___) => ViewerPage(
-                                      mimetype: mimetypes,
-                                      index: index,
-                                      encodedPaths: data.encodedPaths,
-                                      trashMode: widget.album == Album.trash,
-                                      onRefresh: _refresh,
-                                    ),
-                                    transitionsBuilder: (_, animation, ___, child) {
-                                      return Stack(
-                                        children: [
-                                          FadeTransition(
-                                            opacity: animation,
-                                            child: const ColoredBox(
-                                              color: Colors.black,
-                                              child: SizedBox.expand(),
-                                            ),
-                                          ),
-                                          child
-                                        ],
+                                  Navigator.push(
+                                    context,
+                                    PageRouteBuilder(
+                                      opaque: false,
+                                      transitionDuration: const Duration(milliseconds: 300),
+                                      reverseTransitionDuration: const Duration(milliseconds: 300),
+                                      pageBuilder: (_, __, ___) => ViewerPage(
+                                        mimetype: mimetypes,
+                                        index: index,
+                                        encodedPaths: data.encodedPaths,
+                                        trashMode: widget.album == Album.trash,
+                                        onRefresh: _refresh,
+                                        heroPrefix: _heroPrefix,
+                                      ),
+                                     transitionsBuilder: (_, animation, __, child) {
+                                      return FadeTransition(
+                                        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+                                        child: child,
                                       );
-                                    }
-                                  )
-                                ).then((_) => _refresh());
+                                     },
+                                    ),
+                                  ).then((_) => _refresh());
                               }
                             },
 
@@ -1503,18 +1496,15 @@ class _MediaTileState extends State<_MediaTile> {
                 future: _thumbFuture,
                 builder: (context, snapshot) {
                   if (snapshot.data == null) {
-                    return Container(color: Theme.brightnessOf(context) == Brightness.dark 
-                      ? Colors.grey[900]
-                      : Colors.grey[400]
+                    return Container(
+                      color: Theme.brightnessOf(context) == Brightness.dark 
+                        ? Colors.grey[900] 
+                        : Colors.grey[400]
                     );
                   }
                   return Hero(
-                    tag: "${widget.heroPrefix}_image_${widget.index}",
-                    child: Image.memory(
-                      snapshot.data!,
-                      fit: BoxFit.cover,
-                      opacity: opacity,
-                    ),
+                    tag: '${widget.heroPrefix}${widget.encodedPath}', // ← seul changement
+                    child: Image.memory(snapshot.data!, fit: BoxFit.cover, opacity: opacity),
                   );
                 },
               ),

@@ -39,6 +39,7 @@ class ViewerPage extends StatefulWidget {
     required this.index,
     this.trashMode = false,
     required this.onRefresh,
+    required this.heroPrefix,
   });
 
   final List<String> mimetype;
@@ -46,6 +47,7 @@ class ViewerPage extends StatefulWidget {
   final int index;
   final bool trashMode;
   final VoidCallback? onRefresh;
+  final String heroPrefix;
 
   @override
   State<ViewerPage> createState() => _ViewerPageState();
@@ -184,7 +186,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     return ExtendedImageSlidePage(
       key: _slideKey,
       slideAxis: SlideAxis.both,
-      slideType: SlideType.onlyImage,
+      slideType: SlideType.wholePage,
       onSlidingPage: (state) {
         final showSwiper = !state.isSliding;
         if (showSwiper != _showSwiper) {
@@ -192,7 +194,8 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
         }
       },
       child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        // backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Colors.transparent,
         extendBodyBehindAppBar: true,
         extendBody: true,
         appBar: PreferredSize(
@@ -306,74 +309,67 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildImage(int index) {
-    final photo = PhotoStore.get(widget.encodedPaths[index]);
+Widget _buildImage(int index) {
+  final photo = PhotoStore.get(widget.encodedPaths[index]);
 
-    if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
-      return ExtendedImage.file(
-        key: ValueKey(photo.localPath),
-        File(photo.localPath!),
-        fit: BoxFit.contain,
-        mode: ExtendedImageMode.gesture,
-        enableSlideOutPage: true,
-        onDoubleTap: _handleDoubleTap,
-      );
-    }
-
-    if (detectBackend() == ServerBackend.copyparty) {
-      final url = "${CopypartyService.baseUrl}/photos/${widget.encodedPaths[index]}";
-
-      return ExtendedImage.network(
-        key: ValueKey(url),
-        url,
-        fit: BoxFit.contain,
-        mode: ExtendedImageMode.gesture,
-        enableSlideOutPage: true,
-        onDoubleTap: _handleDoubleTap,
-        headers: {'Authorization': 'Basic ${CopypartyService.credentials}'},
-        loadStateChanged: (state) {
-          switch (state.extendedImageLoadState) {
-            case LoadState.loading:
-              return const Center(
-                child: CircularProgressIndicator(color: Colors.white38),
-              );
-            case LoadState.failed:
-              return const Center(
-                child: Text("Error loading image"),
-              );
-            case LoadState.completed:
-              return null;
-          }
-        },
-      );
-    }
-
-    final url = "https://${box.get('apiDomain')}:${box.get('httpsPort')}/api/v15/dl/${widget.encodedPaths[index]}";
-
+  // AI Generated
+  ExtendedImage buildExtended(String url, Map<String, String>? headers) {
     return ExtendedImage.network(
-      key: ValueKey(url),
       url,
+      key: ValueKey(url),
       fit: BoxFit.contain,
       mode: ExtendedImageMode.gesture,
       enableSlideOutPage: true,
       onDoubleTap: _handleDoubleTap,
-      headers: {"X-Fbx-App-Auth": client!.sessionToken!},
+      headers: headers,
       loadStateChanged: (state) {
         switch (state.extendedImageLoadState) {
           case LoadState.loading:
-            return const Center(
-              child: CircularProgressIndicator(color: Colors.white38),
-            );
+            return const Center(child: CircularProgressIndicator(color: Colors.white38));
           case LoadState.failed:
-            return const Center(
-              child: Text("Error loading image"),
-            );
+            return const Center(child: Text('Error loading image'));
           case LoadState.completed:
             return null;
         }
       },
     );
   }
+
+  ExtendedImage buildExtendedFile(File file) {
+    return ExtendedImage.file(
+      file,
+      key: ValueKey(photo!.localPath),
+      fit: BoxFit.contain,
+      mode: ExtendedImageMode.gesture,
+      enableSlideOutPage: true,
+      onDoubleTap: _handleDoubleTap,
+    );
+  }
+
+  ExtendedImage raw;
+  //
+
+  if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
+    raw = buildExtendedFile(File(photo.localPath!));
+  } else if (detectBackend() == ServerBackend.copyparty) {
+    final url = '${CopypartyService.baseUrl}/photos/${widget.encodedPaths[index]}';
+    raw = buildExtended(url, {'Authorization': 'Basic ${CopypartyService.credentials}'});
+  } else {
+    final url = 'https${box.get('apiDomain')}:${box.get('httpsPort')}/api/v15/dl/${widget.encodedPaths[index]}';
+    raw = buildExtended(url, {'X-Fbx-App-Auth': client!.sessionToken!});
+  }
+
+  return Hero(
+    tag: '${widget.heroPrefix}${widget.encodedPaths[index]}',
+    flightShuttleBuilder: (flightContext, animation, direction, fromContext, toContext) {
+      if (direction == HeroFlightDirection.pop) {
+        return fromContext.widget;
+      }
+      return FadeTransition(opacity: animation, child: raw);
+    },
+    child: raw,
+  );
+}
 
   PreferredSizeWidget? _buildAppBar() {
     return  AppBar(
@@ -1017,7 +1013,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   child: SizedBox(
                     height: 220,
                     child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
+                      behavior: HitTestBehavior.translucent,
                       onTap: () {
                         showModalBottomSheet(
                           isDismissible: false,
