@@ -140,8 +140,8 @@ class _SearchPageState extends State<SearchPage> {
                       duration: const Duration(milliseconds: 350),
                       curve: Curves.easeOutCubic,
                       margin: EdgeInsets.only(top: _hasSearched ? 0 : 4),
-                      child: searchField(),
-                    ),
+                      child: searchField()
+                    )
                   ],
                 ),
               ),
@@ -173,15 +173,25 @@ class _SearchPageState extends State<SearchPage> {
             ),
             itemBuilder: (context, index) {
               return GestureDetector(
-                onTap: () => showModalBottomSheet(
-                  isDismissible: false,
-                  enableDrag: false,
-                  isScrollControlled: true,
-                  context: context, 
-                  builder: (context) {
-                    return PhotoMap(photo: null, fullscreen: true);
+                onTap: () {
+                  switch(_exploreItems[index]['key']) {
+                    case 'detectedText':
+                      searchController.text = "has:detectedText";
+                      _onSearch("has:detectedText");
+                      break;
+                    case 'map': 
+                      showModalBottomSheet(
+                        isDismissible: false,
+                        enableDrag: false,
+                        isScrollControlled: true,
+                        context: context, 
+                        builder: (context) {
+                          return PhotoMap(photo: null, fullscreen: true);
+                        }
+                      );
+                      break;
                   }
-                ),
+                },
                 child: Container(
                   decoration: BoxDecoration(
                     color: Theme.brightnessOf(context) == Brightness.light ? Colors.grey.withAlpha(20) : Colors.white10,
