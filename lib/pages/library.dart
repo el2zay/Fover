@@ -1548,10 +1548,10 @@ class _MediaTileState extends State<_MediaTile> {
                 ),
 
               if (widget.isVideo)
-                const Positioned(
+                Positioned(
                   bottom: 5,
                   right: 5,
-                  child: Icon(CupertinoIcons.play_circle_fill, size: 18),
+                  child: buildDurationBadge(PhotoStore.get(widget.encodedPath)?.duration)
                 ),
 
               if (widget.selected)
@@ -1576,7 +1576,29 @@ class _MediaTileState extends State<_MediaTile> {
       ),
     );
   }
+
+  Widget buildDurationBadge(int? seconds) {
+    if (seconds == null) return Icon(CupertinoIcons.play_circle_fill, size: 18);
+    final duration = Duration(seconds: seconds);
+    final mm = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final ss = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    final label = duration.inHours > 0 ? '${duration.inHours}:$mm:$ss' : '$mm:$ss';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w600
+        ),
+      ),
+    );
+  }
+
 }
+
 
 
 class AddToAlbumSheet extends StatefulWidget {
