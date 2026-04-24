@@ -192,7 +192,6 @@ class _SearchPageState extends State<SearchPage> {
                     );
                   } else {
                     searchController.text = "has:${_exploreItems[index]['key']}";
-                    print(searchController.text);
                     _onSearch("has:${_exploreItems[index]['key']}");
                   }
                 },
@@ -291,7 +290,7 @@ class _SearchPageState extends State<SearchPage> {
           prefixIcon: Icon(
             CupertinoIcons.search,
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: Theme.of(context).primaryColor,
             size: 18,
           ),
           prefix: hasToken
@@ -337,7 +336,9 @@ class _SearchPageState extends State<SearchPage> {
           ),
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
           filled: true,
-          fillColor: Colors.white.withAlpha(20)
+          fillColor: Theme.brightnessOf(context) == Brightness.dark
+            ? Colors.white.withAlpha(20)
+            : Colors.grey.withAlpha(20)
         ),
       ),
     );
