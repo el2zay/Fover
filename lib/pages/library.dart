@@ -1365,6 +1365,8 @@ class LibraryPageState extends State<LibraryPage> {
 
                                             _removeLocally(selectedImages);
                                             Navigator.pop(context);
+                                            setState(() => selectedMode = false);
+                                            showTabBar.value = true;
                                           },
                                         ),
                                       );
@@ -1517,23 +1519,6 @@ class _MediaTileState extends State<_MediaTile> {
                 },
               ),
 
-              if (widget.selected)
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: Container(
-                    margin: const EdgeInsets.all(5),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      CupertinoIcons.checkmark_circle_fill,
-                      color: CupertinoColors.systemBlue,
-                      size: 22,
-                    ),
-                  ),
-                ),
-
               if (widget.trashMode) ...[
                 Container(
                   decoration: BoxDecoration(
@@ -1567,6 +1552,23 @@ class _MediaTileState extends State<_MediaTile> {
                   bottom: 5,
                   right: 5,
                   child: Icon(CupertinoIcons.play_circle_fill, size: 18),
+                ),
+
+              if (widget.selected)
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: Container(
+                    margin: const EdgeInsets.all(5),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      CupertinoIcons.checkmark_circle_fill,
+                      color: CupertinoColors.systemBlue,
+                      size: 22,
+                    ),
+                  ),
                 ),
             ],
           ),
