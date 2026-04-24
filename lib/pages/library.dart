@@ -230,11 +230,27 @@ class LibraryPageState extends State<LibraryPage> {
   void _applyFilter() {
     final query = widget.searchText.trim().toLowerCase();
 
-    final matches = query.isEmpty
-        ? _searchIndex
-        : _searchIndex
-            .where((entry) => entry.searchableText.contains(query))
-            .toList();
+    List<_SearchEntry> matches;
+
+    if (query.isEmpty) {
+      matches = _searchIndex;
+    } else if (query.startsWith('has:detectedtext')) {
+      final subQuery = query.replaceFirst('has:detectedtext', '').trim();
+
+      matches = _searchIndex.where((entry) {
+        final photo = PhotoStore.get(entry.encodedPath);
+        final detected = (photo?.detectedText ?? '').toLowerCase();
+        if (detected.isEmpty) return false;
+        if (subQuery.isEmpty) return true;
+
+        return subQuery.split(' ')
+          .where((w) => w.isNotEmpty).every((word) => detected.contains(word));
+      }).toList();
+    } else {
+      matches = _searchIndex
+          .where((entry) => entry.searchableText.contains(query))
+          .toList();
+    }
 
     final result = _GalleryData(
       encodedPaths: matches.map((e) => e.encodedPath).toList(),
@@ -363,6 +379,10 @@ class LibraryPageState extends State<LibraryPage> {
         return stored?.isScreenshot == true && stored?.deletedAt == null;
       }
 
+      if (widget.searchText.startsWith("has:detectedText")) {
+        return stored?.detectedText != null && stored?.detectedText!.isNotEmpty == true && stored?.deletedAt == null;
+      }
+
       return widget.album == Album.trash
           ? stored?.deletedAt != null
           : stored?.deletedAt == null;
@@ -430,7 +450,7 @@ class LibraryPageState extends State<LibraryPage> {
       "$year/$month/$day",
       "$day/$month/$year",
       "$monthName $year",
-      "$day $monthName $year",
+      "$day $monthName $year"
     ].join(' ').toLowerCase();
   }
 
