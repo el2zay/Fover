@@ -138,6 +138,10 @@ class _MainAppState extends State<MainApp> {
                         setState(() => _currentIndex = i);
                       },
                       searchItem: CNTabBarSearchItem(
+                        icon: CNSymbol(
+                          'magnifyingglass', 
+                          color: _currentIndex == 2 ? Colors.blue : null
+                        ),
                         onSearchChanged: (query) {
                           searchQuery.value = query;
                         },
@@ -151,7 +155,7 @@ class _MainAppState extends State<MainApp> {
                             });
                           }
                         },
-                        style: const CNTabBarSearchStyle(
+                        style: CNTabBarSearchStyle(
                           iconSize: 20,
                           buttonSize: 44,
                           searchBarHeight: 44,
