@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fover/pages/library.dart';
 import 'package:fover/src/widgets/photo_map.dart';
 import 'package:hive_ce/hive.dart';
@@ -16,6 +17,7 @@ class _SearchPageState extends State<SearchPage> {
   TextEditingController searchController = TextEditingController();
   bool _hasSearched = false;
   final historyBox = Hive.box('searchHistory');
+  final _displayController = TextEditingController();
 
   static const List<Map<String, dynamic>> _exploreItems = [
     {
@@ -36,7 +38,7 @@ class _SearchPageState extends State<SearchPage> {
     {
       'key': 'detectedText',
       'title': 'Detected text',
-      'icon': CupertinoIcons.text_cursor
+      'icon': CupertinoIcons.textformat
     },
     {
       'key': 'screenshots',
@@ -63,6 +65,7 @@ class _SearchPageState extends State<SearchPage> {
   void dispose() {
     searchFocus.dispose();
     searchController.dispose();
+    _displayController.dispose();
     _query = '';
     super.dispose();
 }
@@ -177,6 +180,7 @@ class _SearchPageState extends State<SearchPage> {
                   switch(_exploreItems[index]['key']) {
                     case 'detectedText':
                       searchController.text = "has:detectedText";
+                      _displayController.clear();
                       _onSearch("has:detectedText");
                       break;
                     case 'map': 
@@ -226,45 +230,113 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  TextField searchField() {
-    return TextField(
-      controller: searchController,
-      focusNode: searchFocus,
-      autofocus: true,
-      onChanged: (query) {
-        setState(() {});
-        _onSearch(query);
-      },
-      onSubmitted: (value) {
-        final cleaned = value.trim();
-          if (cleaned.isNotEmpty) {
-          final existing = historyBox.values.toList();
-          final dupIndex = existing.indexWhere((e) => e.toLowerCase() == cleaned.toLowerCase());
-          if (dupIndex != -1) historyBox.deleteAt(dupIndex);
+  Widget searchField() {
+    final text = searchController.text;
 
-          while (historyBox.length >= 8) {
-            historyBox.deleteAt(0);
-          }
-          historyBox.add(cleaned);
+    final activeItem = _exploreItems.firstWhere(
+      (item) => text.startsWith('has:${item['key']}'),
+      orElse: () => {},
+    );
+
+    final hasToken = activeItem.isNotEmpty;
+    final token = hasToken ? 'has:${activeItem['key']}' : '';
+
+    return Focus(
+      onKeyEvent: (node, event) {
+        if (hasToken &&
+            event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.backspace &&
+            _displayController.text.isEmpty) {
+          searchController.clear();
+          _displayController.clear();
+          _onSearch('');
+          setState(() {});
+          return KeyEventResult.handled;
         }
+        return KeyEventResult.ignored;
       },
-      decoration: InputDecoration(
-        contentPadding: EdgeInsets.symmetric(horizontal: 0),
-        prefixIcon: Icon(CupertinoIcons.search, size: 18),
-        hintText: "Search in Fover",
-        suffixIcon: searchController.text.isNotEmpty
-          ? IconButton(
-            icon: const Icon(CupertinoIcons.xmark_circle_fill, size: 18),
-            onPressed: () {
-              searchController.clear();
-              _onSearch('');
-            },
-          ) : null,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide.none,
+      child: TextField(
+        controller: hasToken ? _displayController : searchController,
+        focusNode: searchFocus,
+        autofocus: true,
+        onChanged: (query) {
+          if (hasToken) {
+            final full = '$token $query'.trimRight();
+            searchController.value = searchController.value.copyWith(text: full);
+            _onSearch(full);
+          } else {
+            _onSearch(query);
+          }
+          setState(() {});
+        },
+        onSubmitted: (value) {
+          if (value.startsWith("has:")) return;
+          final cleaned = value.trim();
+          if (cleaned.isNotEmpty) {
+            final existing = historyBox.values.toList();
+            final dupIndex = existing.indexWhere((e) => e.toLowerCase() == cleaned.toLowerCase());
+            if (dupIndex != -1) historyBox.deleteAt(dupIndex);
+
+            while (historyBox.length >= 8) {
+              historyBox.deleteAt(0);
+            }
+
+            historyBox.add(cleaned);
+          }
+        },
+        decoration: InputDecoration(
+          hintText: !hasToken ?  "Search in Fover" : null,
+          prefixIcon: Icon(
+            CupertinoIcons.search,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+            size: 18,
+          ),
+          prefix: hasToken
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withAlpha(20),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      activeItem['title'] as String,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).primaryColor.withAlpha(200),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                ],
+              )
+            : null,
+          suffixIcon: searchController.text.isNotEmpty
+            ? IconButton(
+              icon: const Icon(CupertinoIcons.xmark_circle_fill, size: 18),
+              onPressed: () {
+                searchController.clear();
+                _onSearch('');
+              },
+            ) : null,
+
+            // Border en cercle tout autour 
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          filled: true,
+          fillColor: Colors.white.withAlpha(20)
         ),
-        filled: true
       ),
     );
   }
