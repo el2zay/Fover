@@ -67,7 +67,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   final _sheetController = DraggableScrollableController();
   late double _imageFocusScale = PhotoStore.isLandscape(widget.encodedPaths[currentIndex]) ? 1 : 0.73;
   bool _isDisposed = false;  
-
+  bool showFullText = false;
 
   @override
   void initState() {
@@ -835,7 +835,6 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     final primary = Theme.of(context).primaryColor;
     final photo = PhotoStore.get(widget.encodedPaths[currentIndex])!;
     final descriptionController = TextEditingController(text: photo.description);
-
     return DraggableScrollableSheet(
       initialChildSize: 0.3,
       minChildSize: 0,
@@ -921,7 +920,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                         });
                       });
                     },
-                    child: Text("Adjust", style: TextStyle(fontSize: 16, color: Colors.blue))
+                    child: Text("Adjust", style: TextStyle(fontSize: 16, color: CupertinoColors.activeBlue))
                   )
                 ],
               ),
@@ -961,6 +960,49 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
               ),
               // Text("A retirer : Coordonnées GPS de l'image si disponible : "),
               // Text("${photo.latitude}, ${photo.longitude}")
+              photo.detectedText != null && photo.detectedText!.isNotEmpty 
+              ? Container(
+                  margin: EdgeInsets.symmetric(vertical: 15),
+                  padding: EdgeInsets.all(15),
+                  decoration: BoxDecoration(
+                    color: primary.withAlpha(20),
+                    borderRadius: BorderRadius.circular(15)
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Detected Text", style: TextStyle(fontSize: 14, color: primary.withAlpha(130))),
+                      SizedBox(height: 5),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SelectableText(
+                            scrollPhysics: NeverScrollableScrollPhysics(),
+                            selectionColor: Colors.blue.withAlpha(70),
+                            photo.detectedText!,
+                            maxLines: !showFullText ? 3 : null,
+                            style: TextStyle(height: 1.5, color: primary.withAlpha(200)),
+                          ),
+                          if (!showFullText && photo.detectedText!.split('\n').length > 3)
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  showFullText = true;
+                                });
+                              },
+                              child: Text(
+                                'Show more...',
+                                style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.w500), 
+                              ),
+                            )
+                        ],
+                      ),
+                    ],
+                  ),
+                ) 
+                : SizedBox(),
               SizedBox(height: 10),
               if (photo.longitude != null && Platform.isIOS)
                 ClipRRect(
