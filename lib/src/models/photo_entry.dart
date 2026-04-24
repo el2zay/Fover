@@ -22,11 +22,8 @@ class PhotoEntry extends HiveObject {
   @HiveField(5)
   String? mimetype;
 
-  // @HiveField(6)
-  // String? localisation;
-
-  // @HiveField(7)
-  // Map<String, String>? exif;
+  @HiveField(6)
+  int? duration;
 
   @HiveField(8)
   String? detectedText;
@@ -91,6 +88,6 @@ class PhotoEntry extends HiveObject {
   @HiveField(29)
   bool? isOldVersion;
 
-  PhotoEntry({required this.path, required this.name, required this.date, required this.size, this.description, required this.mimetype, this.detectedText, this.albums, this.hidden, this.favorite, this.deletedAt, this.latitude, this.longitude, this.cameraBrand, this.cameraModel, this.height, this.width, this.iso, this.focalLength, this.exposureValue, this.focus, this.shutterSpeed, this.displayDate, this.localPath, this.isScreenshot, this.editedFrom, this.isOldVersion});
+  PhotoEntry({required this.path, required this.name, required this.date, required this.size, this.description, required this.mimetype, this.duration, this.detectedText, this.albums, this.hidden, this.favorite, this.deletedAt, this.latitude, this.longitude, this.cameraBrand, this.cameraModel, this.height, this.width, this.iso, this.focalLength, this.exposureValue, this.focus, this.shutterSpeed, this.displayDate, this.localPath, this.isScreenshot, this.editedFrom, this.isOldVersion});
 
 }
