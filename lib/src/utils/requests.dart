@@ -11,11 +11,14 @@ import 'package:fover/src/services/ocr_service.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
 Future<List<dynamic>> fetchPhotosDir() async {
   List<dynamic> entries = [];
   Uint8List? imageBytes;
+  int? videoDuration;
+  VideoPlayerController? controller;
 
   switch (detectBackend()) {
     case ServerBackend.copyparty:
@@ -64,7 +67,6 @@ Future<List<dynamic>> fetchPhotosDir() async {
         }
 
         if (entry['mimetype'].contains('image/')) {
-
           try {
             if (detectBackend() == ServerBackend.copyparty) {
               imageBytes = await CopypartyService.fetchFileRange(entry['path']);
@@ -177,12 +179,36 @@ Future<List<dynamic>> fetchPhotosDir() async {
           buffer.dispose();
         } catch (_) {}
       }
+
+      if ((entry['mimetype'] as String).startsWith('video/')) {
+        try {
+          if (detectBackend() == ServerBackend.copyparty) {
+            controller = VideoPlayerController.networkUrl(
+              Uri.parse("${CopypartyService.baseUrl}/photos/${entry['path']}"),
+              httpHeaders: {'Authorization': 'Basic ${CopypartyService.credentials}'},
+            );
+          } else {
+            controller = VideoPlayerController.networkUrl(
+              Uri.parse("https://${box.get('apiDomain')}:${box.get('httpsPort')}/api/v15/dl/${entry['path']}"),
+              httpHeaders: {"X-Fbx-App-Auth": client!.sessionToken!},
+            );
+          }
+          await controller.initialize();
+          videoDuration = controller.value.duration.inSeconds;
+          await controller.dispose();
+        } catch (e) {
+          log("$e");
+          log("Path : ${entry['path']}");
+        }
+      }
+
       await PhotoStore.addPhoto(
         path: entry['path'], 
         name: entry['name'], 
         date: parseExifDate(exifData['Image DateTime']?.printable) ?? DateTime.now(), 
         size: entry['size'] ?? 0, 
         mimetype: entry['mimetype'],
+        duration: videoDuration,
         latitude: parseGpsFromTag(
           exifData['GPS GPSLatitude'],
           exifData['GPS GPSLatitudeRef'],
