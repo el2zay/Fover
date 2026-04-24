@@ -234,17 +234,47 @@ class LibraryPageState extends State<LibraryPage> {
 
     if (query.isEmpty) {
       matches = _searchIndex;
-    } else if (query.startsWith('has:detectedtext')) {
-      final subQuery = query.replaceFirst('has:detectedtext', '').trim();
+    } else if (query.startsWith('has:')) {
+      final token = query.split(' ').first;
+      final subQuery = query.substring(token.length).trim();
 
       matches = _searchIndex.where((entry) {
         final photo = PhotoStore.get(entry.encodedPath);
-        final detected = (photo?.detectedText ?? '').toLowerCase();
-        if (detected.isEmpty) return false;
+
+        bool matchesToken = false;
+
+        switch (token) {
+          case 'has:detectedText':
+            final detected = (photo?.detectedText ?? '').trim().toLowerCase();
+            matchesToken = detected.isNotEmpty;
+            break;
+
+          case 'has:videos':
+            matchesToken = photo?.mimetype?.startsWith("video/") == true;
+            break;
+
+          case 'has:favorites':
+            matchesToken = photo?.favorite == true;
+            break;
+
+          case 'has:screenshots':
+            matchesToken = photo?.isScreenshot == true;
+            break;
+
+          default:
+            matchesToken = true;
+        }
+
+        if (!matchesToken) return false;
+
         if (subQuery.isEmpty) return true;
 
-        return subQuery.split(' ')
-          .where((w) => w.isNotEmpty).every((word) => detected.contains(word));
+        final searchable = entry.searchableText;
+
+        return subQuery
+            .split(' ')
+            .where((w) => w.isNotEmpty)
+            .every((word) => searchable.contains(word));
       }).toList();
     } else {
       matches = _searchIndex
@@ -364,11 +394,14 @@ class LibraryPageState extends State<LibraryPage> {
 
     final filteredEntries = entries.where((entry) {
       final stored = PhotoStore.get(entry['path'] as String);
-
       if (stored?.isOldVersion == true) return false;
 
       if (widget.albumName != null) {
         return stored?.albums?.contains(widget.albumName) == true;
+      }
+
+      if (widget.album == Album.videos) {
+        return stored?.mimetype?.startsWith("video/") == true && stored?.deletedAt == null;
       }
 
       if (widget.album == Album.favorites) {
@@ -384,8 +417,8 @@ class LibraryPageState extends State<LibraryPage> {
       }
 
       return widget.album == Album.trash
-          ? stored?.deletedAt != null
-          : stored?.deletedAt == null;
+        ? stored?.deletedAt != null
+        : stored?.deletedAt == null;
     }).toList();
 
     filteredEntries.sort((a, b) {

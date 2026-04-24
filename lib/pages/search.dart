@@ -85,6 +85,7 @@ class _SearchPageState extends State<SearchPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
+        bottom: false,
         child: Stack(
           children: [
             Positioned.fill(
@@ -177,10 +178,21 @@ class _SearchPageState extends State<SearchPage> {
             itemBuilder: (context, index) {
               return GestureDetector(
                 onTap: () {
+                  _displayController.clear();
+                  searchController.clear();
                   switch(_exploreItems[index]['key']) {
+                    case 'videos':
+                      searchController.text = "has:videos";
+                      _onSearch("has:videos");
+                      break;
+                    case 'thisMonth':
+                      break;
+                    case 'favorites':
+                      searchController.text = "has:favorites";
+                      _onSearch("has:favorites");
+                      break;
                     case 'detectedText':
                       searchController.text = "has:detectedText";
-                      _displayController.clear();
                       _onSearch("has:detectedText");
                       break;
                     case 'map': 
@@ -221,6 +233,7 @@ class _SearchPageState extends State<SearchPage> {
             title: Text(item, style: TextStyle(color:  Theme.of(context).primaryColor.withAlpha(200), fontSize: 20, fontWeight: FontWeight.w500)),
             dense: true,
             onTap: () {
+              _displayController.clear();
               searchController.text = item;
               _onSearch(item);
             }
@@ -259,6 +272,7 @@ class _SearchPageState extends State<SearchPage> {
         controller: hasToken ? _displayController : searchController,
         focusNode: searchFocus,
         autofocus: true,
+        autocorrect: false,
         onChanged: (query) {
           if (hasToken) {
             final full = '$token $query'.trimRight();
