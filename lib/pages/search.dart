@@ -180,32 +180,20 @@ class _SearchPageState extends State<SearchPage> {
                 onTap: () {
                   _displayController.clear();
                   searchController.clear();
-                  switch(_exploreItems[index]['key']) {
-                    case 'videos':
-                      searchController.text = "has:videos";
-                      _onSearch("has:videos");
-                      break;
-                    case 'thisMonth':
-                      break;
-                    case 'favorites':
-                      searchController.text = "has:favorites";
-                      _onSearch("has:favorites");
-                      break;
-                    case 'detectedText':
-                      searchController.text = "has:detectedText";
-                      _onSearch("has:detectedText");
-                      break;
-                    case 'map': 
-                      showModalBottomSheet(
-                        isDismissible: false,
-                        enableDrag: false,
-                        isScrollControlled: true,
-                        context: context, 
-                        builder: (context) {
-                          return PhotoMap(photo: null, fullscreen: true);
-                        }
-                      );
-                      break;
+                  if (_exploreItems[index]['key'] == "map") {
+                    showModalBottomSheet(
+                      isDismissible: false,
+                      enableDrag: false,
+                      isScrollControlled: true,
+                      context: context, 
+                      builder: (context) {
+                        return PhotoMap(photo: null, fullscreen: true);
+                      }
+                    );
+                  } else {
+                    searchController.text = "has:${_exploreItems[index]['key']}";
+                    print(searchController.text);
+                    _onSearch("has:${_exploreItems[index]['key']}");
                   }
                 },
                 child: Container(
@@ -319,7 +307,7 @@ class _SearchPageState extends State<SearchPage> {
                     child: Text(
                       activeItem['title'] as String,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         color: Theme.of(context).primaryColor.withAlpha(200),
                         fontWeight: FontWeight.w600,
                       ),

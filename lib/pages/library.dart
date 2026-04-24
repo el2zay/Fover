@@ -242,7 +242,6 @@ class LibraryPageState extends State<LibraryPage> {
         final photo = PhotoStore.get(entry.encodedPath);
 
         bool matchesToken = false;
-
         switch (token) {
           case 'has:detectedText':
             final detected = (photo?.detectedText ?? '').trim().toLowerCase();
@@ -259,6 +258,12 @@ class LibraryPageState extends State<LibraryPage> {
 
           case 'has:screenshots':
             matchesToken = photo?.isScreenshot == true;
+            break;
+
+          case "has:thismonth":
+            final now = DateTime.now();
+            final photoDate = PhotoStore.getDate(entry.encodedPath);
+            matchesToken = photoDate.year == now.year;
             break;
 
           default:
