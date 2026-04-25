@@ -723,7 +723,6 @@ class LibraryPageState extends State<LibraryPage> {
                 if (widget.albumName == null) {
                   await pickImages();
                 } else {
-                  // TODO : add to existing album
                   showModalBottomSheet(
                     constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
                     backgroundColor: Colors.black,
