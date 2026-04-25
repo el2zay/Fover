@@ -77,16 +77,18 @@ class _BlurredAppBarState extends State<BlurredAppBar> {
         centerTitle: false,
         flexibleSpace: orientation == Orientation.landscape ? ClipRect(
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 2, sigmaY: 0),
+            filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
             child: Container(
+              // Height : taille de la appbar - 5
+              height: widget.preferredSize.height + 25,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: isDark ? [
-                    Colors.black.withAlpha(150),
-                    Colors.black.withAlpha(150),
-                    Colors.black.withAlpha(25),
+                    Colors.black.withAlpha(100),
+                    Colors.black.withAlpha(100),
+                    Colors.black.withAlpha(0),
                   ] : [
                     Colors.white.withAlpha(25),
                     Colors.white.withAlpha(25),
