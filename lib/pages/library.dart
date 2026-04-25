@@ -9,6 +9,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fover/main.dart';
+import 'package:fover/pages/search.dart';
 import 'package:fover/pages/settings.dart';
 import 'package:fover/pages/viewer.dart';
 import 'package:fover/src/services/copyparty_service.dart';
@@ -1006,28 +1007,29 @@ class LibraryPageState extends State<LibraryPage> {
                                 widget.onSelectedChanged?.call(paths, thumb);
                                 countSelected.value = selectedImages.length;
                               } else {
-                                  Navigator.push(
-                                    context,
-                                    PageRouteBuilder(
-                                      opaque: false,
-                                      transitionDuration: const Duration(milliseconds: 300),
-                                      reverseTransitionDuration: const Duration(milliseconds: 300),
-                                      pageBuilder: (_, __, ___) => ViewerPage(
-                                        mimetype: mimetypes,
-                                        index: index,
-                                        encodedPaths: data.encodedPaths,
-                                        trashMode: widget.album == Album.trash,
-                                        onRefresh: _refresh,
-                                        heroPrefix: _heroPrefix,
-                                      ),
-                                     transitionsBuilder: (_, animation, __, child) {
-                                      return FadeTransition(
-                                        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-                                        child: child,
-                                      );
-                                     },
+                                searchFocus.unfocus();
+                                Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                    opaque: false,
+                                    transitionDuration: const Duration(milliseconds: 300),
+                                    reverseTransitionDuration: const Duration(milliseconds: 300),
+                                    pageBuilder: (_, __, ___) => ViewerPage(
+                                      mimetype: mimetypes,
+                                      index: index,
+                                      encodedPaths: data.encodedPaths,
+                                      trashMode: widget.album == Album.trash,
+                                      onRefresh: _refresh,
+                                      heroPrefix: _heroPrefix,
                                     ),
-                                  ).then((_) => _refresh());
+                                    transitionsBuilder: (_, animation, __, child) {
+                                    return FadeTransition(
+                                      opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+                                      child: child,
+                                    );
+                                    },
+                                  ),
+                                ).then((_) => _refresh());
                               }
                             },
 

@@ -12,8 +12,9 @@ class SearchPage extends StatefulWidget {
   State<SearchPage> createState() => _SearchPageState();
 }
 
+FocusNode searchFocus = FocusNode();
+
 class _SearchPageState extends State<SearchPage> {
-  FocusNode searchFocus = FocusNode();
   TextEditingController searchController = TextEditingController();
   bool _hasSearched = false;
   final historyBox = Hive.box('searchHistory');
@@ -104,7 +105,7 @@ class _SearchPageState extends State<SearchPage> {
               ),
             ),
             Positioned(
-              top: _hasSearched ?  -40 : 0,
+              top: _hasSearched ? -40 : 0,
               bottom: 0,
               left: 10,
               right: 10,
