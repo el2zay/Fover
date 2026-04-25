@@ -137,6 +137,13 @@ class LibraryPageState extends State<LibraryPage> {
   void dispose() {
     _gridController.removeListener(_onGridSelectionChanged);
     _gridController.dispose();
+    _scrollController.dispose();
+    selectedMode = false;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showTabBar.value = true;
+    });
+    
     super.dispose();
   }
 
