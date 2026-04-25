@@ -55,10 +55,12 @@ class _FirstPageState extends State<FirstPage> {
         ),
         child: Stack(
           children: [ 
-            Align(
-              alignment: Alignment.center,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+            Positioned.fill(
+              left: 20,
+              right: 20,
+              top: 0,
+              bottom: MediaQuery.of(context).padding.bottom == 0 ? 60 : 20,
+              child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -77,8 +79,8 @@ class _FirstPageState extends State<FirstPage> {
                 ),
               ),
             ),
-            Positioned(
-              bottom: 30,
+            Positioned.fill(
+              bottom: MediaQuery.of(context).padding.bottom == 0 ? 6 : 30,
               left: 20,
               right: 20,
               child: Align(
