@@ -7,6 +7,7 @@ import 'package:clipboard/clipboard.dart';
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:drag_select_grid_view/drag_select_grid_view.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fover/main.dart';
@@ -19,6 +20,7 @@ import 'package:fover/src/services/fover_picker_delegate.dart';
 import 'package:fover/src/services/freebox_service.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
+import 'package:fover/src/utils/lru_cache.dart';
 import 'package:fover/src/utils/requests.dart';
 import 'package:fover/src/widgets/albums_list.dart';
 import 'package:fover/src/widgets/blurred_app_bar.dart';
@@ -80,11 +82,19 @@ class _SearchEntry {
   final String encodedPath;
   final String mimetype;
   final String searchableText;
+  final bool isFavorite;
+  final bool isScreenshot;
+  final bool hasDetectedText;
+  final String sortKey;
 
   const _SearchEntry({
     required this.encodedPath,
     required this.mimetype,
     required this.searchableText,
+    required this.isFavorite,
+    required this.isScreenshot,
+    required this.hasDetectedText,
+    required this.sortKey
   });
 }
 
@@ -93,7 +103,7 @@ class LibraryPageState extends State<LibraryPage> {
   bool _isAtTop = true;
   _GalleryData? _allData;
   _GalleryData? _filteredData;
-  static final Map<String, Uint8List?> _thumbCache = {};
+  static final _thumbCache = LruCache<String, Uint8List>(300);
 
   bool selectedMode = false;
   bool _loading = true;
@@ -143,7 +153,7 @@ class LibraryPageState extends State<LibraryPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       showTabBar.value = true;
     });
-    
+
     super.dispose();
   }
 
@@ -263,82 +273,27 @@ class LibraryPageState extends State<LibraryPage> {
   }
 
   // Generated with AI
-  void _applyFilter() {
+  Future<void> _applyFilter() async {
     final query = widget.searchText.trim().toLowerCase();
 
-    List<_SearchEntry> matches;
+    final result = await compute(_filterIsolate, {
+      'index': _searchIndex,
+      'query': query,
+    });
 
-    if (query.isEmpty) {
-      matches = _searchIndex;
-    } else if (query.startsWith('has:')) {
-      final token = query.split(' ').first;
-      final subQuery = query.substring(token.length).trim();
+    if (!mounted) return;
 
-      matches = _searchIndex.where((entry) {
-        final photo = PhotoStore.get(entry.encodedPath);
-
-        bool matchesToken = false;
-        switch (token) {
-          case 'has:detectedText':
-            final detected = (photo?.detectedText ?? '').trim().toLowerCase();
-            matchesToken = detected.isNotEmpty;
-            break;
-
-          case 'has:videos':
-            matchesToken = photo?.mimetype?.startsWith("video/") == true;
-            break;
-
-          case 'has:favorites':
-            matchesToken = photo?.favorite == true;
-            break;
-
-          case 'has:screenshots':
-            matchesToken = photo?.isScreenshot == true;
-            break;
-
-          case "has:thismonth":
-            final now = DateTime.now();
-            final photoDate = PhotoStore.getDate(entry.encodedPath);
-            matchesToken = photoDate.year == now.year;
-            break;
-
-          default:
-            matchesToken = true;
-        }
-
-        if (!matchesToken) return false;
-
-        if (subQuery.isEmpty) return true;
-
-        final searchable = entry.searchableText;
-
-        return subQuery
-            .split(' ')
-            .where((w) => w.isNotEmpty)
-            .every((word) => searchable.contains(word));
-      }).toList();
-    } else {
-      matches = _searchIndex
-          .where((entry) => entry.searchableText.contains(query))
-          .toList();
-    }
-
-    final result = _GalleryData(
-      encodedPaths: matches.map((e) => e.encodedPath).toList(),
-      mimetypes: matches.map((e) => e.mimetype).toList(),
-    );
-
-    _filteredData = result;
-
-    if (query.isEmpty) {
-      _allData = _GalleryData(
-        encodedPaths: List<String>.from(result.encodedPaths),
-        mimetypes: List<String>.from(result.mimetypes),
-      );
-    }
-
-    elements = result.encodedPaths.length;
-    showButtons = result.encodedPaths.isNotEmpty;
+    setState(() {
+      _filteredData = result;
+      if (query.isEmpty) {
+        _allData = _GalleryData(
+          encodedPaths: List<String>.from(result.encodedPaths),
+          mimetypes: List<String>.from(result.mimetypes),
+        );
+      }
+      elements = result.encodedPaths.length;
+      showButtons = result.encodedPaths.isNotEmpty;
+    });
   }
 
   // _GalleryData _cloneGalleryData(_GalleryData source) {
@@ -363,7 +318,7 @@ class LibraryPageState extends State<LibraryPage> {
 
   Future<void> _load() async {
     await _buildSearchIndex();
-    _applyFilter();
+    await _applyFilter();
 
     if (!mounted) return;
 
@@ -471,18 +426,28 @@ class LibraryPageState extends State<LibraryPage> {
         : stored?.deletedAt == null;
     }).toList();
 
-    filteredEntries.sort((a, b) {
-      final dateA = PhotoStore.getDate(a['path'] as String);
-      final dateB = PhotoStore.getDate(b['path'] as String);
-      return dateA.compareTo(dateB);
-    });
-
-    _searchIndex = filteredEntries.map((entry) {
+    final enriched = filteredEntries.map((entry) {
       final path = entry['path'] as String;
+      final date = PhotoStore.getDate(path);
+      return (
+        entry: entry, 
+        sortKey: '${date.year.toString().padLeft(4,'0')}-${date.month.toString().padLeft(2,'0')}-${date.day.toString().padLeft(2,'0')}'
+      );
+    }).toList(); 
+
+    enriched.sort((a, b) => a.sortKey.compareTo(b.sortKey));
+
+    _searchIndex = enriched.map((e) {
+      final path = e.entry['path'] as String;
+      final photo = PhotoStore.get(path);
       return _SearchEntry(
         encodedPath: path,
-        mimetype: entry['mimetype'] as String,
+        mimetype: e.entry['mimetype'] as String,
         searchableText: _buildSearchableText(path),
+        isFavorite: photo?.favorite == true,
+        isScreenshot: photo?.isScreenshot == true,
+        hasDetectedText: photo?.detectedText?.isNotEmpty == true,
+        sortKey: e.sortKey
       );
     }).toList();
   }
@@ -563,7 +528,7 @@ class LibraryPageState extends State<LibraryPage> {
 
   Future<void> _refresh() async {
     await _buildSearchIndex();
-    _applyFilter();
+    await _applyFilter();
 
     if (!mounted) return;
     setState(() {});
@@ -915,7 +880,6 @@ class LibraryPageState extends State<LibraryPage> {
           }
 
           final data = _filteredData!;
-          final mimetypes = data.mimetypes;          
           if (data.encodedPaths.isEmpty) {
             return Center(
               child: Column(
@@ -1518,14 +1482,14 @@ class _MediaTileState extends State<_MediaTile> {
 @override
   void initState() {
     super.initState();
-    final cached = LibraryPageState._thumbCache[widget.encodedPath];
+    final cached = LibraryPageState._thumbCache.get(widget.encodedPath);
     if (cached != null) {
       _thumb = cached;
       return;
     }
     loadThumb().then((bytes) {
       if (bytes != null) {
-        LibraryPageState._thumbCache[widget.encodedPath] = bytes;
+          LibraryPageState._thumbCache.put(widget.encodedPath, bytes);
       }
       if (mounted) setState(() => _thumb = bytes);
     });
@@ -1735,4 +1699,58 @@ class _AddToAlbumSheetState extends State<AddToAlbumSheet> {
       ),
     );
   }
+}
+
+_GalleryData _filterIsolate(Map<String, dynamic> args) {
+  final index = args['index'] as List<_SearchEntry>;
+  final query = args['query'] as String;
+
+  List<_SearchEntry> matches;
+
+  if (query.isEmpty) {
+    matches = index;
+  } else if (query.startsWith("has:")) {
+    final token = query.split(' ').first;
+    final subQuery = query.substring(token.length).trim();
+
+    matches = index.where((entry) {
+      bool matchesToken;
+      switch (token) {
+        case 'has:detectedText':
+          matchesToken = entry.hasDetectedText;
+          break;
+        case 'has:videos':
+          matchesToken = entry.mimetype.startsWith('video/');
+          break;
+        case 'has:favorites':
+          matchesToken = entry.isFavorite;
+          break;
+        case 'has:screenshots':
+          matchesToken = entry.isScreenshot;
+          break;
+        case "has:thismonth":
+            final now = DateTime.now();
+            final photoDate = PhotoStore.getDate(entry.encodedPath);
+            matchesToken = photoDate.year == now.year;
+            break;
+        default:
+          matchesToken = true;
+      }
+      if (!matchesToken) return false;
+      if (subQuery.isEmpty) return true;
+      return subQuery
+          .split(' ')
+          .where((w) => w.isNotEmpty)
+          .every((word) => entry.searchableText.contains(word));
+    }).toList();
+  } else {
+    matches = index
+      .where((entry) => entry.searchableText.contains(query))
+      .toList();
+  }
+
+  return _GalleryData(
+    encodedPaths: matches.map((e) => e.encodedPath).toList(),
+    mimetypes: matches.map((e) => e.mimetype).toList(),
+    );
 }
