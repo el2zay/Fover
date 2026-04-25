@@ -111,7 +111,10 @@ class _AlbumsPageState extends State<AlbumsPage> {
               biometricOnly: false,
             );
             if (isAuthenticated) {
-              log("Authenticated successfully.");
+              Navigator.push(
+                context, 
+                MaterialPageRoute(builder: (context) => LibraryPage(album: Album.hidden))
+              );
             } else {
               auth.stopAuthentication();
             }
@@ -128,7 +131,10 @@ class _AlbumsPageState extends State<AlbumsPage> {
               biometricOnly: false,
             );
             if (isAuthenticated) {
-              log("Authenticated successfully.");
+              Navigator.push(
+                context, 
+                MaterialPageRoute(builder: (context) => LibraryPage(album: Album.trash))
+              );
             } else {
               auth.stopAuthentication();
             }
