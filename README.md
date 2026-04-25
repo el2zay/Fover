@@ -69,7 +69,7 @@ services:
       - "--th-poke"
       - "1"
       - "--th-dec"
-      - "vips"
+      - "vips,ff"
       - "-a"
       - "you:yourPassword"
       - "-e2dsa"
