@@ -55,24 +55,26 @@ class _FirstPageState extends State<FirstPage> {
         ),
         child: Stack(
           children: [ 
-            Positioned(
-              top: MediaQuery.of(context).size.height * 0.46,
-              left: 20,
-              right: 20,
-              child: Column(
-                children: [
-                  const Text(
-                    "Fover",
-                    style: TextStyle(color: Colors.white, fontSize: 35, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 15),
-                  const Text(
-                    "Free up your phone. Keep your photos.",
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+            Align(
+              alignment: Alignment.center,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      "Fover",
+                      style: TextStyle(color: Colors.white, fontSize: 35, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 15),
+                    const Text(
+                      "Free up your phone. Keep your photos.",
+                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
             ),
             Positioned(
