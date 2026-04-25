@@ -85,21 +85,18 @@ Create a Dockerfile in the same directory with the following content:
 FROM debian:bookworm-slim
 
 RUN apt-get update && \
-    apt-get install -y \
-    bash \
+    apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
+    ffmpeg \
     libvips \
-    libvips-tools \
-    libheif1 \
-    libheif-examples && \
+    libheif1 && \
     rm -f /usr/lib/python3.*/EXTERNALLY-MANAGED && \
     pip3 install --no-cache-dir copyparty pyvips && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 ENTRYPOINT ["copyparty"]
-CMD []
 ```
 
 
