@@ -93,6 +93,7 @@ class LibraryPageState extends State<LibraryPage> {
   bool _isAtTop = true;
   _GalleryData? _allData;
   _GalleryData? _filteredData;
+  static final Map<String, Uint8List?> _thumbCache = {};
 
   bool selectedMode = false;
   bool _loading = true;
@@ -1505,12 +1506,22 @@ class _MediaTile extends StatefulWidget {
 }
 
 class _MediaTileState extends State<_MediaTile> {
-  late Future<Uint8List?> _thumbFuture;
+  Uint8List? _thumb;
 
-  @override
+@override
   void initState() {
     super.initState();
-    _thumbFuture = loadThumb();
+    final cached = LibraryPageState._thumbCache[widget.encodedPath];
+    if (cached != null) {
+      _thumb = cached;
+      return;
+    }
+    loadThumb().then((bytes) {
+      if (bytes != null) {
+        LibraryPageState._thumbCache[widget.encodedPath] = bytes;
+      }
+      if (mounted) setState(() => _thumb = bytes);
+    });
   }
 
   Future<Uint8List?> loadThumb() async {
@@ -1549,18 +1560,18 @@ class _MediaTileState extends State<_MediaTile> {
       if (isVideo) return bytes;
 
       if (bytes == null) return null;
-
       return await FlutterImageCompress.compressWithList(
         bytes,
-        minWidth: 300,
-        minHeight: 300,
-        quality: 10,
-        format: CompressFormat.webp,
+        minWidth: 300, 
+        minHeight: 300, 
+        quality: 10, 
+        format: CompressFormat.webp
       );
     } catch (_) {
       return null;
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -1578,23 +1589,22 @@ class _MediaTileState extends State<_MediaTile> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              FutureBuilder<Uint8List?>(
-                future: _thumbFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.data == null) {
-                    return Container(
-                      color: Theme.brightnessOf(context) == Brightness.dark 
-                        ? Colors.grey[900] 
-                        : Colors.grey[400]
-                    );
-                  }
-                  return Hero(
-                    tag: '${widget.heroPrefix}${widget.encodedPath}',
-                    child: Image.memory(snapshot.data!, fit: BoxFit.cover, opacity: opacity),
-                  );
-                },
-              ),
-
+              if (_thumb == null)
+                Container(
+                  color: Theme.brightnessOf(context) == Brightness.dark
+                      ? Colors.grey[900]
+                      : Colors.grey[400],
+                )
+              else 
+                Hero(
+                  tag: widget.heroPrefix + widget.encodedPath, 
+                  child: Image.memory(
+                    _thumb!,
+                    fit: BoxFit.cover,
+                    opacity: opacity,
+                    gaplessPlayback: true,
+                  )
+                ),
               if (widget.trashMode) ...[
                 Container(
                   decoration: BoxDecoration(
