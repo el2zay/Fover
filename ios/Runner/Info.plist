@@ -32,6 +32,8 @@
 		<string>To enable access to the photo library for selecting and saving photos.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>Fover uses your location to display your location on the map.</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>Fover uses your location to display your location on the map.</string>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
 		<key>UIFileSharingEnabled</key>
