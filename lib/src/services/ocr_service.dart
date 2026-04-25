@@ -73,7 +73,6 @@ class OcrService {
         'extractText',
         bytes,
       );
-      log("OCR Result: $text");
       return text.isEmpty ? null : text;
     } catch (e) {
       log("OCR error: $e");

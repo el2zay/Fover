@@ -125,10 +125,6 @@ Future<List<dynamic>> fetchPhotosDir() async {
       return double.tryParse(raw);
     }
 
-      exifData.forEach((key, value) {
-        log('$key: ${value.printable}');
-      });
-
       // Generated with AI (The code I wrote isn't working right, so I have to ask Claude to fix it 😔)
 
       bool isScreenshot(Map<String, IfdTag> exifData, int width, int height) {
