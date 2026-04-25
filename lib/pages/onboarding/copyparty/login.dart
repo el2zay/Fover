@@ -177,7 +177,7 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
 
                       if (!mounted) return;
                       navigator.pushAndRemoveUntil(
-                        CupertinoPageRoute(builder: (_) => const MainApp()),
+                        MaterialPageRoute(builder: (_) => const MainApp()),
                         (_) => false,
                       );
                     } on TimeoutException {

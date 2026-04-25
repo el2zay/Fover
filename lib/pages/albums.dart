@@ -79,7 +79,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
         return () {
           Navigator.push(
             context,
-            CupertinoPageRoute(
+            MaterialPageRoute(
               builder: (_) => LibraryPage(album: Album.videos)
             )
           );
@@ -88,7 +88,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
         return () {
           Navigator.push(
             context,
-            CupertinoPageRoute(
+            MaterialPageRoute(
               builder: (_) => LibraryPage(album: Album.screenshots)
             )
           );
@@ -97,7 +97,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
         return () {
           Navigator.push(
             context,
-            CupertinoPageRoute(
+            MaterialPageRoute(
               builder: (_) => LibraryPage(album: Album.favorites)
             )
           );
@@ -252,7 +252,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
                         onTap: (album) {
                           Navigator.push(
                             context, 
-                            CupertinoPageRoute(
+                            MaterialPageRoute(
                               builder: (_) => LibraryPage(albumName: album.name)
                             )
                           );

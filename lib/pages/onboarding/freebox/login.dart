@@ -40,7 +40,7 @@ class _FreeboxLoginPageState extends State<FreeboxLoginPage> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    CupertinoPageRoute(
+                    MaterialPageRoute(
                       builder: (context) => const FreeboxConnectionPage(),
                     ),
                   );
