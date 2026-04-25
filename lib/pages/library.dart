@@ -405,6 +405,10 @@ class LibraryPageState extends State<LibraryPage> {
         return stored?.albums?.contains(widget.albumName) == true;
       }
 
+      if (widget.album != Album.hidden && stored?.hidden == true) {
+        return false;
+      }
+
       if (widget.album == Album.videos) {
         return stored?.mimetype?.startsWith("video/") == true && stored?.deletedAt == null;
       }
@@ -415,6 +419,10 @@ class LibraryPageState extends State<LibraryPage> {
 
       if (widget.album == Album.screenshots) {
         return stored?.isScreenshot == true && stored?.deletedAt == null;
+      }
+
+      if (widget.album == Album.hidden) {
+        return stored?.hidden == true && stored?.deletedAt == null;
       }
 
       if (widget.searchText.startsWith("has:detectedText")) {
@@ -644,8 +652,19 @@ class LibraryPageState extends State<LibraryPage> {
       extendBody: true,
       extendBodyBehindAppBar: true,
       appBar: !widget.onlySelect && !widget.searchText.isNotEmpty ? BlurredAppBar(
-        title: widget.albumName != null ? widget.albumName! : widget.album == Album.trash ? "Trash" : widget.album == Album.favorites ? "Favorites" : widget.album == Album.screenshots ? "Screenshots" : "Library",
-        subtitle:  widget.album != Album.trash ? "$elements element${elements > 1 ? "s" : ""}" : null,
+        title: widget.albumName != null 
+          ? widget.albumName! 
+          : widget.album != Album.none ? ""
+          : "Library",
+          // : widget.album == Album.trash 
+          //   ? "Trash" 
+          //   : widget.album == Album.favorites 
+          //     ? "Favorites" 
+          //     : widget.album == Album.screenshots 
+          //       ? "Screenshots" 
+          //       : widget.album == Album.hidden ? "Hidden"
+          //         : "Library",
+        subtitle: "$elements element${elements > 1 ? "s" : ""}",
         isAlbum:  widget.album != Album.none || widget.albumName != null ,
         onBack: () => Navigator.of(context).pop(),
         scrollController: _scrollController,
@@ -1082,7 +1101,10 @@ class LibraryPageState extends State<LibraryPage> {
                                   MenuAction(
                                     title: "Hide",
                                     image: MenuImage.icon(CupertinoIcons.eye_slash),
-                                    callback: () => PhotoStore.update(path: data.encodedPaths[index], hidden: true)
+                                    callback: () { 
+                                      PhotoStore.update(path: data.encodedPaths[index], hidden: true);
+                                      _removeLocally([index]);
+                                    }
                                   ),
                                   widget.albumName == null 
                                     ? MenuAction(
