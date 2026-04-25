@@ -9,6 +9,7 @@ class BlurredAppBar extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback? onBack;
   final ScrollController? scrollController;
   final bool initiallyAtTop;
+  final bool automaticallyImplyLeading;
 
   const BlurredAppBar({
     super.key, 
@@ -18,7 +19,8 @@ class BlurredAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.isAlbum = false,
     this.onBack,
     this.scrollController,
-    this.initiallyAtTop = false
+    this.initiallyAtTop = false,
+    this.automaticallyImplyLeading = true,
   });
 
   @override
@@ -72,6 +74,7 @@ class _BlurredAppBarState extends State<BlurredAppBar> {
 
     return OrientationBuilder(builder: (context, orientation) {
       return AppBar(
+        automaticallyImplyLeading: widget.automaticallyImplyLeading,
         clipBehavior: Clip.none,
         elevation: 0,
         centerTitle: false,
@@ -114,7 +117,6 @@ class _BlurredAppBarState extends State<BlurredAppBar> {
                 child: Text(
                   widget.title, 
                   style: TextStyle(
-                    color: widget.isAlbum ? Colors.black : null,
                     fontSize: widget.isAlbum ? 20 : 36,
                     fontWeight: FontWeight.bold
                   )
