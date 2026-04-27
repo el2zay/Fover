@@ -24,6 +24,7 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
   final FocusNode passFocus = FocusNode();
 
   final _formKey = GlobalKey<FormState>();
+  bool isLoading = false;
 
   @override
   void dispose() {
@@ -153,7 +154,7 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 50),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.indigo[800],
+                    backgroundColor: isLoading ? primary.withAlpha(30) : Colors.indigo[800],
                     shadowColor: Colors.transparent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15),
@@ -161,10 +162,12 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: () async {
+                  if (isLoading) return;
                     final navigator = Navigator.of(context);
                     if (!_formKey.currentState!.validate()) return;
 
                     try {
+                      setState(() => isLoading = true);
                       await CopypartyService.connect(
                         url: urlController.text.trim(),
                         username: userController.text.trim(),
@@ -180,18 +183,20 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
                       );
                     } on TimeoutException {
                       if (!mounted) return;
+                      setState(() => isLoading = false);
                       showGeneralDialog(
                         barrierDismissible: false,
                         context: context,
                         pageBuilder: (context, animation, secondaryAnimation) {
                           return MyDialog(
                             content: "Connection timed out. Please check your URL and your Internet connection.",
-                            principalButton: TextButton(onPressed: () {}, child: SizedBox()),
+                            principalButton: null,
                           );
                         },
                       );
                     } catch (e) {
                       if (!mounted) return;
+                      setState(() => isLoading = false);
                       showGeneralDialog(
                         barrierDismissible: false,
                         // ignore: use_build_context_synchronously
@@ -205,7 +210,26 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
                       );
                     }
                   },
-                  child: Text("Continue", style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600)),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsetsGeometry.only(right: 10),
+                        child: isLoading ? CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                          constraints: BoxConstraints(
+                            minHeight: 20,
+                            minWidth: 20
+                          ),
+                        ) : null,
+                      ),
+
+                      Center(
+                        child: Text("Continue", style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600)),
+                      ),
+                    ],
+                  ),
                 )
               )
             ],
