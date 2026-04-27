@@ -5,9 +5,9 @@ PODS:
     - Flutter
   - clipboard (3.0.9):
     - Flutter
-  - CocoaLumberjack (3.9.0):
-    - CocoaLumberjack/Core (= 3.9.0)
-  - CocoaLumberjack/Core (3.9.0)
+  - CocoaLumberjack (3.9.1):
+    - CocoaLumberjack/Core (= 3.9.1)
+  - CocoaLumberjack/Core (3.9.1)
   - cupertino_native_better (0.0.1):
     - Flutter
     - SVGKit (~> 3.0)
@@ -168,7 +168,7 @@ SPEC CHECKSUMS:
   app_settings: 0341ec6daa4f0c50f5a421bf0ad7c36084db6e90
   apple_maps_flutter: 2237d66a8e242082a2d88134af372f7b3375d7a6
   clipboard: 85f02e190f24debf05943aff98c26644b2a90245
-  CocoaLumberjack: 5644158777912b7de7469fa881f8a3f259c2512a
+  CocoaLumberjack: e4ba3b414dfca8c1916c6303d37f63b3a95134c6
   cupertino_native_better: 1548ee565186534a34a406bf56b7c49510485844
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
@@ -195,6 +195,6 @@ SPEC CHECKSUMS:
   video_player_avfoundation: dd410b52df6d2466a42d28550e33e4146928280a
   video_thumbnail: b637e0ad5f588ca9945f6e2c927f73a69a661140
 
-PODFILE CHECKSUM: 3c63482e143d1b91d2d2560aee9fb04ecc74ac7e
+PODFILE CHECKSUM: 4922199b5b3854e7c0c2afda74c2fa2ae220b9d8
 
 COCOAPODS: 1.16.2
