@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/foundation.dart';
@@ -6,6 +7,7 @@ import 'package:fover/src/models/album_entry.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/freebox_service.dart';
 import 'package:fover/src/utils/common_utils.dart';
+import 'package:fover/src/utils/requests.dart';
 import 'package:freebox/freebox.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:fover/src/models/photo_entry.dart';
@@ -17,6 +19,20 @@ class PhotoStore {
   static const _photoBoxName = 'photos';
   static const _albumBoxName = 'albums';
   static const _deletionDelay = Duration(days:30);
+
+  static Timer? _uploadDebounce;
+  
+  static void _scheduleUpload() {
+    _uploadDebounce?.cancel();
+    _uploadDebounce = Timer(const Duration(seconds: 5), () {
+      print('_scheduleUpload firing -> uploadHive');
+      uploadHive();
+    });
+  }
+
+  static void cancelScheduledUpload() {
+    _uploadDebounce?.cancel();
+  }
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -55,6 +71,7 @@ class PhotoStore {
     bool? isScreenshot,
     String? editedFrom,
     bool isOldVersion = false,
+    DateTime? deletedAt,
   }) async {
     if (_photoBox.containsKey(path)) return;
 
@@ -81,9 +98,11 @@ class PhotoStore {
         displayDate: displayDate,
         isScreenshot: isScreenshot,
         editedFrom: editedFrom,
-        isOldVersion: isOldVersion
+        isOldVersion: isOldVersion,
+        deletedAt: deletedAt
       )
     );
+    _scheduleUpload();
   }
 
   static Future<void> duplicate({
@@ -140,7 +159,7 @@ class PhotoStore {
         isScreenshot: entry.isScreenshot
       )
     );
-
+    _scheduleUpload();
   }
 
   static Future<void> update({
@@ -175,6 +194,7 @@ class PhotoStore {
       }
       
       await entry.save();
+      _scheduleUpload();
   }
 
   static DateTime getDate(String path) {
@@ -194,6 +214,7 @@ class PhotoStore {
     entry.albums = [];
     entry.favorite = false;
     await entry.save();
+    _scheduleUpload();
   }
 
   static Future<void> hardDelete(String path) async {
@@ -206,6 +227,7 @@ class PhotoStore {
         break;
     }
     await _photoBox.delete(path);
+    _scheduleUpload();
   }
 
   static Future<void> restore(String path) async {
@@ -213,6 +235,7 @@ class PhotoStore {
     if (entry == null) return;
     entry.deletedAt = null;
     await entry.save();
+    _scheduleUpload();
   }
 
   static Future<void> purgeExpired() async {
@@ -244,6 +267,7 @@ class PhotoStore {
     for (final photo in expired) {
       await photo.delete();
     }
+    _scheduleUpload();
   }
 
   static Future<void> revertEdit(String editedPath) async {
@@ -334,6 +358,7 @@ class PhotoStore {
 
     entry.albums = [...(entry.albums ?? []), album];
     await entry.save();
+    _scheduleUpload();
   }
 
   static Future<void> removeFromAlbum({
@@ -344,7 +369,8 @@ class PhotoStore {
     if (entry == null) return;
 
     entry.albums = (entry.albums ?? []).where((a) => a != album).toList();
-  await entry.save();
+    await entry.save();
+    _scheduleUpload();
   }
 
   static Future<AlbumEntry?> createAlbum({
@@ -361,6 +387,7 @@ class PhotoStore {
       coverBytes: coverBytes
     );
     await _albumBox.put(name, album);
+    _scheduleUpload();
     return album;
   }
 
@@ -369,6 +396,7 @@ class PhotoStore {
       await removeFromAlbum(path: photo.path, album: name);
     }
     await _albumBox.delete(name);
+    _scheduleUpload();
   }
 
   static Future<void> renameAlbum({
@@ -427,12 +455,12 @@ class PhotoStore {
       local.height = entry.height;
       changed = true;
     }
-    if (entry.favorite == true && local.favorite != true) {
-      local.favorite = true;
+    if (entry.favorite != local.favorite) {
+      local.favorite = entry.favorite;
       changed = true;
     }
-    if (entry.hidden == true && local.hidden != true) {
-      local.hidden = true;
+    if (entry.hidden != local.hidden) {
+      local.hidden = entry.hidden;
       changed = true;
     }
 
@@ -448,7 +476,7 @@ class PhotoStore {
       changed = true;
     }
 
-    if (entry.deletedAt != null && local.deletedAt == null) {
+    if (entry.deletedAt != local.deletedAt ) {
       local.deletedAt = entry.deletedAt;
       changed = true;
     }
@@ -495,6 +523,8 @@ class PhotoStore {
     _listenable ??= _photoBox.listenable();
     return _listenable!;
   }
+
+  static bool hasPendingUpload() => _uploadDebounce?.isActive == true;
 
   static List<PhotoEntry> getDeleted() =>
     _photoBox.values.where((e) => e.deletedAt != null).toList();
