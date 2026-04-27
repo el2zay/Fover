@@ -54,6 +54,15 @@ class _SearchPageState extends State<SearchPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      FocusScope.of(context).requestFocus(searchFocus);
+    });
+  }
+
+  @override
   void didUpdateWidget(covariant SearchPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -64,7 +73,6 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   void dispose() {
-    searchFocus.dispose();
     searchController.dispose();
     _displayController.dispose();
     _query = '';
