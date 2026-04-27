@@ -145,7 +145,9 @@ class LibraryPageState extends State<LibraryPage> {
     selectedMode = false;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      showTabBar.value = true;
+      if (mounted) {
+        showTabBar.value = true;
+      }
     });
 
     super.dispose();
@@ -830,7 +832,23 @@ class LibraryPageState extends State<LibraryPage> {
         child: Builder(
         builder: (context) {
           if (_loading) {
-            return SizedBox();
+            return Center(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CupertinoActivityIndicator(),
+                  SizedBox(height: 10),
+                  Text(
+                    "Synchronizing your data", 
+                    style: TextStyle(
+                      fontSize: 16, 
+                      color: Theme.of(context).primaryColor.withAlpha(150)
+                    )
+                  )
+                ],
+              ),
+            );
           }
           if (_filteredData == null) {
             return const Center(child: Text("Error loading images"));
