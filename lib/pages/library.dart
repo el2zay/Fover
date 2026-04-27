@@ -108,7 +108,6 @@ class LibraryPageState extends State<LibraryPage> {
   bool _loading = true;
   List<int> selectedImages = [];
   int elements = 0;
-  bool isDeactivating = false;
 
   final ScrollController _scrollController = ScrollController();
   bool _isRefreshing = false;
@@ -142,12 +141,10 @@ class LibraryPageState extends State<LibraryPage> {
   @override 
   void dispose() {
     _scrollController.dispose();
+    selectedImages.clear();
     selectedMode = false;
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        showTabBar.value = true;
-      }
+      showTabBar.value = true;
     });
 
     super.dispose();
@@ -1104,7 +1101,7 @@ class LibraryPageState extends State<LibraryPage> {
                                       ? "Unhide"
                                       : "Hide",
                                     image: MenuImage.icon(isHidden ? CupertinoIcons.eye : CupertinoIcons.eye_slash),
-                                    callback: () { 
+                                    callback: () {
                                       PhotoStore.update(path: data.encodedPaths[index], hidden: !isHidden);
                                       _removeLocally([index]);
                                     }
