@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fover/pages/onboarding/copyparty/login.dart';
@@ -80,7 +79,7 @@ class _FirstPageState extends State<FirstPage> {
               ),
             ),
             Positioned.fill(
-              bottom: MediaQuery.of(context).padding.bottom == 0 ? 6 : 30,
+              bottom: MediaQuery.of(context).padding.bottom != 0 ? 6 : 30,
               left: 20,
               right: 20,
               child: Align(

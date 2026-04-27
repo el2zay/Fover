@@ -1,4 +1,3 @@
-import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fover/src/widgets/container.dart';
