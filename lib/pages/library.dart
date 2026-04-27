@@ -861,6 +861,7 @@ class LibraryPageState extends State<LibraryPage> {
               _pullUpProgress = 0;
             });
             HapticFeedback.mediumImpact();
+            await syncHive();
             await _refresh();
             if (mounted) {
               setState(() {
