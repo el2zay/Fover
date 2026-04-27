@@ -338,6 +338,7 @@ Widget _buildImage(int index) {
   ExtendedImage buildExtendedFile(File file) {
     return ExtendedImage.file(
       file,
+      clearMemoryCacheWhenDispose: true,
       key: ValueKey(photo!.localPath),
       fit: BoxFit.contain,
       mode: ExtendedImageMode.gesture,
@@ -765,17 +766,21 @@ Widget _buildImage(int index) {
               if (localVideoPath != null) {
                 try {
                   File(localVideoPath).deleteSync();
-                } catch (_) {
-
-                }
-
+                } catch (_) {}
+              
                 if (!mounted || newPath == null) return;
                 widget.onRefresh?.call();
                 if (!mounted) return;
                 setState(() {
                   widget.encodedPaths[currentIndex] = newPath;
                 });
-              
+              } else if (newPath != null) {
+                if (!mounted) return;
+                widget.onRefresh?.call();
+                if (!mounted) return;
+                setState(() {
+                  widget.encodedPaths[currentIndex] = newPath;
+                });
               }
             },
             config: const CNButtonDataConfig(
