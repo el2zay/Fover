@@ -195,11 +195,18 @@ class _AlbumsPageState extends State<AlbumsPage> {
             glassIcon: CNSymbol('plus', size: 20),
             onPressed: () {
               log("Add Album Tapped");
+              setState(() {
+                isUnfolded = false;
+              });
               showCupertinoSheet(
                 context: context, builder: (context) {
                   return NewAlbumSheet();
                 }
-              ).then((_) {});
+              ).then((_) {
+                setState(() {
+                  isUnfolded = true;
+                });
+              });
             },
           ),
           SizedBox(width: 10),
