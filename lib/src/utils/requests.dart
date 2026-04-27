@@ -5,11 +5,14 @@ import 'dart:ui' as ui;
 
 import 'package:exif/exif.dart';
 import 'package:fover/main.dart';
+import 'package:fover/src/models/album_entry.dart';
+import 'package:fover/src/models/photo_entry.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/freebox_service.dart';
 import 'package:fover/src/services/ocr_service.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
+import 'package:hive_ce/hive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
@@ -230,14 +233,11 @@ Future<List<dynamic>> fetchPhotosDir() async {
       (entry['mimetype'] as String?) ?? 'image/jpeg',
     ));
   }
-  
-  if (hasBeenEdited) {
-    uploadHive();
-  }
   return filesOnly.toList();
 }
 
 Future<void> uploadHive() async {
+  print("uploadHive called");
   final appDir = (await getApplicationDocumentsDirectory()).path;
   final files = [
     File("$appDir/photos.hive"),
@@ -263,6 +263,163 @@ Future<void> uploadHive() async {
 
     default:
       break;
+  }
+}
+
+Future<Uint8List?> downloadHive(String filename) async {
+  try {
+    switch (detectBackend()) {
+      case ServerBackend.copyparty:
+        final bytes = await CopypartyService.fetchFile(filename);
+        return Uint8List.fromList(bytes);
+      case ServerBackend.freebox:
+        final response = await client?.fetch(
+          url: "v15/dl/$filename",
+          parseJson: false
+        );
+        return response?.data is Uint8List ? response!.data as Uint8List : null;
+
+        default:
+          return null;
+    }
+  } catch (_) {
+    return null;
+  }
+}
+
+Future<void> syncHive() async {
+  if (PhotoStore.hasPendingUpload()) {
+    PhotoStore.cancelScheduledUpload();
+    await uploadHive();
+  }
+
+  final appDir = (await getApplicationDocumentsDirectory()).path;
+  bool didMerge = false;
+
+  for (final filename in ['photos.hive', 'albums.hive']) {
+    final localFile = File("$appDir/$filename");
+    final serverBytes = await downloadHive(filename);
+    print("downloaded $filename: ${serverBytes?.length ?? 'null'} bytes");
+
+    if (serverBytes == null) continue;
+
+    if (!localFile.existsSync()) {
+      await localFile.writeAsBytes(serverBytes);
+      log("Hive initialisé depuis le serveur : $filename");
+      didMerge = true;
+      continue;
+    }
+
+    await mergeHive(localFile, serverBytes, filename);
+    didMerge = true;
+  }
+
+  if (didMerge) await uploadHive();
+}
+
+Future<void> mergeHive(File localFile, Uint8List serverBytes, String filename) async {
+  final appDir = localFile.parent.path;
+  final tempPath = "$appDir/temp_$filename";
+  final tempFile = File(tempPath);
+
+  try {
+    await tempFile.writeAsBytes(serverBytes);
+
+    if (filename == "photos.hive") {
+      await mergePhotosBox(localFile.path, tempPath);
+    } else if (filename == "albums.hive") {
+      await mergeAlbumsBox(localFile.path, tempPath);
+    }
+  } finally {
+    if (tempFile.existsSync()) await tempFile.delete();
+
+    final tempLock = File('$appDir/temp_${filename.replaceAll('.hive', '.lock')}');
+    if (tempLock.existsSync()) await tempLock.delete();
+  }
+}
+
+Future<void> mergePhotosBox(String localPath, String serverPath) async {
+  final dir = File(serverPath).parent.path;
+
+  try {
+    if (Hive.isBoxOpen("temp_photos")) {
+      await Hive.box<PhotoEntry>("temp_photos").close();
+    }
+  } catch (_) {}
+
+
+  final serverBox = await Hive.openBox<PhotoEntry>(
+    "temp_photos",
+    path: dir
+  );
+
+  for (final key in serverBox.keys) {
+    final serverEntry = serverBox.get(key);
+    final localEntry = PhotoStore.get(key as String);
+
+    if (localEntry == null && serverEntry != null) {
+      await PhotoStore.addPhoto(
+        path: serverEntry.path, 
+        name: serverEntry.name, 
+        // date: PhotoStore.getDate(serverEntry.path), 
+        date: serverEntry.date,
+        size: serverEntry.size, 
+        mimetype: serverEntry.mimetype ?? "image/jpeg",
+        duration: serverEntry.duration,
+        latitude: serverEntry.latitude,
+        longitude: serverEntry.longitude,
+        cameraBrand: serverEntry.cameraBrand,
+        cameraModel: serverEntry.cameraModel,
+        height: serverEntry.height,
+        width: serverEntry.width,
+        iso: serverEntry.iso,
+        focalLength: serverEntry.focalLength,
+        exposureValue: serverEntry.exposureValue,
+        focus: serverEntry.focus,
+        isScreenshot: serverEntry.isScreenshot,
+        deletedAt: serverEntry.deletedAt
+      );
+      log("Nouvelle photo du serveur : ${serverEntry.path}");
+    } else if (localEntry != null && serverEntry != null) {
+      print('mergeFrom ${serverEntry.name} | serverDeletedAt=${serverEntry.deletedAt} | localDeletedAt=${localEntry.deletedAt}');
+        await PhotoStore.mergeFrom(key, serverEntry);
+    }
+  }
+
+  await serverBox.close();
+  await Hive.deleteBoxFromDisk("temp_photos");
+}
+
+Future<void> mergeAlbumsBox(String localPath, String serverPath) async {
+  final dir = File(serverPath).parent.path;
+
+  try {
+    if (Hive.isBoxOpen("temp_albums")) {
+      await Hive.box<AlbumEntry>("temp_albums").close();
+    }
+  } catch (_) {}
+
+  final serverBox = await Hive.openBox<AlbumEntry>(
+    "temp_albums",
+    path: dir,
+  );
+
+  try {
+    for (final key in serverBox.keys) {
+      final entry = serverBox.get(key as String);
+      if (entry == null) continue;
+      if (PhotoStore.getAlbumEntry(key) == null) {
+        await PhotoStore.createAlbum(
+          name: entry.name,
+          coverBytes: entry.coverBytes,
+          description: entry.description,
+        );
+        log("Nouvel album du serveur : ${entry.name}");
+      }
+    }
+  } finally {
+    await serverBox.close();
+    await Hive.deleteBoxFromDisk("temp_albums");
   }
 }
 
