@@ -1027,6 +1027,7 @@ class LibraryPageState extends State<LibraryPage> {
                             },
 
                             menuProvider: (request) {
+                              final isHidden = PhotoStore.get(data.encodedPaths[index])?.hidden == true;
                               return widget.album != Album.trash ? Menu(
                                 children: [
                                   MenuAction(
@@ -1094,10 +1095,12 @@ class LibraryPageState extends State<LibraryPage> {
                                     }
                                   ),
                                   MenuAction(
-                                    title: "Hide",
-                                    image: MenuImage.icon(CupertinoIcons.eye_slash),
+                                    title: isHidden
+                                      ? "Unhide"
+                                      : "Hide",
+                                    image: MenuImage.icon(isHidden ? CupertinoIcons.eye : CupertinoIcons.eye_slash),
                                     callback: () { 
-                                      PhotoStore.update(path: data.encodedPaths[index], hidden: true);
+                                      PhotoStore.update(path: data.encodedPaths[index], hidden: !isHidden);
                                       _removeLocally([index]);
                                     }
                                   ),
