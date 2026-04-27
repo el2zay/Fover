@@ -75,6 +75,12 @@ class _BlurredAppBarState extends State<BlurredAppBar> {
     return OrientationBuilder(builder: (context, orientation) {
       return AppBar(
         automaticallyImplyLeading: widget.automaticallyImplyLeading,
+        leading: widget.isAlbum 
+        ? IconButton(
+            icon: Icon(Icons.chevron_left, size: 30),
+            onPressed: widget.onBack ?? () => Navigator.pop(context)
+          ) 
+        : null,
         clipBehavior: Clip.none,
         elevation: 0,
         centerTitle: false,

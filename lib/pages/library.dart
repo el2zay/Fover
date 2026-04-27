@@ -647,7 +647,13 @@ class LibraryPageState extends State<LibraryPage> {
           //         : "Library",
         subtitle: "$elements element${elements > 1 ? "s" : ""}",
         isAlbum:  widget.album != Album.none || widget.albumName != null ,
-        onBack: () => Navigator.of(context).pop(),
+        onBack: () {
+          setState(() {
+            selectedMode = false;
+            showTabBar.value = true;
+          });
+          Navigator.of(context).pop();
+        },
         scrollController: _scrollController,
         initiallyAtTop: _isAtTop,
         actions: showButtons || !widget.onlySelect ? [
@@ -676,7 +682,7 @@ class LibraryPageState extends State<LibraryPage> {
               ),
             ),
           SizedBox(width: 15),
-          if (widget.album != Album.trash && widget.album != Album.favorites &&widget.album != Album.screenshots && connectedToInternet)...[
+          if (widget.album == Album.none && connectedToInternet)...[
              widget.albumName == null ?
               Button.iconOnly(
                 icon: const Icon(CupertinoIcons.settings, color: Colors.white),
@@ -711,8 +717,7 @@ class LibraryPageState extends State<LibraryPage> {
                     builder: (context) {
                       return Scaffold(
                         appBar: AppBar(
-                          leading: 
-                          Transform.scale(
+                          leading: Transform.scale(
                             scale: 0.9,
                             child: Button.iconOnly(
                                 icon: Icon(Icons.close, size: 16),
