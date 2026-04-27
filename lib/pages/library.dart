@@ -1279,6 +1279,7 @@ class LibraryPageState extends State<LibraryPage> {
                                   isViewer: false,
                                   isDownloaded: selectedImages.every((i) => DownloadService.isDownloaded(data.encodedPaths[i])),
                                   isFavorite: false,
+                                  isHidden: selectedImages.every((i) => PhotoStore.get(data.encodedPaths[i])?.hidden == true),
                                   onSelected: (action) async {
                                     final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
                                     switch (action) {

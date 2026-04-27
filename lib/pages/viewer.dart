@@ -430,6 +430,7 @@ Widget _buildImage(int index) {
             child: PopMenu(
               showCopy: widget.mimetype[currentIndex].startsWith('image/'),
               isViewer: true,
+              isHidden: PhotoStore.get(widget.encodedPaths[currentIndex])?.hidden == true,
               isDownloaded: DownloadService.isDownloaded(widget.encodedPaths[currentIndex]),
               isFavorite: PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true,
               canRevert: PhotoStore.get(widget.encodedPaths[currentIndex])?.editedFrom != null,

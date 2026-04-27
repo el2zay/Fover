@@ -26,6 +26,7 @@ class PopMenu extends StatelessWidget {
   final bool isViewer;
   final bool isDownloaded;
   final bool isFavorite;
+  final bool isHidden;
   final bool canRevert;
   final Function(PopMenuAction) onSelected;
 
@@ -36,6 +37,7 @@ class PopMenu extends StatelessWidget {
     required this.isViewer, 
     this.isDownloaded = false, 
     this.isFavorite = false,
+    required this.isHidden,
     this.canRevert = false,
     required this.onSelected
   });
@@ -92,8 +94,8 @@ class PopMenu extends StatelessWidget {
               icon: CNSymbol('plus.square.on.square', size: 20),
             ),
           CNPopupMenuItem(
-            label: 'Hide',
-            icon: CNSymbol('eye.slash', size: 20),
+            label: isHidden ? 'Unhide' : 'Hide',
+            icon: CNSymbol(isHidden ? 'eye' : 'eye.slash', size: 20),
           ),
           CNPopupMenuItem(
             label: 'Add to Album',
@@ -165,8 +167,10 @@ class PopMenu extends StatelessWidget {
               },
             ),
           PullDownMenuItem(
-            title: 'Hide',
-            icon: CupertinoIcons.eye_slash,
+            title: isHidden ? 'Unhide' : 'Hide',
+            icon: isHidden 
+              ? CupertinoIcons.eye
+              : CupertinoIcons.eye_slash,
             onTap: () {
               onSelected(PopMenuAction.hide);
             },
