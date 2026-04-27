@@ -9,8 +9,26 @@ flutter pub get
 dart run build_runner build --delete-conflicting-outputs
 ``` -->
 
-## In development
-This project is still under development. Please check back later!
+Fover is a self-hosted photo server that lets you manage and access your photos in one place through a clean. and familiar interface.
+Your photos are automatically synced across all of your devices through your own private server, with no third-party cloud involved, which mean your memories will always stay on your side.
+
+<!-- Que pouvez-vous faire dans Fover ? -->
+## Features
+- Edit your photos and videos (crop, rotate, add filters, etc)
+- Create albums and organize your photos
+- Hide your photos with a password or a biometric lock
+- Search your photos by date, location, or content
+  - The Text Recognition feature is only available on iOS devices.
+- View your photos on a map based on their geolocation data
+- Liquid Glass on iOS 26+
+
+### Coming soon
+- Windows and macOS support
+- Swipe cards to quickly navigate through your photos
+- Import your photos from other services (Google Photos, iCloud, etc)
+- Compatibility with Freebox
+- Share your photos with friends and family through private links
+
 
 ## Quick start with Copyparty
 **Requires Docker**<br>
@@ -58,7 +76,7 @@ services:
     ports:
       - "3923:3923"
     volumes:
-      - /home/freebox/Fover/FoverServer:/mnt/photos
+      - /path/to/Fover/FoverServer:/mnt/photos
       - /opt/copyparty/config:/cfg
     command:
       - "-v"
