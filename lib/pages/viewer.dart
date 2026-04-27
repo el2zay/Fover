@@ -147,7 +147,8 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     setState(() {
       focused = !focused;
       if (!PhotoStore.isLandscape(widget.encodedPaths[currentIndex])) {
-        _imageFocusScale = focused ? 1 : 0.73;
+        // _imageFocusScale = focused ? 1 : 0.73;
+        _imageFocusScale = 1.0;
       }
       SystemChrome.setEnabledSystemUIMode(
         focused ? SystemUiMode.immersive : SystemUiMode.edgeToEdge,
@@ -201,7 +202,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
         appBar: PreferredSize(
           preferredSize: const Size.fromHeight(kToolbarHeight),
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 0),
+            duration: const Duration(milliseconds: 250),
             child: focused ? const SizedBox.shrink() : _buildAppBar(),
           )
         ),
@@ -209,7 +210,8 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
           children: [ 
             Center(
               child: AnimatedScale(
-                scale: _imageFocusScale,
+                // scale: _imageFocusScale,
+                scale: 1.0,
                 curve: Curves.easeInOut,
                 duration: const Duration(milliseconds: 200),
                 child: ExtendedImageGesturePageView.builder(
@@ -221,7 +223,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                       currentIndex = index;
                       _videoOffset = Offset.zero;
                       _videoScale = 1.0;
-                      _imageFocusScale = PhotoStore.isLandscape(widget.encodedPaths[index]) ? 1.0 : 0.73;
+                      // _imageFocusScale = PhotoStore.isLandscape(widget.encodedPaths[index]) ? 1.0 : 0.73;
                     });
                     _videoController?.pause();
                     _videoController?.seekTo(Duration.zero);
@@ -729,7 +731,7 @@ Widget _buildImage(int index) {
           CNButtonData.icon(
             icon: const CNSymbol('slider.horizontal.3', size: 22),
             onPressed: () async {
-              setState(()=> focused = true);
+              setState(() => focused = true);
               final isVideo = widget.mimetype[currentIndex].startsWith('video');
               String? localVideoPath;
 
