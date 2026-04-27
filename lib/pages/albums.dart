@@ -11,6 +11,7 @@ import 'package:fover/main.dart';
 import 'package:fover/pages/library.dart';
 import 'package:fover/src/models/album_entry.dart';
 import 'package:fover/src/services/photo_store.dart';
+import 'package:fover/src/utils/requests.dart';
 import 'package:fover/src/widgets/albums_list.dart';
 import 'package:fover/src/widgets/blurred_app_bar.dart';
 import 'package:fover/src/widgets/button.dart';
@@ -189,6 +190,17 @@ class _AlbumsPageState extends State<AlbumsPage> {
       appBar: BlurredAppBar(
         title: ("Albums"),
         actions: [
+          Button.iconOnly(
+            glassIcon: CNSymbol('arrow.clockwise', size: 16),
+            icon: Icon(CupertinoIcons.arrow_clockwise, color: isLightAndroid ? Colors.black : null),
+            onPressed: () async {
+              await syncHive();
+              setState(() {
+                albums = loadAlbums(context);
+              });
+            },
+          ),
+          SizedBox(width: 15),
           Button.iconOnly(
             icon: Icon(CupertinoIcons.add, color: isLightAndroid ? Colors.black : null),
             backgroundColor: isLightAndroid ? Colors.grey[300] : null,
