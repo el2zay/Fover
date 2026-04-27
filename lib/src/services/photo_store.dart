@@ -310,7 +310,13 @@ class PhotoStore {
         return;
     }
 
-    final toDelete = _photoBox.keys.where((key) => !serverFiles.contains(key)).toList();
+    final toDelete = _photoBox.keys.where((key) {
+      final entry = _photoBox.get(key);
+      if (entry == null) return true;
+      if (entry.deletedAt != null) return false;
+      if (entry.isOldVersion == true) return false;
+      return !serverFiles.contains(entry.path);
+    }).toList();
 
     for (final key in toDelete) {
       log('File ${_photoBox.get(key)?.name} does not exist on server, deleting locally');
@@ -385,6 +391,69 @@ class PhotoStore {
       coverBytes: album.coverBytes,
     );
     await _albumBox.delete(oldName);
+  }
+
+  static Future<void> mergeFrom(String path, PhotoEntry entry) async {
+    final local = _photoBox.get(path);
+
+    if (local == null) {
+      await _photoBox.put(path, entry);
+      return;
+    }
+
+    bool changed = false;
+
+    if (local.latitude == null && entry.latitude != null) {
+        local.latitude = entry.latitude;
+        local.longitude = entry.longitude;
+        changed = true;
+      }
+    if ((local.detectedText == null || local.detectedText!.isEmpty) &&
+        entry.detectedText != null && entry.detectedText!.isNotEmpty) {
+      local.detectedText = entry.detectedText;
+      changed = true;
+    }
+    if ((local.description == null || local.description!.isEmpty) &&
+        entry.description != null) {
+      local.description = entry.description;
+      changed = true;
+    }
+    if (local.cameraModel == null && entry.cameraModel != null) {
+      local.cameraModel = entry.cameraModel;
+      changed = true;
+    }
+    if ((local.width == null || local.width == 0) && entry.width != null) {
+      local.width = entry.width;
+      local.height = entry.height;
+      changed = true;
+    }
+    if (entry.favorite == true && local.favorite != true) {
+      local.favorite = true;
+      changed = true;
+    }
+    if (entry.hidden == true && local.hidden != true) {
+      local.hidden = true;
+      changed = true;
+    }
+
+    final localAlbums = local.albums ?? [];
+    final merged = {...localAlbums, ...(entry.albums ?? [])}.toList();
+    if (merged.length != localAlbums.length) {
+      local.albums = merged;
+      changed = true;
+    }
+
+    if (local.displayDate == null && entry.displayDate != null) {
+      local.displayDate = entry.displayDate;
+      changed = true;
+    }
+
+    if (entry.deletedAt != null && local.deletedAt == null) {
+      local.deletedAt = entry.deletedAt;
+      changed = true;
+    }
+
+    if (changed) await local.save();
   }
 
   static PhotoEntry? get(String path) => _photoBox.get(path);
