@@ -85,7 +85,11 @@ class _AlbumsPageState extends State<AlbumsPage> {
             MaterialPageRoute(
               builder: (_) => LibraryPage(album: Album.videos)
             )
-          );
+          ).then((_) {
+            Future.delayed(const Duration(milliseconds: 350), () {
+              if (context.mounted) setState(() {});
+            });
+          });
         };
       case 'screenshots':
         return () {
@@ -94,7 +98,11 @@ class _AlbumsPageState extends State<AlbumsPage> {
             MaterialPageRoute(
               builder: (_) => LibraryPage(album: Album.screenshots)
             )
-          );
+          ).then((_) {
+            Future.delayed(const Duration(milliseconds: 350), () {
+              if (context.mounted) setState(() {});
+            });
+          });
         };
       case 'favorites':
         return () {
@@ -103,7 +111,11 @@ class _AlbumsPageState extends State<AlbumsPage> {
             MaterialPageRoute(
               builder: (_) => LibraryPage(album: Album.favorites)
             )
-          );
+          ).then((_) {
+            Future.delayed(const Duration(milliseconds: 350), () {
+              if (context.mounted) setState(() {});
+            });
+          });
         };
 
       case 'hidden':
@@ -117,7 +129,11 @@ class _AlbumsPageState extends State<AlbumsPage> {
               Navigator.push(
                 context, 
                 MaterialPageRoute(builder: (context) => LibraryPage(album: Album.hidden))
-              );
+              ).then((_) {
+                Future.delayed(const Duration(milliseconds: 350), () {
+                  if (context.mounted) setState(() {});
+                });
+             });
             } else {
               auth.stopAuthentication();
             }
@@ -137,7 +153,11 @@ class _AlbumsPageState extends State<AlbumsPage> {
               Navigator.push(
                 context, 
                 MaterialPageRoute(builder: (context) => LibraryPage(album: Album.trash))
-              );
+              ).then((_) {
+                Future.delayed(const Duration(milliseconds: 350), () {
+                  if (context.mounted) setState(() {});
+                });
+              });
             } else {
               auth.stopAuthentication();
             }
