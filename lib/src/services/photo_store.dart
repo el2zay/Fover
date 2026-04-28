@@ -471,12 +471,20 @@ class PhotoStore {
       changed = true;
     }
 
-    if (local.displayDate == null && entry.displayDate != null) {
-      local.displayDate = entry.displayDate;
+    if (entry.date.isAfter(DateTime(1970)) &&
+        (local.date == DateTime(1970) || entry.date.isBefore(local.date))) {
+      local.date = entry.date;
       changed = true;
     }
 
-    if (entry.deletedAt != local.deletedAt ) {
+    if (entry.displayDate != null) {
+      if (local.displayDate == null || entry.displayDate!.isAfter(local.displayDate!)) {
+        local.displayDate = entry.displayDate;
+        changed = true;
+      }
+    }
+
+    if (entry.deletedAt != local.deletedAt) {
       local.deletedAt = entry.deletedAt;
       changed = true;
     }
