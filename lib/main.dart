@@ -23,7 +23,8 @@ import 'package:pull_down_button/pull_down_button.dart';
 FreeboxClient? client;
 bool is26OrNewer =  PlatformVersion.supportsLiquidGlass;
 final box = Hive.box('settings');
-final ValueNotifier<bool> showTabBar = ValueNotifier(false);
+final ValueNotifier<bool> showTabBar = ValueNotifier(true);
+bool isLoggedIn = box.get("appToken") != null || box.get("copypartyUrl") != null;
 final ValueNotifier<String> searchQuery = ValueNotifier('');
 String? model;
 late bool connectedToInternet;
@@ -32,9 +33,9 @@ final ValueNotifier<double> tabBarHeight = ValueNotifier(kBottomNavigationBarHei
 Future<void> initApp() async {
   await PhotoStore.init();
 
-  if (box.get("appToken") != null || box.get("copypartyUrl") != null) {    
+  if (box.get("appToken") != null || box.get("copypartyUrl") != null) {
     connectedToInternet = await CopypartyService.isUp() && await hasInternet();
-     print("Connected to internet: ${await CopypartyService.isUp()} et ${await hasInternet()} donc $connectedToInternet");
+
     if (box.get("appToken") != null) {
       client = FreeboxClient(
         appToken: box.get("appToken"),
@@ -44,20 +45,19 @@ Future<void> initApp() async {
       );
       await client?.authentificate();
     }
+
     if (box.get("copypartyUrl") != null) {
       CopypartyService.init();
     }
 
-    showTabBar.value = true;
-
     if (connectedToInternet) {
-      print("ici");
       await PhotoStore.purgeExpired();
+      await syncHive();
       await PhotoStore.existsOnServer();
-      if (box.get("appToken") != null ) model = await FreeboxService.getFreeboxModel();
-      fetchPhotosDir();
-    } else {
-      print(connectedToInternet);
+      if (box.get("appToken") != null) {
+        model = await FreeboxService.getFreeboxModel();
+      }
+      await fetchPhotosDir();
     }
   }
 }
@@ -91,6 +91,8 @@ class _MainAppState extends State<MainApp> {
   int _currentIndex = 0;
   final GlobalKey<LibraryPageState> libraryKey = GlobalKey<LibraryPageState>();
 
+  bool get isLoggedIn => box.get("appToken") != null || box.get("copypartyUrl") != null;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -101,24 +103,28 @@ class _MainAppState extends State<MainApp> {
         // ignore: sort_child_properties_last
         child: Scaffold(
           extendBody: true,
-          body: box.get("appToken") == null && box.get("copypartyUrl") == null
+          body: !isLoggedIn
             ? const FirstPage()
             : IndexedStack(
-            index: _currentIndex,
-            children:  [
-              LibraryPage(key: libraryKey, onlySelect: false),
-              SafeArea(child: AlbumsPage()),
-              SearchPage()
-            ],
-          ),
+              index: _currentIndex,
+              children:  [
+                LibraryPage(key: libraryKey, onlySelect: false),
+                SafeArea(child: AlbumsPage()),
+                SearchPage()
+              ],
+            ),
+
           bottomNavigationBar: ValueListenableBuilder(
             valueListenable: showTabBar,
             builder: (context, tabBarVisible, _) {
-              if (is26OrNewer) {
-                return AnimatedSwitcher(
-                  duration: Duration(milliseconds: 200),
-                  child: tabBarVisible 
-                    ? CNTabBar(
+              final loggedIn = isLoggedIn;
+              Widget child;
+              if (!loggedIn || !tabBarVisible) {
+                child = const SizedBox.shrink(key: ValueKey('empty'));
+              } else {
+                child = is26OrNewer
+                  ? CNTabBar(
+                      key: const ValueKey('tabbar'),
                       tint: Colors.blue,
                       iconSize: 18,
                       items: [
@@ -140,8 +146,8 @@ class _MainAppState extends State<MainApp> {
                       },
                       searchItem: CNTabBarSearchItem(
                         icon: CNSymbol(
-                          'magnifyingglass', 
-                          color: _currentIndex == 2 ? Colors.blue : null
+                          'magnifyingglass',
+                          color: _currentIndex == 2 ? Colors.blue : null,
                         ),
                         onSearchChanged: (query) {
                           searchQuery.value = query;
@@ -149,48 +155,40 @@ class _MainAppState extends State<MainApp> {
                         onSearchSubmit: (query) {
                           searchQuery.value = query;
                         },
-                        onSearchActiveChanged: (isActive) { 
+                        onSearchActiveChanged: (isActive) {
                           if (isActive) {
                             setState(() {
                               _currentIndex = 2;
                             });
                           }
                         },
-                        style: CNTabBarSearchStyle(
-                          iconSize: 20,
-                          buttonSize: 44,
-                          searchBarHeight: 44,
-                          animationDuration: Duration(milliseconds: 400),
-                          showClearButton: true,
-                        ),
                       ),
                     )
-                  : SizedBox.shrink(key: const ValueKey('empty'))
-                );
-              }
+                  : BottomNavigationBar(
+                      key: const ValueKey('tabbar'),
+                      currentIndex: _currentIndex,
+                      onTap: (value) {
+                        setState(() {
+                          _currentIndex = value;
+                        });
+                      },
+                      items: const [
+                        BottomNavigationBarItem(
+                            icon: Icon(CupertinoIcons.photo), label: "Library"),
+                        BottomNavigationBarItem(
+                            icon: Icon(CupertinoIcons.collections), label: "Albums"),
+                        BottomNavigationBarItem(
+                            icon: Icon(CupertinoIcons.search), label: "Search"),
+                      ],
+                    );
+                }
 
-              return AnimatedSwitcher(
-                duration: Duration(milliseconds: 300),
-                child: tabBarVisible ? BottomNavigationBar(
-                  elevation: 0,
-                  type: BottomNavigationBarType.fixed,
-                  selectedFontSize: 13,
-                  unselectedFontSize: 13,
-                  currentIndex: _currentIndex,
-                  onTap: (value) {
-                    setState(() {
-                      _currentIndex = value;
-                    });
-                  },
-                  items: [
-                    BottomNavigationBarItem(icon: Icon(CupertinoIcons.photo), label: "Library"),
-                    BottomNavigationBarItem(icon: Icon(CupertinoIcons.collections), label: "Albums"),
-                    BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: "Search"),
-                  ]
-                ) : SizedBox.shrink(key: const ValueKey('empty')),
-              );
-            }
-          ),
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: child,
+                );
+              },
+          )
         ),
       ),
       themeMode: ThemeMode.system,
