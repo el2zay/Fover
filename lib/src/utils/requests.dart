@@ -361,12 +361,17 @@ Future<void> mergeHive(File localFile, Uint8List serverBytes, String filename) a
 
 Future<void> mergePhotosBox(String localPath, String serverPath) async {
   final dir = File(serverPath).parent.path;
+  PhotoStore.merging = true;
 
   try {
     if (Hive.isBoxOpen("temp_photos")) {
       await Hive.box<PhotoEntry>("temp_photos").close();
     }
-  } catch (_) {}
+  } catch (_) {
+
+  } finally {
+    PhotoStore.merging = false;
+  }
 
 
   final serverBox = await Hive.openBox<PhotoEntry>(
@@ -382,7 +387,6 @@ Future<void> mergePhotosBox(String localPath, String serverPath) async {
       await PhotoStore.addPhoto(
         path: serverEntry.path, 
         name: serverEntry.name, 
-        // date: PhotoStore.getDate(serverEntry.path), 
         date: serverEntry.date,
         size: serverEntry.size, 
         mimetype: serverEntry.mimetype ?? "image/jpeg",
@@ -413,12 +417,17 @@ Future<void> mergePhotosBox(String localPath, String serverPath) async {
 
 Future<void> mergeAlbumsBox(String localPath, String serverPath) async {
   final dir = File(serverPath).parent.path;
+  PhotoStore.merging = true;
 
   try {
     if (Hive.isBoxOpen("temp_albums")) {
       await Hive.box<AlbumEntry>("temp_albums").close();
     }
-  } catch (_) {}
+  } catch (_) {
+
+  } finally {
+    PhotoStore.merging = false;
+  }
 
   final serverBox = await Hive.openBox<AlbumEntry>(
     "temp_albums",
