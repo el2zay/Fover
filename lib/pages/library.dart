@@ -406,7 +406,7 @@ class LibraryPageState extends State<LibraryPage> {
       final date = PhotoStore.getDate(path);
       return (
         entry: entry, 
-        sortKey: '${date.year.toString().padLeft(4,'0')}-${date.month.toString().padLeft(2,'0')}-${date.day.toString().padLeft(2,'0')}'
+        sortKey: date.toIso8601String()
       );
     }).toList(); 
 
