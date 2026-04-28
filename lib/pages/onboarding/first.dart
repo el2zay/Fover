@@ -126,14 +126,21 @@ class _FirstPageState extends State<FirstPage> {
                         width: double.infinity,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
+                            backgroundColor: Colors.white24,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20),
                             ),
                           ),
-                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FreeboxLoginPage())),
-                          child: const Text("Start with Freebox", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                          // onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FreeboxLoginPage())),
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("This feature is not available yet, but will be coming soon!")
+                              )
+                            );
+                          },
+                          child: const Text("Start with Freebox", style: TextStyle(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.w600)),
                         ),
                       ),
                     ],
