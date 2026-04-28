@@ -85,6 +85,22 @@ class CopypartyService {
     'Authorization': 'Basic $credentials',
   };
 
+  static Future<bool> isUp() async {
+    if (baseUrl.isEmpty) return false;
+
+    try {
+      final response = await _client.get(
+        Uri.parse("$baseUrl/photo?ls"),
+        headers: _headers,
+      );
+      print(response.statusCode == 200 ? "Copyparty is up!" : "Copyparty check failed: ${response.statusCode}");
+      return response.statusCode == 200;
+    } catch(e) {
+      log("Connection check failed: $e");
+      return false;
+    }
+  }
+
   static Future<List<Map<String, dynamic>>> listFiles() async {
     final uri = Uri.parse('$baseUrl/photos?ls');
     final response = await _client.get(uri, headers: _headers);

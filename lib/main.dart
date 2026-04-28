@@ -46,7 +46,7 @@ Future<void> initApp() async {
       await client?.authentificate();
     }
 
-    if (box.get("copypartyUrl") != null) {
+    if (box.get("copypartyUrl") != null && await CopypartyService.isUp()) {
       CopypartyService.init();
     }
 
@@ -72,7 +72,7 @@ void main() async {
   clearMemoryImageCache();
   PaintingBinding.instance.imageCache.maximumSize = 50;
   PaintingBinding.instance.imageCache.maximumSizeBytes = 30 << 20;
-  connectedToInternet = await hasInternet();
+  connectedToInternet = await hasInternet() && await CopypartyService.isUp();
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   await initApp();
 
