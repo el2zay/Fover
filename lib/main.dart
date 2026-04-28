@@ -32,10 +32,9 @@ final ValueNotifier<double> tabBarHeight = ValueNotifier(kBottomNavigationBarHei
 Future<void> initApp() async {
   await PhotoStore.init();
 
-  if (box.get("appToken") != null || box.get("copypartyUrl") != null) {
-
-    // FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
-    
+  if (box.get("appToken") != null || box.get("copypartyUrl") != null) {    
+    connectedToInternet = await CopypartyService.isUp() && await hasInternet();
+     print("Connected to internet: ${await CopypartyService.isUp()} et ${await hasInternet()} donc $connectedToInternet");
     if (box.get("appToken") != null) {
       client = FreeboxClient(
         appToken: box.get("appToken"),
@@ -45,18 +44,20 @@ Future<void> initApp() async {
       );
       await client?.authentificate();
     }
-
-    if (box.get("copypartyUrl") != null && await CopypartyService.isUp()) {
+    if (box.get("copypartyUrl") != null) {
       CopypartyService.init();
     }
 
     showTabBar.value = true;
 
     if (connectedToInternet) {
+      print("ici");
       await PhotoStore.purgeExpired();
       await PhotoStore.existsOnServer();
       if (box.get("appToken") != null ) model = await FreeboxService.getFreeboxModel();
       fetchPhotosDir();
+    } else {
+      print(connectedToInternet);
     }
   }
 }
@@ -72,7 +73,7 @@ void main() async {
   clearMemoryImageCache();
   PaintingBinding.instance.imageCache.maximumSize = 50;
   PaintingBinding.instance.imageCache.maximumSizeBytes = 30 << 20;
-  connectedToInternet = await hasInternet() && await CopypartyService.isUp();
+  connectedToInternet = await CopypartyService.isUp() && await hasInternet();
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   await initApp();
 

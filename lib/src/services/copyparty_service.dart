@@ -82,20 +82,23 @@ class CopypartyService {
   }
 
   static Map<String, String> get _headers => {
-    'Authorization': 'Basic $credentials',
+    'Authorization': 'Basic $credentials', 
   };
 
   static Future<bool> isUp() async {
-    if (baseUrl.isEmpty) return false;
-
     try {
-      final response = await _client.get(
-        Uri.parse("$baseUrl/photo?ls"),
-        headers: _headers,
-      );
-      print(response.statusCode == 200 ? "Copyparty is up!" : "Copyparty check failed: ${response.statusCode}");
-      return response.statusCode == 200;
-    } catch(e) {
+      final rawUrl = box.get("copypartyUrl") as String?;
+      if (rawUrl == null || rawUrl.isEmpty) return false;
+
+      final uri = Uri.parse(rawUrl);
+      final testUri = uri.replace(path: '/');
+      final client = HttpClient()..connectionTimeout = const Duration(seconds: 2);
+      final request = await client.headUrl(testUri);
+      final response = await request.close();
+      await response.drain();
+      client.close();
+      return true;
+    } catch (e) {
       log("Connection check failed: $e");
       return false;
     }
@@ -349,7 +352,7 @@ class CopypartyService {
     }
 
 
-  bool get isConnected => baseUrl.isNotEmpty;
+  static bool get isConnected => baseUrl.isNotEmpty;
 
   static void disconnect() {
     box.delete('copypartyUrl');
