@@ -354,10 +354,10 @@ class CopypartyService {
 
   static bool get isConnected => baseUrl.isNotEmpty;
 
-  static void disconnect() {
-    box.delete('copypartyUrl');
-    box.delete('copypartyUser');
-    box.delete('copypartyPass');
+  static Future<void> disconnect() async {
+    await box.delete('copypartyUrl');
+    await box.delete('copypartyUser');
+    await box.delete('copypartyPass');
     baseUrl = "";
     credentials = "";
   }

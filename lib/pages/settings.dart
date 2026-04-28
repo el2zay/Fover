@@ -184,8 +184,12 @@ class _SettingsPageState extends State<SettingsPage> {
                               child: Text("Log out", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
                               onPressed: () async {
                                 Navigator.pop(context);
-                                CopypartyService.disconnect();
+
+                                await CopypartyService.disconnect();
+                                await box.delete('appToken');
+
                                 showTabBar.value = false;
+
                                 await Future.delayed(const Duration(milliseconds: 100));
                                 Phoenix.rebirth(context);
                               }
