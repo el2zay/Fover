@@ -20,7 +20,16 @@ class AdjustDate extends StatefulWidget {
 
 class _AdjustDateState extends State<AdjustDate> {
   DateTime? newDate;
+  late final DateTime? _originalDisplayDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _originalDisplayDate = widget.photo.displayDate;
+  }
+
   DateTime get localNewDate => newDate ?? PhotoStore.getDate(widget.encodedPath);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,10 +41,7 @@ class _AdjustDateState extends State<AdjustDate> {
             icon: Icon(Icons.close),
             glassIcon: CNSymbol('xmark', size: 16),
             backgroundColor: Colors.transparent,
-            onPressed: () {
-              PhotoStore.update(path: widget.encodedPath, displayDate: widget.initialDate);
-              Navigator.pop(context);
-            }
+            onPressed: () => Navigator.pop(context)
           ),
         ),
         title: Text("Adjust the time and date", style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600)),
@@ -47,7 +53,17 @@ class _AdjustDateState extends State<AdjustDate> {
             ),
             textColor: Colors.blue,
             tint: Colors.blue.withAlpha(230),
-            onPressed: () => Navigator.pop(context)
+            onPressed: () {
+              if (newDate != null) {
+                final isReverted = newDate == widget.photo.date && _originalDisplayDate == null;
+                if (isReverted) {
+                  PhotoStore.update(path: widget.encodedPath, clearDisplayDate: true);
+                } else {
+                  PhotoStore.update(path: widget.encodedPath, displayDate: newDate!);
+                }
+              }
+              Navigator.pop(context);
+            }
           ),
         ],
       ),
@@ -109,8 +125,7 @@ class _AdjustDateState extends State<AdjustDate> {
               timeLabel: "Time",
               onDateTimeChanged: (date) {
                 setState(() => newDate = date);
-                PhotoStore.update(path: widget.encodedPath, displayDate: date,);
-              },
+              }
             ),
           )
         ],
