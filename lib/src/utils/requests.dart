@@ -237,13 +237,11 @@ Future<List<dynamic>> fetchPhotosDir() async {
 }
 
 Future<void> uploadHive() async {
-  print("uploadHive called");
+
   final appDir = (await getApplicationDocumentsDirectory()).path;
   final files = [
     File("$appDir/photos.hive"),
-    File("$appDir/photos.lock"),
     File("$appDir/albums.hive"),
-    File("$appDir/albums.lock")
   ];
 
   switch (detectBackend()) {
@@ -253,10 +251,23 @@ Future<void> uploadHive() async {
 
     case ServerBackend.copyparty:
       for (final file in files) {
+        if (!file.existsSync()) continue;
+
+        final boxName = file.path.split('/').last.replaceAll('.hive', '');
+        if (boxName == "photos" && Hive.isBoxOpen("photos")) {
+          await Hive.box<PhotoEntry>('photos').compact();
+        } else if (boxName == "albums" && Hive.isBoxOpen("albums")) {
+          await Hive.box<AlbumEntry>("albums").compact();
+        }
+
         final filename = file.path.split('/').last;
+
         try {
           await CopypartyService.deleteFile(filename);
-        } catch (_) {}
+        } catch (e) {
+          if (!e.toString().contains('404')) rethrow;
+        }
+
         await CopypartyService.uploadLocalFiles(files: [file]);
       }
       break;
