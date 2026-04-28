@@ -172,6 +172,7 @@ class PhotoStore {
     bool? hidden,
     bool? favorite,
     DateTime? displayDate,
+    bool clearDisplayDate = false,
     String? localPath,
     String? editedForm,
     bool? isOldVersion
@@ -183,7 +184,12 @@ class PhotoStore {
       if (detectedText != null) entry.detectedText = detectedText;
       if (hidden != null) entry.hidden = hidden;
       if (favorite != null) entry.favorite = favorite;
-      if (displayDate != null) entry.displayDate = displayDate;
+
+      if (displayDate != null || clearDisplayDate) {
+        entry.displayDate = clearDisplayDate ? null : displayDate;
+        entry.displayDateUpdatedAt = DateTime.now();
+      }
+
       if (localPath != null) entry.localPath = localPath;
       if (editedForm != null) entry.editedFrom = editedForm;
       if (isOldVersion != null) entry.isOldVersion = isOldVersion;
@@ -477,11 +483,14 @@ class PhotoStore {
       changed = true;
     }
 
-    if (entry.displayDate != null) {
-      if (local.displayDate == null || entry.displayDate!.isAfter(local.displayDate!)) {
-        local.displayDate = entry.displayDate;
-        changed = true;
-      }
+    final localTs = local.displayDateUpdatedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+    final remoteTs = entry.displayDateUpdatedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+
+    final remoteHasChange = entry.displayDate != null || entry.displayDateUpdatedAt != null;
+    if (remoteHasChange && remoteTs.isAfter(localTs)) {
+      local.displayDate = entry.displayDate;
+      local.displayDateUpdatedAt = remoteTs;
+      changed = true;
     }
 
     if (entry.deletedAt != local.deletedAt) {
