@@ -1030,6 +1030,8 @@ class LibraryPageState extends State<LibraryPage> {
 
                             menuProvider: (request) {
                               final isHidden = PhotoStore.get(data.encodedPaths[index])?.hidden == true;
+                              final isFavorite = PhotoStore.get(data.encodedPaths[index])?.favorite == true;
+
                               return widget.album != Album.trash ? Menu(
                                 children: [
                                   MenuAction(
@@ -1062,20 +1064,40 @@ class LibraryPageState extends State<LibraryPage> {
                                         if (bytes != null) await FlutterClipboard.copyImage(bytes);
                                       },
                                     ),
-                                    if (PhotoStore.get(data.encodedPaths[index])?.editedFrom != null)
-                                      MenuAction(
-                                        title: "Revert to original",
-                                        image: MenuImage.icon(CupertinoIcons.arrow_counterclockwise_circle),
-                                        callback: () async {
-                                          await PhotoStore.revertEdit(data.encodedPaths[index]);
-                                          await _refresh();
-                                        },
-                                      ),
+                                  if (PhotoStore.get(data.encodedPaths[index])?.editedFrom != null)
+                                    MenuAction(
+                                      title: "Revert to original",
+                                      image: MenuImage.icon(CupertinoIcons.arrow_counterclockwise_circle),
+                                      callback: () async {
+                                        await PhotoStore.revertEdit(data.encodedPaths[index]);
+                                        await _refresh();
+                                      },
+                                    ),
+                                  // MenuAction(
+                                  //   title: "Duplicate",
+                                  //   image: MenuImage.icon(CupertinoIcons.plus_square_on_square),
+                                  //   callback: () => PhotoStore.duplicate(path: data.encodedPaths[index])
+                                  // ),
+
                                   MenuAction(
-                                    title: "Duplicate",
-                                    image: MenuImage.icon(CupertinoIcons.plus_square_on_square),
-                                    callback: () => PhotoStore.duplicate(path: data.encodedPaths[index])
+                                    title: isFavorite
+                                      ? "Remove from favorites"
+                                      : "Add to favorites",
+                                      image: MenuImage.icon(
+                                        isFavorite
+                                          ? CupertinoIcons.heart_fill
+                                          : CupertinoIcons.heart
+                                      ),
+                                    callback: () {
+                                      PhotoStore.update(path: data.encodedPaths[index], favorite: !isFavorite);
+                                      if (widget.album == Album.favorites) {
+                                        _removeLocally([index]);
+                                      } else {
+                                      setState(() {});
+                                      }
+                                    }
                                   ),
+
                                   MenuAction(
                                     title: "Share",
                                     image: MenuImage.icon(CupertinoIcons.share),
