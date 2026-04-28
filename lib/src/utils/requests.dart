@@ -266,10 +266,17 @@ Future<void> uploadHive() async {
           await CopypartyService.deleteFile(filename);
         } catch (e) {
           final msg = e.toString().toLowerCase();
-          if (!msg.contains('404') && !msg.contains('400') && !msg.contains("not found")) {
-            rethrow;
+
+          final isBlockingError =
+              msg.contains('401') ||
+              msg.contains('403') ||
+              msg.contains('timeout') ||
+              msg.contains('connection refused');
+          
+          if (isBlockingError) rethrow;
+          
+          log('[upload] deleteFile ignored: $msg');
           }
-        }
 
         await CopypartyService.uploadLocalFiles(files: [file]);
       }
