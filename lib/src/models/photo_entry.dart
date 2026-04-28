@@ -11,7 +11,7 @@ class PhotoEntry extends HiveObject {
   final String name;
 
   @HiveField(2)
-  final DateTime date;
+  DateTime date;
 
   @HiveField(3)
   final int size;
