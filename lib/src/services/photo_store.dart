@@ -21,11 +21,12 @@ class PhotoStore {
   static const _deletionDelay = Duration(days:30);
 
   static Timer? _uploadDebounce;
+  static bool merging = false;
   
   static void _scheduleUpload() {
+    if (merging) return;
     _uploadDebounce?.cancel();
     _uploadDebounce = Timer(const Duration(seconds: 5), () {
-      print('_scheduleUpload firing -> uploadHive');
       uploadHive();
     });
   }
@@ -493,7 +494,7 @@ class PhotoStore {
       changed = true;
     }
 
-    if (entry.deletedAt != local.deletedAt) {
+    if (entry.deletedAt != null && local.deletedAt == null) {
       local.deletedAt = entry.deletedAt;
       changed = true;
     }
