@@ -265,7 +265,10 @@ Future<void> uploadHive() async {
         try {
           await CopypartyService.deleteFile(filename);
         } catch (e) {
-          if (!e.toString().contains('404')) rethrow;
+          final msg = e.toString().toLowerCase();
+          if (!msg.contains('404') && !msg.contains('400') && !msg.contains("not found")) {
+            rethrow;
+          }
         }
 
         await CopypartyService.uploadLocalFiles(files: [file]);
