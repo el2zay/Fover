@@ -42,82 +42,47 @@ class PopMenu extends StatelessWidget {
     required this.onSelected
   });
 
-  List<PopMenuAction?> get _actionMap => [
-  PopMenuAction.download,
-  if (showCopy && isViewer) PopMenuAction.copy,
-  if (canRevert) PopMenuAction.revert,
-  if (!isViewer) PopMenuAction.share,
-  if (!isViewer) PopMenuAction.favorite,
-  if (isViewer) PopMenuAction.duplicate,
-  PopMenuAction.hide,
-  PopMenuAction.addToAlbum,
-  if (isViewer) null,
-  if (isViewer) PopMenuAction.adjustDate,
-  if (isViewer) PopMenuAction.adjustLocation,
-
-];
-
   @override
   Widget build(BuildContext context) {
     if (is26OrNewer) {
+        final items = [];
+        final actions = <PopMenuAction?>[];
+
+        void add(dynamic item, PopMenuAction? action) {
+          items.add(item);
+          actions.add(action);
+        }
+
+        add(CNPopupMenuItem(label: isDownloaded ? 'Remove download' : 'Download', icon: CNSymbol('arrow.down.circle', size: 20)), PopMenuAction.download);
+        if (showCopy && isViewer) {
+          add(CNPopupMenuItem(label: 'Copy', icon: CNSymbol('doc.on.doc', size: 20)), PopMenuAction.copy);
+        }
+        if (canRevert) {
+          add(CNPopupMenuItem(label: 'Revert to original', icon: CNSymbol('arrow.counterclockwise.circle')), PopMenuAction.revert);
+        }
+        if (!isViewer) {
+          add(CNPopupMenuItem(label: 'Share', icon: CNSymbol('square.and.arrow.up', size: 20)), PopMenuAction.share);
+        }
+        if (!isViewer) {
+          add(CNPopupMenuItem(label: isFavorite ? 'Remove from favorites' : 'Add to favorites', icon: CNSymbol('heart', size: 18)), PopMenuAction.favorite);
+        }
+        add(CNPopupMenuItem(label: isHidden ? 'Unhide' : 'Hide', icon: CNSymbol(isHidden ? 'eye' : 'eye.slash', size: 20)), PopMenuAction.hide);
+        add(CNPopupMenuItem(label: 'Add to Album', icon: CNSymbol('plus.rectangle.on.rectangle', size: 20)), PopMenuAction.addToAlbum);
+        if (isViewer) {
+          add(CNPopupMenuDivider(), null); 
+          add(CNPopupMenuItem(label: 'Adjust the date and time', icon: CNSymbol('calendar.badge.clock', size: 20)), PopMenuAction.adjustDate);
+          add(CNPopupMenuItem(label: 'Adjust the location', icon: CNSymbol('mappin.circle', size: 20)), PopMenuAction.adjustLocation);
+        }
+
+
       return CNPopupMenuButton.icon(
         size: 40,
         buttonIcon: CNSymbol('ellipsis', size: 15),
-        items: [
-          CNPopupMenuItem(
-              label: isDownloaded ? 'Remove download' : 'Download',
-              icon: CNSymbol('arrow.down.circle', size: 20),
-          ),
-          if (showCopy && isViewer)
-            CNPopupMenuItem(
-              label: 'Copy',
-              icon: CNSymbol('doc.on.doc', size: 20),
-            ),
-          if (canRevert)
-            CNPopupMenuItem(
-              label: 'Revert to original',
-              icon: CNSymbol('arrow.counterclockwise.circle')
-            ),
-          if (!isViewer) 
-            CNPopupMenuItem(
-              label: 'Share',
-              icon: CNSymbol('square.and.arrow.up', size: 20),
-            ),
-          if (!isViewer)
-            CNPopupMenuItem(
-              label: isFavorite ? "Remove from favorites" : "Add to favorites",
-              icon: CNSymbol('heart', size: 18),
-            ),
-          if (isViewer)
-            CNPopupMenuItem(
-              label: 'Duplicate',
-              icon: CNSymbol('plus.square.on.square', size: 20),
-            ),
-          CNPopupMenuItem(
-            label: isHidden ? 'Unhide' : 'Hide',
-            icon: CNSymbol(isHidden ? 'eye' : 'eye.slash', size: 20),
-          ),
-          CNPopupMenuItem(
-            label: 'Add to Album',
-            icon: CNSymbol('plus.rectangle.on.rectangle', size: 20),
-          ),
-          CNPopupMenuDivider(),
-          if (isViewer)...[
-            CNPopupMenuItem(
-              label: 'Adjust the date and time',
-              icon: CNSymbol('calendar.badge.clock', size: 20),
-            ),
-            CNPopupMenuItem(
-              label: 'Adjust the location',
-              icon: CNSymbol('mappin.circle', size: 20),
-            )
-          ]
-        ],
+        items: items.cast(),
         onSelected: (id) {
-          if (_actionMap[id] != null) {
-            onSelected(_actionMap[id]!);
-          }
-        }
+          final action = actions[id];
+          if (action != null) onSelected(action);
+        },
       );
     } else {
       return PullDownButton(
