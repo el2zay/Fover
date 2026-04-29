@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,7 +22,7 @@ class _SearchPageState extends State<SearchPage> {
   final historyBox = Hive.box('searchHistory');
   final _displayController = TextEditingController();
 
-  static const List<Map<String, dynamic>> _exploreItems = [
+  static final List<Map<String, dynamic>> _exploreItems = [
     {
       'key': 'videos',
       'title': 'Videos',
@@ -36,16 +38,18 @@ class _SearchPageState extends State<SearchPage> {
       'title': 'Favorites',
       'icon': CupertinoIcons.heart,
     },
-    {
-      'key': 'detectedText',
-      'title': 'Detected text',
-      'icon': CupertinoIcons.textformat
-    },
+    if (Platform.isIOS || Platform.isMacOS)
+      {
+        'key': 'detectedText',
+        'title': 'Detected text',
+        'icon': CupertinoIcons.textformat
+      },
     {
       'key': 'screenshots',
       'title': 'Screenshots',
       'icon': CupertinoIcons.camera_viewfinder
     },
+    if (Platform.isIOS)
     {
       'key': 'map',
       'title': 'Map',
