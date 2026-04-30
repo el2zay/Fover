@@ -12,8 +12,11 @@ dart run build_runner build --delete-conflicting-outputs
 Fover is a self-hosted photo server that lets you manage and access your photos in one place through a clean. and familiar interface.
 Your photos are automatically synced across all of your devices through your own private server, with no third-party cloud involved, which mean your memories will always stay on your side.
 
+## Demonstration 
+Please check [my youtude video](https://www.youtube.com/watch?v=t_8HsaMlzbc)
 
 ## Features
+- Synchronize data between all your devices
 - Edit your photos and videos (crop, rotate, add filters, etc)
 - Create albums and organize your photos
 - Hide your photos with a password or a biometric lock
