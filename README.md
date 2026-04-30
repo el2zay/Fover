@@ -9,8 +9,7 @@ flutter pub get
 dart run build_runner build --delete-conflicting-outputs
 ``` -->
 
-Fover is a self-hosted photo server that lets you manage and access your photos in one place through a clean. and familiar interface.
-Your photos are automatically synced across all of your devices through your own private server, with no third-party cloud involved, which mean your memories will always stay on your side.
+Fover is an app for your self-hosted photo server that lets you manage and view your photos all in one place, thanks to a clean and intuitive interface. Your photos are automatically synced across all your devices via your own private server, without relying on a third-party cloud service, which means your memories will always be within reach.
 
 ## Demonstration 
 Please check [my youtude video](https://www.youtube.com/watch?v=t_8HsaMlzbc)
