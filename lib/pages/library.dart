@@ -102,7 +102,7 @@ class LibraryPageState extends State<LibraryPage> {
   bool _isAtTop = true;
   _GalleryData? _allData;
   _GalleryData? _filteredData;
-  static final _thumbCache = LruCache<String, Uint8List>(300);
+  static final thumbCache = LruCache<String, Uint8List>(300);
 
   bool selectedMode = false;
   bool _loading = true;
@@ -679,7 +679,7 @@ class LibraryPageState extends State<LibraryPage> {
               ),
             ),
           SizedBox(width: 15),
-          if (widget.album == Album.none && connectedToInternet)...[
+          if (widget.album == Album.none)...[
              widget.albumName == null ?
               Button.iconOnly(
                 icon: const Icon(CupertinoIcons.settings, color: Colors.white),
@@ -1469,14 +1469,14 @@ class _MediaTileState extends State<_MediaTile> {
 @override
   void initState() {
     super.initState();
-    final cached = LibraryPageState._thumbCache.get(widget.encodedPath);
+    final cached = LibraryPageState.thumbCache.get(widget.encodedPath);
     if (cached != null) {
       _thumb = cached;
       return;
     }
     loadThumb().then((bytes) {
       if (bytes != null) {
-          LibraryPageState._thumbCache.put(widget.encodedPath, bytes);
+          LibraryPageState.thumbCache.put(widget.encodedPath, bytes);
       }
       if (mounted) setState(() => _thumb = bytes);
     });
