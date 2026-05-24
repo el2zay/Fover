@@ -13,6 +13,7 @@ import 'package:fover/main.dart';
 import 'package:fover/pages/search.dart';
 import 'package:fover/pages/settings.dart';
 import 'package:fover/pages/viewer.dart';
+import 'package:fover/src/models/photo_entry.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/download.dart';
 import 'package:fover/src/services/fover_picker_delegate.dart';
@@ -43,7 +44,8 @@ enum Album {
   screenshots,
   hidden,
   trash,
-  other
+  other,
+  custom
 }
 
 class LibraryPage extends StatefulWidget {
@@ -52,6 +54,7 @@ class LibraryPage extends StatefulWidget {
   final String? albumName;
   final Album album; 
   final String searchText;
+  final List<PhotoEntry>? photos;
 
 
   const LibraryPage({
@@ -61,6 +64,7 @@ class LibraryPage extends StatefulWidget {
     this.albumName,
     this.album = Album.none,
     this.searchText = "",
+    this.photos,
   });
 
   @override
@@ -364,6 +368,20 @@ class LibraryPageState extends State<LibraryPage> {
           .toList();
     }
 
+      if (widget.photos != null) {
+        _searchIndex = widget.photos!.map((p) => _SearchEntry(
+          encodedPath: p.path,
+          mimetype: p.mimetype ?? 'image/jpeg',
+          searchableText: "",
+          isFavorite: p.favorite == true,
+          isScreenshot: p.isScreenshot == true,
+          hasDetectedText: p.detectedText?.isNotEmpty == true,
+          sortKey: PhotoStore.getDate(p.path).toIso8601String(),
+        )).toList();
+        return;
+      }
+
+
     final filteredEntries = entries.where((entry) {
       final stored = PhotoStore.get(entry['path'] as String);
       if (stored?.isOldVersion == true) return false;
@@ -628,7 +646,7 @@ class LibraryPageState extends State<LibraryPage> {
     return Scaffold(
       extendBody: true,
       extendBodyBehindAppBar: true,
-      appBar: !widget.onlySelect && !widget.searchText.isNotEmpty ? BlurredAppBar(
+      appBar: !widget.onlySelect && widget.album != Album.custom && !widget.searchText.isNotEmpty ? BlurredAppBar(
         automaticallyImplyLeading: widget.album != Album.none || widget.albumName != null,
         title: widget.albumName != null 
           ? widget.albumName! 
@@ -1027,7 +1045,13 @@ class LibraryPageState extends State<LibraryPage> {
                                 ).then((_) => _refresh());
                               }
                             },
-
+                            onDoubleTap: () {
+                              if (widget.album != Album.custom) return;
+                              setState(() {
+                                widget.photos?.removeWhere((p) => p.path == data.encodedPaths[index]);
+                              });
+                              _refresh();
+                            },
                             menuProvider: (request) {
                               final isHidden = PhotoStore.get(data.encodedPaths[index])?.hidden == true;
                               final isFavorite = PhotoStore.get(data.encodedPaths[index])?.favorite == true;
@@ -1227,7 +1251,7 @@ class LibraryPageState extends State<LibraryPage> {
                   ),
                 ),
               ),
-              if (!widget.searchText.isNotEmpty && _pullUpProgress > 0 || _isRefreshing)
+              if (!widget.searchText.isNotEmpty && widget.album != Album.custom && _pullUpProgress > 0 || _isRefreshing)
                 Positioned(
                   bottom:  MediaQuery.of(context).padding.bottom + 10,
                   left: 0,
@@ -1440,6 +1464,7 @@ class _MediaTile extends StatefulWidget {
   final bool trashMode;
   final int? daysLeft;
   final VoidCallback onTap;
+  final VoidCallback? onDoubleTap;
   final MenuProvider menuProvider;
   final int index;
   final String heroPrefix;
@@ -1454,6 +1479,7 @@ class _MediaTile extends StatefulWidget {
     required this.trashMode,
     required this.daysLeft,
     required this.onTap,
+    this.onDoubleTap,
     required this.menuProvider,
     required this.index,
     required this.heroPrefix,
@@ -1542,6 +1568,7 @@ class _MediaTileState extends State<_MediaTile> {
       height: MediaQuery.of(context).size.width / 3 - 2,
       child: GestureDetector(
         onTap: widget.onTap,
+        onDoubleTap: widget.onDoubleTap,
         child: ContextMenuWidget(
           menuProvider: widget.selected ? (_) => null : widget.menuProvider,
           child: Stack(
