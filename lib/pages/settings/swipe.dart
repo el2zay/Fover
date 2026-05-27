@@ -209,7 +209,10 @@ class _SwipePageState extends State<SwipePage> {
             return true;
           },
           onEnd: () {
-            // TODO si y a pas d'élémenets
+            if (selectedPhotos.isEmpty) {
+              Navigator.pop(context);
+              return;
+            }
             Navigator.pushReplacement(
               context, 
               MaterialPageRoute(builder: (_) => ReviewPage(photos: selectedPhotos))
@@ -235,7 +238,7 @@ class _SwipePageState extends State<SwipePage> {
                   top: 20,
                   left: 20,
                   child: AnimatedOpacity(
-                    opacity: percentThresholdX > 1 && percentThresholdX < 600 ? 1 : 0,
+                    opacity: percentThresholdX > 1 && percentThresholdX < 500 ? 1 : 0,
                     duration: Duration(milliseconds: 150),
                     child: Transform.rotate(
                         angle: -pi / 6,
@@ -254,7 +257,7 @@ class _SwipePageState extends State<SwipePage> {
                   top: 30,
                   right: 20,
                   child: AnimatedOpacity(
-                    opacity: percentThresholdX > -600 && percentThresholdX < 0 ? 1 : 0,
+                    opacity: percentThresholdX > -500 && percentThresholdX < 0 ? 1 : 0,
                     duration: Duration(milliseconds: 150),
                     child: Transform.rotate(
                         angle: pi / 6,
@@ -379,6 +382,28 @@ class _ReviewPageState extends State<ReviewPage> {
     return !isDone ? Scaffold(
       appBar: AppBar(
         title: Text("Review", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+        leading: Transform.scale(
+          scale: 0.8,
+          child: Button.iconOnly(
+            icon: Icon(CupertinoIcons.xmark),
+            glassIcon: CNSymbol('xmark', size: 16),
+            onPressed: () => showGeneralDialog(
+              barrierDismissible: false,
+              context: context, 
+              pageBuilder: (context, animation, secondaryAnimation) {
+                return MyDialog(
+                  content: "Are you sure you want to go back? Your current selection will be lost.",
+                  principalButton: TextButton(
+                    child: Text("Go back", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
+                    onPressed: () { 
+                      Navigator.popUntil(context, (route) => route.isFirst);
+                      return;
+                    }
+                  ),
+                );
+              })
+          ),
+        ),
         actions: [
           Button.iconOnly(
             icon: Icon(CupertinoIcons.check_mark, size: 14),
@@ -522,8 +547,9 @@ class _ReviewPageState extends State<ReviewPage> {
                 EdgeInsets.symmetric(horizontal: 80, vertical: 20)
               )
             ),
-            onPressed: () {
+            onPressed: () async {
               Navigator.popUntil(context, (route) => route.isFirst);
+              await libraryKey.currentState?.refresh();
             },
             child: Text("Back to the library", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
