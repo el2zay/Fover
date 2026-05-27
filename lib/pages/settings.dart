@@ -1,10 +1,12 @@
 import 'dart:io';
 
+import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:cupertino_native_better/style/sf_symbol.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/main.dart';
+import 'package:fover/pages/settings/swipe.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/widgets/button.dart';
@@ -109,6 +111,19 @@ class _SettingsPageState extends State<SettingsPage> {
                     )
                   ),
                   SizedBox(height: 5),
+                  ListTile(
+                    leading: Icon(CupertinoIcons.wifi_slash),
+                    title: Text("Offline mode"),
+                    subtitle: Text("Access to your downloaded medias directly"),
+                    trailing: CNSwitch(
+                      value: box.get('offlineMode', defaultValue: false),
+                      color: CupertinoColors.activeGreen,
+                      onChanged: (value) {
+                        box.put('offlineMode', value);
+                        setState(() {});
+                      }
+                    ),
+                  ),
                   if (detectBackend() == ServerBackend.freebox)
                     ListTile(
                       leading: Icon(CupertinoIcons.folder),
@@ -123,21 +138,44 @@ class _SettingsPageState extends State<SettingsPage> {
                       },
                     ),
                   ListTile(
-                    leading: Icon(CupertinoIcons.globe),
-                    title: Text("Language"),
-                    trailing: Icon(CupertinoIcons.chevron_forward),
+                    leading: Icon(Icons.swipe_outlined),
+                    title: Text("Cleaner"),
+                    trailing: Icon(CupertinoIcons.chevron_forward, color: Colors.grey.withAlpha(150)),
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("Available in a future update!"),
-                        )
+                      Navigator.push(
+                        context, 
+                        MaterialPageRoute(builder: (context) => PopScope(
+                          canPop: false,
+                          child: SwipePage()
+                        ))
                       );
                     },
                   ),
                   ListTile(
-                    leading: Icon(Icons.swipe_outlined),
-                    title: Text("Swipe cards"),
-                    trailing: Icon(CupertinoIcons.chevron_forward),
+                    leading: Icon(CupertinoIcons.paintbrush),
+                    title: Text("Style"),
+                    trailing: Icon(CupertinoIcons.chevron_forward, color: Colors.grey.withAlpha(150)),
+                    onTap: () {
+                      Navigator.push(
+                        context, 
+                        MaterialPageRoute(builder: (context) => PopScope(
+                          canPop: false,
+                          child: SwipePage()
+                        ))
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(CupertinoIcons.arrow_up_to_line_alt),
+                    title: Text("Import"),
+                    trailing: Icon(CupertinoIcons.chevron_forward, color: Colors.grey.withAlpha(150)),
+                    onTap: () {
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(CupertinoIcons.globe),
+                    title: Text("Language"),
+                    trailing: Icon(CupertinoIcons.chevron_forward, color: Colors.grey.withAlpha(150)),
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -156,7 +194,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         )
                       );
                     },
-                    trailing: Icon(CupertinoIcons.chevron_forward),
+                    trailing: Icon(CupertinoIcons.chevron_forward, color: Colors.grey.withAlpha(150)),
                   ),
                   ListTile(
                     leading: Icon(Icons.lightbulb_outline),
@@ -168,7 +206,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         )
                       );
                     },
-                    trailing: Icon(CupertinoIcons.chevron_forward),
+                    trailing: Icon(CupertinoIcons.chevron_forward, color: Colors.grey.withAlpha(150)),
                   ),
                   ListTile(
                     leading: Icon(Icons.logout, color: Colors.red[600]),
