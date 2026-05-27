@@ -128,7 +128,30 @@ class _SwipePageState extends State<SwipePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // TODO lorsque l'on clique sur le trailing, afficher un avertissement.
+        leading: IconButton(
+          icon: Icon(Icons.close),
+          onPressed: () {
+            if (selectedPhotos.isNotEmpty) {
+              showGeneralDialog(
+                context: context,
+                pageBuilder: (context, animation, secondaryAnimation) {
+                  return MyDialog(
+                    content: "Are you sure you want to exit? Your current selection will be lost.",
+                    principalButton: TextButton(
+                      child: Text("Exit", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
+                      onPressed: () { 
+                        Navigator.of(context).pop();
+                        return;
+                      }
+                    ),
+                  );
+                }
+              );
+            }
+            Navigator.of(context).pop();
+          }
+          
+        ),
         title: CNPopupMenuButton(
           tint: Theme.of(context).primaryColor,
           buttonStyle: CNButtonStyle.glass,
@@ -186,6 +209,7 @@ class _SwipePageState extends State<SwipePage> {
             return true;
           },
           onEnd: () {
+            // TODO si y a pas d'élémenets
             Navigator.pushReplacement(
               context, 
               MaterialPageRoute(builder: (_) => ReviewPage(photos: selectedPhotos))
@@ -499,10 +523,7 @@ class _ReviewPageState extends State<ReviewPage> {
               )
             ),
             onPressed: () {
-              Navigator.pushReplacement(
-                context, 
-                MaterialPageRoute(builder: (_) => LibraryPage())
-              );
+              Navigator.popUntil(context, (route) => route.isFirst);
             },
             child: Text("Back to the library", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
