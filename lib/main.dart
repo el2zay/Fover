@@ -87,9 +87,9 @@ class MainApp extends StatefulWidget {
   State<MainApp> createState() => _MainAppState();
 }
 
+final GlobalKey<LibraryPageState> libraryKey = GlobalKey<LibraryPageState>();
 class _MainAppState extends State<MainApp> {
   int _currentIndex = 0;
-  final GlobalKey<LibraryPageState> libraryKey = GlobalKey<LibraryPageState>();
 
   bool get isLoggedIn => box.get("appToken") != null || box.get("copypartyUrl") != null;
 
