@@ -116,7 +116,7 @@ class LibraryPageState extends State<LibraryPage> {
   final ScrollController _scrollController = ScrollController();
   bool _isRefreshing = false;
   double _pullUpProgress = 0.0;
-  static const double _refreshThreshold = 160.0;
+  static const double refreshThreshold = 160.0;
   final ValueNotifier<bool> _isDragging = ValueNotifier(false);
   List<_SearchEntry> _searchIndex = [];
   String get _heroPrefix => widget.searchText.isEmpty ? 'library' : 'search';
@@ -219,7 +219,7 @@ class LibraryPageState extends State<LibraryPage> {
           break;
       }
 
-      await _refresh();
+      await refresh();
     } catch (e) {
       final content = e.toString().contains("PermissionState.denied") 
         ? "Fover does not have permission to access your gallery." 
@@ -519,7 +519,7 @@ class LibraryPageState extends State<LibraryPage> {
   // }
 
 
-  Future<void> _refresh() async {
+  Future<void> refresh() async {
     await _buildSearchIndex();
     await _applyFilter();
 
@@ -768,7 +768,7 @@ class LibraryPageState extends State<LibraryPage> {
                             for (final path in paths) {
                               PhotoStore.addToAlbum(path: path, album: widget.albumName!);
                             }
-                            _refresh();
+                            refresh();
                             countSelected.value = paths.length;
                           },
                         ),
@@ -846,7 +846,7 @@ class LibraryPageState extends State<LibraryPage> {
                 });
               }
             }
-            await _refresh();
+            await refresh();
           }
         },
         child: Builder(
@@ -882,7 +882,7 @@ class LibraryPageState extends State<LibraryPage> {
             });
             HapticFeedback.mediumImpact();
             await syncHive();
-            await _refresh();
+            await refresh();
             if (mounted) {
               setState(() {
                 _isRefreshing = false;
@@ -916,9 +916,9 @@ class LibraryPageState extends State<LibraryPage> {
                     notification.metrics.pixels > notification.metrics.maxScrollExtent) {
                       final excess = notification.metrics.pixels - notification.metrics.maxScrollExtent;
                       setState(() {
-                        _pullUpProgress = (excess / _refreshThreshold).clamp(0.0, 1.0);
+                        _pullUpProgress = (excess / refreshThreshold).clamp(0.0, 1.0);
                       });
-                      if (excess >= _refreshThreshold) {
+                      if (excess >= refreshThreshold) {
                         triggerPullRefresh();
                       }
                     }
@@ -1032,7 +1032,7 @@ class LibraryPageState extends State<LibraryPage> {
                                       index: index,
                                       encodedPaths: data.encodedPaths,
                                       trashMode: widget.album == Album.trash,
-                                      onRefresh: _refresh,
+                                      onRefresh: refresh,
                                       heroPrefix: _heroPrefix,
                                     ),
                                     transitionsBuilder: (_, animation, __, child) {
@@ -1042,7 +1042,7 @@ class LibraryPageState extends State<LibraryPage> {
                                     );
                                     },
                                   ),
-                                ).then((_) => _refresh());
+                                ).then((_) => refresh());
                               }
                             },
                             onDoubleTap: () {
@@ -1050,7 +1050,10 @@ class LibraryPageState extends State<LibraryPage> {
                               setState(() {
                                 widget.photos?.removeWhere((p) => p.path == data.encodedPaths[index]);
                               });
-                              _refresh();
+                              refresh();
+                              if (widget.photos == null || widget.photos!.isEmpty) {
+                                Navigator.pop(context);
+                              }
                             },
                             menuProvider: (request) {
                               final isHidden = PhotoStore.get(data.encodedPaths[index])?.hidden == true;
@@ -1094,7 +1097,7 @@ class LibraryPageState extends State<LibraryPage> {
                                       image: MenuImage.icon(CupertinoIcons.arrow_counterclockwise_circle),
                                       callback: () async {
                                         await PhotoStore.revertEdit(data.encodedPaths[index]);
-                                        await _refresh();
+                                        await refresh();
                                       },
                                     ),
                                   // MenuAction(
@@ -1375,7 +1378,7 @@ class LibraryPageState extends State<LibraryPage> {
                                         for (final i in selectedImages) {
                                           await PhotoStore.duplicate(path: data.encodedPaths[i]);
                                         }
-                                        _refresh();
+                                        refresh();
                                         break;
                                       case PopMenuAction.hide:
                                         for (final i in selectedImages) {
