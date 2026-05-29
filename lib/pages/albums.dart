@@ -420,7 +420,7 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
     return Scaffold(
       appBar: AppBar(
         leading: Transform.scale(
-          scale: 0.8,
+          scale: 0.7,
           child: Button.iconOnly(
             icon: Icon(Icons.close),
             glassIcon: CNSymbol('xmark', size: 16),
@@ -502,8 +502,7 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
                     builder: (context) {
                       return Scaffold(
                         appBar: AppBar(
-                          leading: 
-                          Transform.scale(
+                          leading: Transform.scale(
                             scale: 0.9,
                             child: Button.iconOnly(
                                 icon: Icon(Icons.close, size: 16),

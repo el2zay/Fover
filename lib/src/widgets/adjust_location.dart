@@ -105,7 +105,7 @@ class _AdjustLocationState extends State<AdjustLocation> {
       appBar: AppBar(
         centerTitle: true,
         leading: Transform.scale(
-          scale: 0.8,
+          scale: 0.7,
           child: Button.iconOnly(
             icon: Icon(Icons.close),
             glassIcon: CNSymbol('xmark', size: 16),
