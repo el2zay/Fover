@@ -67,6 +67,7 @@ flutter:
     - assets/icons/editor/
     - assets/illustrations/
     - assets/illustrations/freebox/
+    - assets/illustrations/style/
 
 flutter_native_splash:
   color: "#FFFFFF"
