@@ -178,7 +178,7 @@ class CopypartyService {
     log('Delete response: ${response.statusCode} ${response.body}');
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Failed to delete: ${response.statusCode} ${response.body}');
+      log('Failed to delete: ${response.statusCode} ${response.body}');
     }
   }
 
