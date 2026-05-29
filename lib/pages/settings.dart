@@ -1,11 +1,11 @@
 import 'dart:io';
 
 import 'package:cupertino_native_better/cupertino_native.dart';
-import 'package:cupertino_native_better/style/sf_symbol.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/main.dart';
+import 'package:fover/pages/settings/style.dart';
 import 'package:fover/pages/settings/swipe.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/utils/common_utils.dart';
@@ -45,17 +45,20 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Settings", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-        leading: Row(
+        leading: box.get("navBarStyle") != 0 ? Row(
           children: [
-            Button.iconOnly(
-              icon: Icon(Icons.close),
-              glassIcon: CNSymbol('xmark', size: 14),
-               onPressed: () {
-                Navigator.pop(context);
-               },
+            Transform.scale(
+              scale: 0.7,
+              child: Button.iconOnly(
+                icon: Icon(Icons.close),
+                glassIcon: CNSymbol('xmark', size: 14),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
             ),
           ],
-        ),
+        ) : null,
       ),
       body: SafeArea(
         child: Column(
@@ -158,10 +161,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     onTap: () {
                       Navigator.push(
                         context, 
-                        MaterialPageRoute(builder: (context) => PopScope(
-                          canPop: false,
-                          child: SwipePage()
-                        ))
+                        MaterialPageRoute(builder: (context) => StylePage())
                       );
                     },
                   ),
