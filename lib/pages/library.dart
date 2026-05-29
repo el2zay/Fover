@@ -698,7 +698,7 @@ class LibraryPageState extends State<LibraryPage> {
             ),
           SizedBox(width: 15),
           if (widget.album == Album.none)...[
-             widget.albumName == null ?
+             widget.albumName == null && box.get("navBarStyle") != 0 ?
               Button.iconOnly(
                 icon: const Icon(CupertinoIcons.settings, color: Colors.white),
                 glassIcon: CNSymbol('gear', size: 17),
@@ -1254,6 +1254,46 @@ class LibraryPageState extends State<LibraryPage> {
                   ),
                 ),
               ),
+              if (widget.album == Album.custom)
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Container(
+                    padding: EdgeInsets.all(10),
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black87,
+
+                        ]
+                      )
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Changed your mind?", 
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600
+                          ),
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          "Double tap on the images you want to keep", 
+                          style: TextStyle(
+                            fontSize: 16,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 10),
+                      ],
+                    )
+                  ),
+                ),
               if (!widget.searchText.isNotEmpty && widget.album != Album.custom && _pullUpProgress > 0 || _isRefreshing)
                 Positioned(
                   bottom:  MediaQuery.of(context).padding.bottom + 10,
@@ -1325,7 +1365,7 @@ class LibraryPageState extends State<LibraryPage> {
                                 icon: Icon(CupertinoIcons.arrow_up_bin, size: 20),
                                 tint: Theme.of(context).scaffoldBackgroundColor,
                               ) : PopMenu(
-                                  scale: 0.85,
+                                  scale: 0.75,
                                   showCopy: false,
                                   isViewer: false,
                                   isDownloaded: selectedImages.every((i) => DownloadService.isDownloaded(data.encodedPaths[i])),
@@ -1690,7 +1730,7 @@ class _AddToAlbumSheetState extends State<AddToAlbumSheet> {
       appBar: AppBar(
         centerTitle: true,
         leading: Transform.scale(
-          scale: 0.8,
+          scale: 0.7,
           child: Button.iconOnly(
             icon: Icon(Icons.close),
             glassIcon: CNSymbol('xmark', size: 16),
