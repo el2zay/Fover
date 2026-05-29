@@ -111,46 +111,58 @@ class _SwipePageState extends State<SwipePage> {
   Future<void> _loadImageFor(PhotoEntry photo, ValueNotifier<Uint8List?> notifier) async {
     final cached = LibraryPageState.thumbCache.get(photo.path);
     if (cached != null) {
+      if (!mounted) return;
       notifier.value = cached;
     } else {
       final thumb = await fetchImageBytes(photo.path, photo.mimetype ?? 'image/jpeg');
       if (thumb != null) {
+        if (!mounted) return;
         LibraryPageState.thumbCache.put(photo.path, thumb);
         notifier.value = thumb;
       }
     }
-
+  
     final full = await fetchFullBytes(photo.path);
-    if (full != null) notifier.value = full;
+    if (full != null) {
+      if (!mounted) return;
+      notifier.value = full;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.close),
-          onPressed: () {
-            if (selectedPhotos.isNotEmpty) {
-              showGeneralDialog(
-                context: context,
-                pageBuilder: (context, animation, secondaryAnimation) {
-                  return MyDialog(
-                    content: "Are you sure you want to exit? Your current selection will be lost.",
-                    principalButton: TextButton(
-                      child: Text("Exit", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
-                      onPressed: () { 
-                        Navigator.of(context).pop();
-                        return;
-                      }
-                    ),
-                  );
-                }
-              );
+        leading: Transform.scale(
+          scale: 0.7,
+          child: Button.iconOnly(
+            icon: Icon(CupertinoIcons.xmark),
+            glassIcon: CNSymbol('xmark', size: 16),
+            onPressed: () {
+              if (selectedPhotos.isNotEmpty) {
+                showGeneralDialog(
+                  barrierDismissible: false,
+                  context: context,
+                  pageBuilder: (context, animation,   secondaryAnimation) {
+                    return MyDialog(
+                      content: "Are you sure you want to exit? Your current selection will be lost.",
+                      principalButton: TextButton(
+                        child: Text("Exit", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
+                        onPressed: () { 
+                          Navigator.pop(context);
+                          Future.delayed(Duration(milliseconds: 150), () {
+                            Navigator.pop(context);
+                          });
+                        }
+                      ),
+                    );
+                  }
+                );
+              } else {
+                Navigator.of(context).pop();
+              }
             }
-            Navigator.of(context).pop();
-          }
-          
+          ),
         ),
         title: CNPopupMenuButton(
           tint: Theme.of(context).primaryColor,
@@ -166,20 +178,28 @@ class _SwipePageState extends State<SwipePage> {
           }
         ),
         actions: [
-          Button.iconOnly(
-            enabled: selectedPhotos.isNotEmpty,
-            icon: Icon(CupertinoIcons.check_mark, size: 14),
-            glassIcon: CNSymbol('checkmark', size: 14),
-            glassConfig: CNButtonConfig(
-              style: CNButtonStyle.prominentGlass,
-            ),
-            tint: Colors.blue,
-            backgroundColor: Colors.blue,
-            onPressed: () => Navigator.pushReplacement(
-              context, 
-              MaterialPageRoute(builder: (_) => ReviewPage(photos: selectedPhotos))
-            ),
-          )
+          Transform.scale(
+            scale: 0.8,
+             child: Button.iconOnly(
+              enabled: selectedPhotos.isNotEmpty,
+              icon: Icon(CupertinoIcons.check_mark, size: 14),
+              glassIcon: CNSymbol('checkmark', size: 14),
+              glassConfig: CNButtonConfig(
+                style: CNButtonStyle.prominentGlass,
+              ),
+              tint: Colors.blue,
+              backgroundColor: Colors.blue,
+              onPressed: () => Navigator.pushReplacement(
+                context, 
+                MaterialPageRoute(
+                  builder: (_) => PopScope(
+                    canPop: false,
+                    child: ReviewPage(photos: selectedPhotos)
+                  )
+                ),
+              ),
+            )
+          ),
         ],
       ),
       body: _photos.isEmpty 
@@ -202,10 +222,9 @@ class _SwipePageState extends State<SwipePage> {
           onUndo: (currentIndex, previousIndex, _) {
             if (currentIndex != null) {
               setState(() {
-                selectedPhotos.remove(_photos[currentIndex]);
+                selectedPhotos.remove(_photos[previousIndex]);
               });
             }
-
             return true;
           },
           onEnd: () {
@@ -383,7 +402,7 @@ class _ReviewPageState extends State<ReviewPage> {
       appBar: AppBar(
         title: Text("Review", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
         leading: Transform.scale(
-          scale: 0.8,
+          scale: 0.7,
           child: Button.iconOnly(
             icon: Icon(CupertinoIcons.xmark),
             glassIcon: CNSymbol('xmark', size: 16),
