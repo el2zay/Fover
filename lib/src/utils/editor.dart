@@ -666,14 +666,22 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                                 children: [
                                   GestureDetector(
                                     onTap: () {
-                                      _iosColorPickerController.showNativeIosColorPicker(
-                                        startingColor: _currentColor,
-                                        darkMode: Theme.of(context).brightness == Brightness.dark,
-                                        onColorChanged: (color) {
-                                          setState(() => _currentColor = color);
-                                          paintEditor.setColor(color);
-                                        }
-                                      );
+                                      (Platform.isIOS) 
+                                        ? _iosColorPickerController.showNativeIosColorPicker(
+                                          startingColor: _currentColor,
+                                          darkMode: Theme.of(context).brightness == Brightness.dark,
+                                          onColorChanged: (color) {
+                                            setState(() => _currentColor = color);
+                                            paintEditor.setColor(color);
+                                          }
+                                        ) : _iosColorPickerController.showIOSCustomColorPicker(
+                                          context: context,
+                                          startingColor: _currentColor,
+                                          onColorChanged: (color) {
+                                            setState(() => _currentColor = color);
+                                            paintEditor.setColor(color);
+                                          }
+                                         );
                                     },
                                     child: Stack(
                                       alignment: Alignment.center,
