@@ -10,6 +10,7 @@ import 'package:fover/pages/albums.dart';
 import 'package:fover/pages/onboarding/first.dart';
 import 'package:fover/pages/library.dart';
 import 'package:fover/pages/search.dart';
+import 'package:fover/pages/settings.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/freebox_service.dart';
 import 'package:fover/src/services/photo_store.dart';
@@ -49,6 +50,15 @@ Future<void> initApp() async {
     if (box.get("copypartyUrl") != null) {
       CopypartyService.init();
     }
+
+    if (box.get("navBarStyle") == null) {
+      box.put("navBarStyle", 0);
+    }
+
+    if (box.get("primaryColor") == null) {
+      box.put("primaryColor", CupertinoColors.activeBlue);
+    }
+
 
     if (connectedToInternet) {
       await PhotoStore.purgeExpired();
@@ -110,7 +120,8 @@ class _MainAppState extends State<MainApp> {
               children:  [
                 LibraryPage(key: libraryKey, onlySelect: false),
                 SafeArea(child: AlbumsPage()),
-                SearchPage()
+                box.get("navBarStyle") == 0 ? SettingsPage() : SearchPage(),
+                box.get("navBarStyle") == 0 ? SearchPage() : Container(),
               ],
             ),
 
@@ -122,7 +133,58 @@ class _MainAppState extends State<MainApp> {
               if (!loggedIn || !tabBarVisible) {
                 child = const SizedBox.shrink(key: ValueKey('empty'));
               } else {
-                child = is26OrNewer
+                child = is26OrNewer && box.get("navBarStyle") == 0 ?
+                  CNTabBar(
+                    key: const ValueKey('tabbar'),
+                    tint: Colors.blue,
+                    iconSize: 18,
+                    items: [
+                      // CupertinoIcons.gear
+                      CNTabBarItem(
+                        label: 'Library',
+                        icon: CNSymbol('photo.fill.on.rectangle.fill'),
+                      ),
+                      CNTabBarItem(
+                        label: 'Albums',
+                        icon: CNSymbol('rectangle.stack.fill'),
+                      ),
+                      CNTabBarItem(
+                        label: 'Settings',
+                        icon: CNSymbol('gear'),
+                      ),
+                      // CNTabBarItem(
+                      //   label: 'Search',
+                      //   icon: CNSymbol('magnifyingglass'),
+                      // ),
+                    ],
+                    currentIndex: _currentIndex,
+                    onTap: (i) {
+                      if (i == 0 && _currentIndex == 0) {
+                        libraryKey.currentState?.scrollToBottom();
+                      }
+                      setState(() => _currentIndex = i);
+                    },
+                    searchItem: CNTabBarSearchItem(
+                      icon: CNSymbol(
+                        'magnifyingglass',
+                        color: _currentIndex == 3 ? Colors.blue : null,
+                      ),
+                      onSearchChanged: (query) {
+                        searchQuery.value = query;
+                      },
+                      onSearchSubmit: (query) {
+                        searchQuery.value = query;
+                      },
+                      onSearchActiveChanged: (isActive) {
+                        if (isActive) {
+                          setState(() {
+                            _currentIndex = 3;
+                          });
+                        }
+                      },
+                    ),
+                  )
+                : is26OrNewer && box.get("navBarStyle") == 1
                   ? CNTabBar(
                       key: const ValueKey('tabbar'),
                       tint: Colors.blue,
