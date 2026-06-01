@@ -7,6 +7,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:fover/main.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
@@ -317,33 +318,34 @@ class CopypartyService {
   //
 
   static Future<Map<String, dynamic>?> getDiskUsage() async {
+    if (!connectedToInternet) return null;
       final response = await _client.get(
-        Uri.parse("$baseUrl/photos?ls"),
-        headers: _headers
-      );
+      Uri.parse("$baseUrl/photos?ls"),
+      headers: _headers
+    );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final srvinf = data['srvinf'];
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final srvinf = data['srvinf'];
 
-        // AI Notice : Thank you Claude for the regex
-        final match = RegExp(r'([\d.]+)\s*(\w+)\s*free of\s*([\d.]+)\s*(\w+)').firstMatch(srvinf);
-        if (match != null ) {
-          final freeVal = double.parse(match.group(1) ?? "");
-          final freeUnit = match.group(2) ?? "";
-          final totalVal = double.parse(match.group(3) ?? "");
-          final totalUnit = match.group(4) ?? "";
+      // AI Notice : Thank you Claude for the regex
+      final match = RegExp(r'([\d.]+)\s*(\w+)\s*free of\s*([\d.]+)\s*(\w+)').firstMatch(srvinf);
+      if (match != null ) {
+        final freeVal = double.parse(match.group(1) ?? "");
+        final freeUnit = match.group(2) ?? "";
+        final totalVal = double.parse(match.group(3) ?? "");
+        final totalUnit = match.group(4) ?? "";
 
-          return {
-            "free" : _toBytes(freeVal, freeUnit),
-            "total": _toBytes(totalVal, totalUnit)
-          };
-        }
-        return data;
-      } else {
-        log("Failed to get disk usage: ${response.statusCode} ${response.body}");
-        return null;
+        return {
+          "free" : _toBytes(freeVal, freeUnit),
+          "total": _toBytes(totalVal, totalUnit)
+        };
       }
+      return data;
+    } else {
+      log("Failed to get disk usage: ${response.statusCode} ${response.body}");
+      return null;
+    }
   }
 
     static int _toBytes(double value, String unit) {
