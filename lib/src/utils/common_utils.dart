@@ -72,7 +72,7 @@ String formatSize(int size) {
 }
 
 Future<bool> hasInternet({bool? withBox}) async {
-  if (withBox != false && box.get("offlineMode") == false) return false;
+  if (withBox != false && box.get("offlineMode") == true) return false;
   
   try {
     final result = await InternetAddress.lookup('example.com');
