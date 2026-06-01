@@ -1,9 +1,6 @@
-import 'dart:io';
-
 import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/main.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:ios_color_picker/show_ios_color_picker.dart';
@@ -16,14 +13,20 @@ class StylePage extends StatefulWidget {
 }
 
 class _StylePageState extends State<StylePage> {
-  int navBar = box.get("navBarStyle");
+  final int navBar = box.get("navBarStyle");
+  final Color primaryColor = box.get("primaryColor");
   final _iosColorPickerController = IOSColorPickerController();
+  int _currentNavBar = box.get("navBarStyle");
   Color _currentColor = box.get("primaryColor");
 
   @override
   void dispose() {
     _iosColorPickerController.dispose();
     super.dispose();
+  }
+
+  bool hasChanges() {
+    return navBar != box.get("navBarStyle") || primaryColor != box.get("primaryColor");
   }
 
   @override
@@ -38,8 +41,13 @@ class _StylePageState extends State<StylePage> {
             glassIcon: CNSymbol('chevron.left', size: 20),
             backgroundColor: Colors.transparent,
             onPressed: () {
-              box.put("navBarStyle", navBar);
-              Phoenix.rebirth(context);
+              box.put("navBarStyle", _currentNavBar);
+              box.put("primaryColor", _currentColor);
+              if (hasChanges()) {
+                Navigator.popUntil(context, (route) => route.isFirst);
+              } else {
+                Navigator.pop(context);
+              }
             }
           )
         ),
@@ -113,7 +121,7 @@ class _StylePageState extends State<StylePage> {
                 children: [
                   GestureDetector(
                     onTap: () {
-                      setState(() => navBar = 0);
+                      setState(() => _currentNavBar = 0);
                     },
                     child: Column(
                       children: [
@@ -121,7 +129,7 @@ class _StylePageState extends State<StylePage> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 15, vertical: 5),
                           decoration: BoxDecoration(
-                            color: navBar == 0
+                            color: _currentNavBar == 0
                               ? Colors.lightBlue[700]
                               : null,
                             borderRadius: BorderRadius.circular(30)
@@ -136,7 +144,7 @@ class _StylePageState extends State<StylePage> {
                   ),
                   GestureDetector(
                     onTap: () {
-                      setState(() => navBar = 1);
+                      setState(() => _currentNavBar = 1);
                     },
                     child: Column(
                       children: [
@@ -144,7 +152,7 @@ class _StylePageState extends State<StylePage> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 15, vertical: 5),
                           decoration: BoxDecoration(
-                            color: navBar == 1
+                            color: _currentNavBar == 1
                               ? Colors.lightBlue[700]
                               : null,
                             borderRadius: BorderRadius.circular(30)
@@ -163,7 +171,7 @@ class _StylePageState extends State<StylePage> {
               Center(
                 child: GestureDetector(
                   onTap: () {
-                    setState(() => navBar = 2);
+                    setState(() => _currentNavBar = 2);
                   },
                   child: Column(
                     children: [
@@ -172,7 +180,7 @@ class _StylePageState extends State<StylePage> {
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 15, vertical: 5),
                         decoration: BoxDecoration(
-                          color: navBar == 2
+                          color: _currentNavBar == 2
                             ? Colors.lightBlue[700]
                             : null,
                           borderRadius: BorderRadius.circular(30)
