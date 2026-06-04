@@ -14,7 +14,7 @@ import 'package:fover/src/utils/requests.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/dialog.dart';
 
-enum SwipeFilter { library, favorites, album, month, year }
+enum SwipeFilter { library, favorites, album, month, year, size }
 
 class SwipePage extends StatefulWidget {
   final SwipeFilter filter;
@@ -38,12 +38,27 @@ class _SwipePageState extends State<SwipePage> {
   List<PhotoEntry> _photos = [];
   List<PhotoEntry> selectedPhotos = [];
   final Map<String, ValueNotifier<Uint8List?>> _imageCache = {};
-
   final CardSwiperController _swipeController = CardSwiperController();
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    isLoading = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showGeneralDialog(
+        barrierDismissible: false,
+        context: context,
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return MyDialog(
+            content: "Please wait while the medias are loading...",
+            onCancel: () {
+              Navigator.pop(context);
+            },
+          );
+        }
+      );
+    });
     _loadPhotos();
   }
 
@@ -56,7 +71,7 @@ class _SwipePageState extends State<SwipePage> {
     super.dispose();
   }
 
-    void _loadPhotos() {
+  void _loadPhotos() {
     List<PhotoEntry> photos;
 
     switch (widget.filter) {
@@ -91,22 +106,26 @@ class _SwipePageState extends State<SwipePage> {
           return date.year == widget.year;
         }).toList();
         break;
+
+      case SwipeFilter.size:
+        photos = PhotoStore.getAll()..sort((a, b) => b.size.compareTo(a.size));
+        break;
     }
 
     setState(() => _photos = photos);
     _preloadAhead(0, count: 10);
   }
 
-    void _preloadAhead(int currentIndex, {int count = 5}) {
-      for (int i = currentIndex; i < (currentIndex + count).clamp(0, _photos.length); i++) {
-        final path = _photos[i].path;
-        if (!_imageCache.containsKey(path)) {
-          final notifier = ValueNotifier<Uint8List?>(null);
-          _imageCache[path] = notifier;
-          _loadImageFor(_photos[i], notifier);
-        }
+  void _preloadAhead(int currentIndex, {int count = 5}) {
+    for (int i = currentIndex; i < (currentIndex + count).clamp(0, _photos.length); i++) {
+      final path = _photos[i].path;
+      if (!_imageCache.containsKey(path)) {
+        final notifier = ValueNotifier<Uint8List?>(null);
+        _imageCache[path] = notifier;
+        _loadImageFor(_photos[i], notifier);
       }
     }
+  }
 
   Future<void> _loadImageFor(PhotoEntry photo, ValueNotifier<Uint8List?> notifier) async {
     final cached = LibraryPageState.thumbCache.get(photo.path);
@@ -121,11 +140,17 @@ class _SwipePageState extends State<SwipePage> {
         notifier.value = thumb;
       }
     }
-  
+
     final full = await fetchFullBytes(photo.path);
     if (full != null) {
       if (!mounted) return;
       notifier.value = full;
+
+      if (isLoading) {
+        isLoading = false;
+        Navigator.of(context, rootNavigator: true).pop(); 
+        setState(() {});
+      }
     }
   }
 
@@ -136,8 +161,8 @@ class _SwipePageState extends State<SwipePage> {
         leading: Transform.scale(
           scale: 0.7,
           child: Button.iconOnly(
-            icon: Icon(CupertinoIcons.xmark),
-            glassIcon: CNSymbol('xmark', size: 16),
+            icon: Icon(CupertinoIcons.chevron_left),
+            glassIcon: CNSymbol('chevron.left', size: 16),
             onPressed: () {
               if (selectedPhotos.isNotEmpty) {
                 showGeneralDialog(
@@ -471,8 +496,9 @@ class _ReviewPageState extends State<ReviewPage> {
           backgroundColor: Colors.indigo[900],
           automaticallyImplyLeading: false,
           toolbarHeight: height * 0.15,
-          title: Text("You did a great job!", 
-          style: TextStyle(fontSize: width * 0.1, fontWeight: FontWeight.w600)
+          title: Text(
+            "You did a great job!", 
+            style: TextStyle(fontSize: width * 0.1, fontWeight: FontWeight.w600)
           )
         ),
       body: done()
