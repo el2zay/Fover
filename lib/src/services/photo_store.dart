@@ -535,6 +535,29 @@ class PhotoStore {
       e.longitude != null,
     ).toList();
 
+  static List<DateTime> getAvailableMonths() {
+    final months = _photoBox.values.where((e) => e.deletedAt == null).
+      map((e) => DateTime(e.date.year, e.date.month)).toSet().toList();
+    months.sort((a, b) => b.compareTo(a));
+    return months;
+  }
+
+  static List<DateTime> getAvailableYears() {
+    final years = _photoBox.values.where((e) => e.deletedAt == null).
+      map((e) => DateTime(e.date.year)).toSet().toList();
+    years.sort((a, b) => b.compareTo(a));
+    return years;
+  }
+
+  static String? getFirstPhotoOf(DateTime date) {
+    final entry = _photoBox.values.where((e) =>
+      e.deletedAt == null &&
+      e.date.year == date.year &&
+      (date.month == 1 || e.date.month == date.month)
+    ).firstOrNull;
+    return entry?.path;
+  }
+
   static ValueListenable<Box<PhotoEntry>>? _listenable;
 
   static ValueListenable<Box<PhotoEntry>> get listenable {
