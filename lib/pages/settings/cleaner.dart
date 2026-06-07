@@ -2,10 +2,8 @@ import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fover/pages/settings/swipe.dart';
-import 'package:fover/src/widgets/albums_list.dart';
 import 'package:fover/src/widgets/button.dart';
-
-
+import 'package:fover/src/widgets/date_list.dart';
 
 class CleanerPage extends StatefulWidget {
   const CleanerPage({super.key});
@@ -201,7 +199,7 @@ class _CleanerPageState extends State<CleanerPage> {
           //     }
           //   ),
           ),
-        body: YearList(
+        body: DateList(
           // TODO rajouter un paramètre mois et année pour filtrer les albums en fonction de ça
           filterDate: months == true ? 1 : 0,
         )
