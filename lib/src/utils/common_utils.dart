@@ -71,6 +71,21 @@ String formatSize(int size) {
   }
 }
 
+String formatDate(String date) {
+  try {
+    final parts = date.split('-');
+    final year = parts[0];
+    final monthNum = int.parse(parts[1]);
+    final month = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ][monthNum - 1];
+    return '$month $year';
+  } catch (_) {
+    return date;
+  }
+}
+
 Future<bool> hasInternet({bool? withBox}) async {
   if (withBox != false && box.get("offlineMode") == true) return false;
   
