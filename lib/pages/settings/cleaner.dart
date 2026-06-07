@@ -1,14 +1,24 @@
-import 'package:cupertino_native_better/cupertino_native_better.dart' show CNSymbol;
+import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fover/pages/settings/swipe.dart';
+import 'package:fover/src/widgets/albums_list.dart';
 import 'package:fover/src/widgets/button.dart';
 
-class CleanerPage extends StatelessWidget {
+
+
+class CleanerPage extends StatefulWidget {
   const CleanerPage({super.key});
 
-// TODO afficher les statistiques quelques part
-//* Surement entre les cards et le bouton "How does it work?" 
+  @override
+  State<CleanerPage> createState() => _CleanerPageState();
+}
 
+class _CleanerPageState extends State<CleanerPage> {
+  bool months = true;
+
+  // TODO afficher les statistiques quelques part
+  //* Surement entre les cards et le bouton "How does it work?" 
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
@@ -27,14 +37,14 @@ class CleanerPage extends StatelessWidget {
         toolbarHeight: height * 0.2,
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(10),
-          child:  Text(
-          "Choose your\ncleaning mode", 
-          style: TextStyle(
-            fontSize: height * 0.056, 
-            fontWeight: FontWeight.bold
+          child: Text(
+            "Choose your\ncleaning mode", 
+            style: TextStyle(
+              fontSize: height * 0.056, 
+              fontWeight: FontWeight.bold
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
-        ),
         ),
       ),
       body: Center(
@@ -47,7 +57,6 @@ class CleanerPage extends StatelessWidget {
                 spacing: 20,
                 runSpacing: 15,
                 alignment: WrapAlignment.center,
-        
                   children: [
                     buildCard(
                       context, 
@@ -59,7 +68,7 @@ class CleanerPage extends StatelessWidget {
                         end: Alignment.bottomRight
                       ), 
                       "Fover will randomly select medias to clean",
-                      () {}
+                      () => Navigator.push(context, MaterialPageRoute(builder: (_) => SwipePage()))
                     ),
                     buildCard(
                       context,
@@ -71,7 +80,8 @@ class CleanerPage extends StatelessWidget {
                         end: Alignment.bottomRight  
                       ),
                       "Fover will select your heaviest medias to clean",
-                      () {}  
+                      () => Navigator.push(context, MaterialPageRoute(builder: (_) => SwipePage(filter: SwipeFilter.size))
+                      ),
                     ),
                     buildCard(
                       context,
@@ -83,7 +93,8 @@ class CleanerPage extends StatelessWidget {
                         end: Alignment.bottomRight
                       ),
                       "Select the month or year you want to clean",
-                      () {}
+                      () => Navigator.push(context, MaterialPageRoute(builder: (_) => chooseDate(context))
+                      ),
                     ),
                     buildCard(
                       context,
@@ -117,6 +128,8 @@ class CleanerPage extends StatelessWidget {
       )
     );
   }
+
+  
   Widget buildCard(BuildContext context, IconData icon, String title, LinearGradient gradient, String description, VoidCallback onTap) {
     final width = (MediaQuery.of(context).size.width - 20 - 40) / 2;
     return SizedBox(
@@ -161,5 +174,38 @@ class CleanerPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  // TODO petite transition
+  Widget chooseDate(BuildContext context) {
+      return Scaffold(
+        appBar: AppBar(
+          // TODO en title, un bouton pour switch entre month et year
+
+          // title: CNPopupMenuButton(
+          //     tint: Theme.of(context).primaryColor,
+          //     buttonStyle: CNButtonStyle.glass,
+          //     shrinkWrap: true,
+          //     buttonLabel: "   ${months == true ? "Months" : "Years"}   ",
+          //     items: [
+          //       CNPopupMenuItem(label: "Select a year"),
+          //       CNPopupMenuItem(label: "Select a month"),
+          //     ], 
+          //     onSelected: (value) {
+          //       if (value == 0) {
+          //         setState(() => months = false);
+          //       } else {
+          //         setState(() => months = true);
+          //       }
+          //       setState(() {});
+          //     }
+          //   ),
+          ),
+        body: YearList(
+          // TODO rajouter un paramètre mois et année pour filtrer les albums en fonction de ça
+          filterDate: months == true ? 1 : 0,
+        )
+      );
+      
   }
 }

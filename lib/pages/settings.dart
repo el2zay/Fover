@@ -5,8 +5,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/main.dart';
+import 'package:fover/pages/settings/cleaner.dart';
 import 'package:fover/pages/settings/style.dart';
-import 'package:fover/pages/settings/swipe.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/widgets/button.dart';
@@ -160,7 +160,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         context, 
                         MaterialPageRoute(builder: (context) => PopScope(
                           canPop: false,
-                          child: SwipePage()
+                          child: CleanerPage()
                         ))
                       );
                     },
