@@ -12,7 +12,9 @@ import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart' show formatSize;
 import 'package:fover/src/utils/requests.dart';
 import 'package:fover/src/widgets/button.dart';
+import 'package:fover/src/widgets/container.dart';
 import 'package:fover/src/widgets/dialog.dart';
+import 'package:intl/intl.dart';
 
 enum SwipeFilter { library, favorites, album, month, year, size }
 
@@ -40,6 +42,7 @@ class _SwipePageState extends State<SwipePage> {
   final Map<String, ValueNotifier<Uint8List?>> _imageCache = {};
   final CardSwiperController _swipeController = CardSwiperController();
   bool isLoading = true;
+  int index = 0;
 
   @override
   void initState() {
@@ -189,19 +192,30 @@ class _SwipePageState extends State<SwipePage> {
             }
           ),
         ),
-        title: CNPopupMenuButton(
-          tint: Theme.of(context).primaryColor,
-          buttonStyle: CNButtonStyle.glass,
-          shrinkWrap: true,
-          buttonLabel: "   Library   ",
-          items: [
-            CNPopupMenuItem(label: "Library"),
-            CNPopupMenuItem(label: "Favorites"),
-          ], 
-          onSelected: (value) {
-
-          }
-        ),
+        title: MyContainer(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 30, vertical: 6),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    DateFormat('d MMMM yyyy', 'en').format(PhotoStore.getDate(_photos[index].path)),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    formatSize(_photos[index].size),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         actions: [
           Transform.scale(
             scale: 0.8,
@@ -236,11 +250,14 @@ class _SwipePageState extends State<SwipePage> {
           isLoop: false,
           allowedSwipeDirection: AllowedSwipeDirection.only(left: true, right: true),
           onSwipe: (previousIndex, currentIndex, direction) {
+            setState(() => index = currentIndex ?? 0);
+
             if (direction == CardSwiperDirection.left) {
               setState(() {
                 selectedPhotos.add(_photos[previousIndex]);
               });
             }
+            
             if (currentIndex != null) _preloadAhead(currentIndex, count: 3);
             return true;
           },
@@ -248,6 +265,7 @@ class _SwipePageState extends State<SwipePage> {
             if (currentIndex != null) {
               setState(() {
                 selectedPhotos.remove(_photos[previousIndex]);
+                index = previousIndex;
               });
             }
             return true;
