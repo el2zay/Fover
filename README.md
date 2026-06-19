@@ -124,7 +124,7 @@ ENTRYPOINT ["copyparty"]
 
 3. Start the Copyparty server with the following command in the "Fover" directory:
 ```bash
-docker compose up -d
+docker-compose up -d
 ```
 ___ 
 Now we have to make it accessible from the Internet. 
@@ -211,7 +211,7 @@ In the Cloudflare dashboard, under **Public Hostname**:
 **4. Start**
 
 ```bash
-docker compose up -d
+docker-compose up -d
 ```
 
 Your server is now accessible at `https://photos.mydomain.com`. HTTPS is handled automatically by Cloudflare — no certificate needed.
