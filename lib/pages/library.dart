@@ -931,326 +931,330 @@ class LibraryPageState extends State<LibraryPage> {
                     return false;
                   },
                   //
-                  child: GridView.builder(
+                  child: Scrollbar(
                     controller: _scrollController,
-                    physics: const BouncingScrollPhysics(
-                      parent: AlwaysScrollableScrollPhysics(),
-                    ),
-                    padding: EdgeInsets.only(
-                      bottom: tabBarHeight.value * 1.6,
-                      top:  MediaQuery.of(context).padding.top + 5
-                    ),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 3 : 5,
-                      crossAxisSpacing: 2,
-                      mainAxisSpacing: 2,
-                    ),
-                    itemCount: data.encodedPaths.length,
-                    itemBuilder: (context, index) {
-                      final photo = PhotoStore.get(data.encodedPaths[index]);
+                    thickness: elements < 50 ? 0 : null,
+                    child: GridView.builder(
+                      controller: _scrollController,
+                      physics: const BouncingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics(),
+                      ),
+                      padding: EdgeInsets.only(
+                        bottom: tabBarHeight.value * 1.6,
+                        top:  MediaQuery.of(context).padding.top + 5
+                      ),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 3 : 5,
+                        crossAxisSpacing: 2,
+                        mainAxisSpacing: 2,
+                      ),
+                      itemCount: data.encodedPaths.length,
+                      itemBuilder: (context, index) {
+                        final photo = PhotoStore.get(data.encodedPaths[index]);
 
-                      return DragItemWidget(
-                        canAddItemToExistingSession: true,
-                        dragItemProvider: (request) async {
-                          request.session.dragging.addListener(() {
-                            _isDragging.value = request.session.dragging.value;
-                          });
+                        return DragItemWidget(
+                          canAddItemToExistingSession: true,
+                          dragItemProvider: (request) async {
+                            request.session.dragging.addListener(() {
+                              _isDragging.value = request.session.dragging.value;
+                            });
 
-                          final encodedPath = data.encodedPaths[index];
-                          final mimetype = data.mimetypes[index];
-                          final existingData = await request.session.getLocalData();
-                          if (existingData != null && existingData.contains(encodedPath)) {
-                            return null;
-                          }
-
-                          final items = DragItem(
-                            localData: encodedPath
-                          );
-
-                          final format = formatMap[mimetype] 
-                            ?? (mimetype.startsWith('image/') ? Formats.jpeg : null)
-                            ??  (mimetype.startsWith('video/') ? Formats.mp4 : null);
-
-                            if (format != null) {
-                              items.add(format.lazy(() async => (await fetchFullBytes(encodedPath)) ?? Uint8List(0)));
+                            final encodedPath = data.encodedPaths[index];
+                            final mimetype = data.mimetypes[index];
+                            final existingData = await request.session.getLocalData();
+                            if (existingData != null && existingData.contains(encodedPath)) {
+                              return null;
                             }
 
-                            return items;
-                        },
-                        allowedOperations: () => [DropOperation.copy],
-                        child: DraggableWidget(
-                          child: _MediaTile(
-                            key: ValueKey(data.encodedPaths[index]),
-                            index: index,
-                            encodedPath: data.encodedPaths[index],
-                            mimetype: data.mimetypes[index],
-                            selected: (selectedMode || widget.onlySelect) && selectedImages.contains(index), 
-                            isVideo: data.mimetypes[index].startsWith('video/'), 
-                            isFavorite: photo?.favorite == true, 
-                            trashMode: widget.album == Album.trash, 
-                            heroPrefix: _heroPrefix,
-                            daysLeft: photo?.deletedAt != null
-                              ? (30 - DateTime.now().difference(photo!.deletedAt!).inDays).clamp(0, 30)
-                              : null,
-                            onTap: () async {
-                              if (_isDragging.value) return;
+                            final items = DragItem(
+                              localData: encodedPath
+                            );
 
-                              if (selectedMode || widget.onlySelect) {
-                                setState(() {
-                                  if (selectedImages.contains(index)) {
-                                    selectedImages.remove(index);
-                                  } else {
-                                    selectedImages.add(index);
-                                  }
-                                });
+                            final format = formatMap[mimetype] 
+                              ?? (mimetype.startsWith('image/') ? Formats.jpeg : null)
+                              ??  (mimetype.startsWith('video/') ? Formats.mp4 : null);
 
-                                final paths = selectedImages.map((i) => data.encodedPaths[i]).toList();
-                                Uint8List? thumb;
-                                if (selectedImages.isNotEmpty) {
-                                  final firstIndex = selectedImages.first;
-                                  final firstPath = data.encodedPaths[firstIndex];
-                                  final photo = PhotoStore.get(firstPath);
-                                  if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
-                                    thumb = await File(photo.localPath!).readAsBytes();
-                                  } else {
-                                    thumb = await fetchImageBytes(firstPath, data.mimetypes[firstIndex]);
-                                  }
-                                }
-
-                                widget.onSelectedChanged?.call(paths, thumb);
-                                countSelected.value = selectedImages.length;
-                              } else {
-                                searchFocus.unfocus();
-                                Navigator.push(
-                                  context,
-                                  PageRouteBuilder(
-                                    opaque: false,
-                                    transitionDuration: const Duration(milliseconds: 300),
-                                    reverseTransitionDuration: const Duration(milliseconds: 300),
-                                    pageBuilder: (_, __, ___) => ViewerPage(
-                                      mimetype: mimetypes,
-                                      index: index,
-                                      encodedPaths: data.encodedPaths,
-                                      trashMode: widget.album == Album.trash,
-                                      onRefresh: refresh,
-                                      heroPrefix: _heroPrefix,
-                                    ),
-                                    transitionsBuilder: (_, animation, __, child) {
-                                    return FadeTransition(
-                                      opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-                                      child: child,
-                                    );
-                                    },
-                                  ),
-                                ).then((_) => refresh());
+                              if (format != null) {
+                                items.add(format.lazy(() async => (await fetchFullBytes(encodedPath)) ?? Uint8List(0)));
                               }
-                            },
-                            onDoubleTap: () {
-                              if (widget.album != Album.custom) return;
-                              setState(() {
-                                widget.photos?.removeWhere((p) => p.path == data.encodedPaths[index]);
-                              });
-                              refresh();
-                              if (widget.photos == null || widget.photos!.isEmpty) {
-                                Navigator.pop(context);
-                              }
-                            },
-                            menuProvider: (request) {
-                              final isHidden = PhotoStore.get(data.encodedPaths[index])?.hidden == true;
-                              final isFavorite = PhotoStore.get(data.encodedPaths[index])?.favorite == true;
 
-                              return widget.album != Album.trash ? Menu(
-                                children: [
-                                  MenuAction(
-                                    title: DownloadService.isDownloaded(data.encodedPaths[index])
-                                      ? 'Remove download'
-                                      : 'Download',
-                                    image: MenuImage.icon(DownloadService.isDownloaded(data.encodedPaths[index])
-                                      ? CupertinoIcons.arrow_down_circle_fill
-                                      : CupertinoIcons.arrow_down_circle),
-                                    callback: () async {
-                                      final photo = PhotoStore.get(data.encodedPaths[index]);
-                                      if (!DownloadService.isDownloaded(data.encodedPaths[index])) {
-                                        final path = await DownloadService.download(
-                                          encodedPath: data.encodedPaths[index],
-                                          filename: photo?.name ?? data.encodedPaths[index],
-                                        );
-                                        log('Downloaded to: $path');
-                                      } else {
-                                        log("ici");
-                                        DownloadService.remove(data.encodedPaths[index]);
-                                      }
+                              return items;
+                          },
+                          allowedOperations: () => [DropOperation.copy],
+                          child: DraggableWidget(
+                            child: _MediaTile(
+                              key: ValueKey(data.encodedPaths[index]),
+                              index: index,
+                              encodedPath: data.encodedPaths[index],
+                              mimetype: data.mimetypes[index],
+                              selected: (selectedMode || widget.onlySelect) && selectedImages.contains(index), 
+                              isVideo: data.mimetypes[index].startsWith('video/'), 
+                              isFavorite: photo?.favorite == true, 
+                              trashMode: widget.album == Album.trash, 
+                              heroPrefix: _heroPrefix,
+                              daysLeft: photo?.deletedAt != null
+                                ? (30 - DateTime.now().difference(photo!.deletedAt!).inDays).clamp(0, 30)
+                                : null,
+                              onTap: () async {
+                                if (_isDragging.value) return;
+
+                                if (selectedMode || widget.onlySelect) {
+                                  setState(() {
+                                    if (selectedImages.contains(index)) {
+                                      selectedImages.remove(index);
+                                    } else {
+                                      selectedImages.add(index);
                                     }
-                                  ),
-                                  if (mimetypes[index].startsWith("image/"))
+                                  });
+
+                                  final paths = selectedImages.map((i) => data.encodedPaths[i]).toList();
+                                  Uint8List? thumb;
+                                  if (selectedImages.isNotEmpty) {
+                                    final firstIndex = selectedImages.first;
+                                    final firstPath = data.encodedPaths[firstIndex];
+                                    final photo = PhotoStore.get(firstPath);
+                                    if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
+                                      thumb = await File(photo.localPath!).readAsBytes();
+                                    } else {
+                                      thumb = await fetchImageBytes(firstPath, data.mimetypes[firstIndex]);
+                                    }
+                                  }
+
+                                  widget.onSelectedChanged?.call(paths, thumb);
+                                  countSelected.value = selectedImages.length;
+                                } else {
+                                  searchFocus.unfocus();
+                                  Navigator.push(
+                                    context,
+                                    PageRouteBuilder(
+                                      opaque: false,
+                                      transitionDuration: const Duration(milliseconds: 300),
+                                      reverseTransitionDuration: const Duration(milliseconds: 300),
+                                      pageBuilder: (_, __, ___) => ViewerPage(
+                                        mimetype: mimetypes,
+                                        index: index,
+                                        encodedPaths: data.encodedPaths,
+                                        trashMode: widget.album == Album.trash,
+                                        onRefresh: refresh,
+                                        heroPrefix: _heroPrefix,
+                                      ),
+                                      transitionsBuilder: (_, animation, __, child) {
+                                      return FadeTransition(
+                                        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+                                        child: child,
+                                      );
+                                      },
+                                    ),
+                                  ).then((_) => refresh());
+                                }
+                              },
+                              onDoubleTap: () {
+                                if (widget.album != Album.custom) return;
+                                setState(() {
+                                  widget.photos?.removeWhere((p) => p.path == data.encodedPaths[index]);
+                                });
+                                refresh();
+                                if (widget.photos == null || widget.photos!.isEmpty) {
+                                  Navigator.pop(context);
+                                }
+                              },
+                              menuProvider: (request) {
+                                final isHidden = PhotoStore.get(data.encodedPaths[index])?.hidden == true;
+                                final isFavorite = PhotoStore.get(data.encodedPaths[index])?.favorite == true;
+
+                                return widget.album != Album.trash ? Menu(
+                                  children: [
                                     MenuAction(
-                                      title: "Copy",
-                                      image: MenuImage.icon(CupertinoIcons.doc_on_doc),
+                                      title: DownloadService.isDownloaded(data.encodedPaths[index])
+                                        ? 'Remove download'
+                                        : 'Download',
+                                      image: MenuImage.icon(DownloadService.isDownloaded(data.encodedPaths[index])
+                                        ? CupertinoIcons.arrow_down_circle_fill
+                                        : CupertinoIcons.arrow_down_circle),
+                                      callback: () async {
+                                        final photo = PhotoStore.get(data.encodedPaths[index]);
+                                        if (!DownloadService.isDownloaded(data.encodedPaths[index])) {
+                                          final path = await DownloadService.download(
+                                            encodedPath: data.encodedPaths[index],
+                                            filename: photo?.name ?? data.encodedPaths[index],
+                                          );
+                                          log('Downloaded to: $path');
+                                        } else {
+                                          log("ici");
+                                          DownloadService.remove(data.encodedPaths[index]);
+                                        }
+                                      }
+                                    ),
+                                    if (mimetypes[index].startsWith("image/"))
+                                      MenuAction(
+                                        title: "Copy",
+                                        image: MenuImage.icon(CupertinoIcons.doc_on_doc),
+                                        callback: () async {
+                                          final bytes = await fetchFullBytes(data.encodedPaths[index]);
+                                          if (bytes != null) await FlutterClipboard.copyImage(bytes);
+                                        },
+                                      ),
+                                    if (PhotoStore.get(data.encodedPaths[index])?.editedFrom != null)
+                                      MenuAction(
+                                        title: "Revert to original",
+                                        image: MenuImage.icon(CupertinoIcons.arrow_counterclockwise_circle),
+                                        callback: () async {
+                                          await PhotoStore.revertEdit(data.encodedPaths[index]);
+                                          await refresh();
+                                        },
+                                      ),
+                                    // MenuAction(
+                                    //   title: "Duplicate",
+                                    //   image: MenuImage.icon(CupertinoIcons.plus_square_on_square),
+                                    //   callback: () => PhotoStore.duplicate(path: data.encodedPaths[index])
+                                    // ),
+
+                                    MenuAction(
+                                      title: isFavorite
+                                        ? "Remove from favorites"
+                                        : "Add to favorites",
+                                        image: MenuImage.icon(
+                                          isFavorite
+                                            ? CupertinoIcons.heart_fill
+                                            : CupertinoIcons.heart
+                                        ),
+                                      callback: () {
+                                        PhotoStore.update(path: data.encodedPaths[index], favorite: !isFavorite);
+                                        if (widget.album == Album.favorites) {
+                                          _removeLocally([index]);
+                                        } else {
+                                        setState(() {});
+                                        }
+                                      }
+                                    ),
+
+                                    MenuAction(
+                                      title: "Share",
+                                      image: MenuImage.icon(CupertinoIcons.share),
                                       callback: () async {
                                         final bytes = await fetchFullBytes(data.encodedPaths[index]);
-                                        if (bytes != null) await FlutterClipboard.copyImage(bytes);
-                                      },
-                                    ),
-                                  if (PhotoStore.get(data.encodedPaths[index])?.editedFrom != null)
-                                    MenuAction(
-                                      title: "Revert to original",
-                                      image: MenuImage.icon(CupertinoIcons.arrow_counterclockwise_circle),
-                                      callback: () async {
-                                        await PhotoStore.revertEdit(data.encodedPaths[index]);
-                                        await refresh();
-                                      },
-                                    ),
-                                  // MenuAction(
-                                  //   title: "Duplicate",
-                                  //   image: MenuImage.icon(CupertinoIcons.plus_square_on_square),
-                                  //   callback: () => PhotoStore.duplicate(path: data.encodedPaths[index])
-                                  // ),
+                                        if (bytes == null) return;
 
-                                  MenuAction(
-                                    title: isFavorite
-                                      ? "Remove from favorites"
-                                      : "Add to favorites",
-                                      image: MenuImage.icon(
-                                        isFavorite
-                                          ? CupertinoIcons.heart_fill
-                                          : CupertinoIcons.heart
-                                      ),
-                                    callback: () {
-                                      PhotoStore.update(path: data.encodedPaths[index], favorite: !isFavorite);
-                                      if (widget.album == Album.favorites) {
-                                        _removeLocally([index]);
-                                      } else {
-                                      setState(() {});
+                                        await SharePlus.instance.share(
+                                          ShareParams(
+                                            files: [
+                                              XFile.fromData(
+                                                bytes,
+                                                mimeType: mimetypes[index],
+                                                name: PhotoStore.get(data.encodedPaths[index])?.name ?? 'media',
+                                              )
+                                            ]
+                                          )
+                                        );
                                       }
-                                    }
-                                  ),
-
-                                  MenuAction(
-                                    title: "Share",
-                                    image: MenuImage.icon(CupertinoIcons.share),
-                                    callback: () async {
-                                      final bytes = await fetchFullBytes(data.encodedPaths[index]);
-                                      if (bytes == null) return;
-
-                                      await SharePlus.instance.share(
-                                        ShareParams(
-                                          files: [
-                                            XFile.fromData(
-                                              bytes,
-                                              mimeType: mimetypes[index],
-                                              name: PhotoStore.get(data.encodedPaths[index])?.name ?? 'media',
-                                            )
-                                          ]
-                                        )
-                                      );
-                                    }
-                                  ),
-                                  MenuAction(
-                                    title: isHidden
-                                      ? "Unhide"
-                                      : "Hide",
-                                    image: MenuImage.icon(isHidden ? CupertinoIcons.eye : CupertinoIcons.eye_slash),
-                                    callback: () {
-                                      PhotoStore.update(path: data.encodedPaths[index], hidden: !isHidden);
-                                      _removeLocally([index]);
-                                    }
-                                  ),
-                                  widget.albumName == null 
-                                    ? MenuAction(
-                                      title: "Add to album",
-                                      image: MenuImage.icon(CupertinoIcons.plus_rectangle_on_rectangle),
+                                    ),
+                                    MenuAction(
+                                      title: isHidden
+                                        ? "Unhide"
+                                        : "Hide",
+                                      image: MenuImage.icon(isHidden ? CupertinoIcons.eye : CupertinoIcons.eye_slash),
                                       callback: () {
-                                        showModalBottomSheet(
+                                        PhotoStore.update(path: data.encodedPaths[index], hidden: !isHidden);
+                                        _removeLocally([index]);
+                                      }
+                                    ),
+                                    widget.albumName == null 
+                                      ? MenuAction(
+                                        title: "Add to album",
+                                        image: MenuImage.icon(CupertinoIcons.plus_rectangle_on_rectangle),
+                                        callback: () {
+                                          showModalBottomSheet(
+                                            context: context,
+                                            isScrollControlled: true,
+                                            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
+                                            builder: (context) {
+                                              return AddToAlbumSheet(
+                                                photoPath: [data.encodedPaths[index]],
+                                              );
+                                            }
+                                          );
+                                        }
+                                      ) 
+                                      : MenuAction(
+                                        title: "Remove from album",
+                                        image: MenuImage.icon(CupertinoIcons.xmark),
+                                        callback: () {
+                                          PhotoStore.removeFromAlbum(
+                                            path: data.encodedPaths[index],
+                                            album: widget.albumName!,
+                                          );
+                                          _removeLocally([index]);
+                                        }
+                                      ),
+                                    MenuAction(
+                                      title: "Delete",
+                                      image: MenuImage.icon(CupertinoIcons.trash),
+                                      attributes: MenuActionAttributes(destructive: true),
+                                      callback: () {
+                                        showGeneralDialog(
+                                          barrierDismissible: false,
                                           context: context,
-                                          isScrollControlled: true,
-                                          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
-                                          builder: (context) {
-                                            return AddToAlbumSheet(
-                                              photoPath: [data.encodedPaths[index]],
+                                          pageBuilder: (context, animation, secondaryAnimation) {
+                                            return MyDialog(
+                                              content: "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
+                                              principalButton: TextButton(
+                                                child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
+                                              onPressed: () {
+                                                  PhotoStore.softDelete(data.encodedPaths[index]);
+                                                  _removeLocally([index]);
+                                                  Navigator.pop(context);
+                                                }
+                                              ),
                                             );
                                           }
                                         );
                                       }
-                                    ) 
-                                    : MenuAction(
-                                      title: "Remove from album",
-                                      image: MenuImage.icon(CupertinoIcons.xmark),
+                                    ),
+                                  ]
+                                ) : Menu(
+                                  children: [
+                                    MenuAction(
+                                      title: "Restore",
+                                      image: MenuImage.icon(CupertinoIcons.arrow_up_bin),
                                       callback: () {
-                                        PhotoStore.removeFromAlbum(
-                                          path: data.encodedPaths[index],
-                                          album: widget.albumName!,
-                                        );
+                                        PhotoStore.restore(data.encodedPaths[index]);
                                         _removeLocally([index]);
                                       }
                                     ),
-                                  MenuAction(
-                                    title: "Delete",
-                                    image: MenuImage.icon(CupertinoIcons.trash),
-                                    attributes: MenuActionAttributes(destructive: true),
-                                    callback: () {
-                                      showGeneralDialog(
-                                        barrierDismissible: false,
-                                        context: context,
-                                        pageBuilder: (context, animation, secondaryAnimation) {
-                                          return MyDialog(
-                                            content: "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
-                                            principalButton: TextButton(
-                                              child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
-                                            onPressed: () {
-                                                PhotoStore.softDelete(data.encodedPaths[index]);
-                                                _removeLocally([index]);
-                                                Navigator.pop(context);
-                                              }
-                                            ),
-                                          );
-                                        }
-                                      );
-                                    }
-                                  ),
-                                ]
-                              ) : Menu(
-                                children: [
-                                  MenuAction(
-                                    title: "Restore",
-                                    image: MenuImage.icon(CupertinoIcons.arrow_up_bin),
-                                    callback: () {
-                                      PhotoStore.restore(data.encodedPaths[index]);
-                                      _removeLocally([index]);
-                                    }
-                                  ),
-                                  MenuAction(
-                                    title: "Delete permanently",
-                                    image: MenuImage.icon(CupertinoIcons.trash),
-                                    attributes: MenuActionAttributes(destructive: true),
-                                    callback: () {
-                                      showGeneralDialog(
-                                        barrierDismissible: false,
-                                        context: context,
-                                        pageBuilder: (context, animation, secondaryAnimation) {
-                                          return MyDialog(
-                                            content: "This action cannot be undone. The image will also be deleted from your server.",
-                                            principalButton: TextButton(
-                                              child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
-                                              onPressed: () async {
-                                                final navigator = Navigator.of(context);
-                                                await PhotoStore.hardDelete(data.encodedPaths[index]);
-                                                if (!mounted) return;
-                                                navigator.pop();
-                                                _removeLocally([index]);
-                                              }
-                                            ),
-                                          );
-                                        }
-                                      );
-                                    }
-                                  ),
-                                ]
-                              );
-                            },
-                          ),
-                        )
-                      );
-                    }, 
+                                    MenuAction(
+                                      title: "Delete permanently",
+                                      image: MenuImage.icon(CupertinoIcons.trash),
+                                      attributes: MenuActionAttributes(destructive: true),
+                                      callback: () {
+                                        showGeneralDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          pageBuilder: (context, animation, secondaryAnimation) {
+                                            return MyDialog(
+                                              content: "This action cannot be undone. The image will also be deleted from your server.",
+                                              principalButton: TextButton(
+                                                child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
+                                                onPressed: () async {
+                                                  final navigator = Navigator.of(context);
+                                                  await PhotoStore.hardDelete(data.encodedPaths[index]);
+                                                  if (!mounted) return;
+                                                  navigator.pop();
+                                                  _removeLocally([index]);
+                                                }
+                                              ),
+                                            );
+                                          }
+                                        );
+                                      }
+                                    ),
+                                  ]
+                                );
+                              },
+                            ),
+                          )
+                        );
+                      }, 
+                    ),
                   ),
                 ),
               ),
