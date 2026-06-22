@@ -44,6 +44,7 @@ class _SettingsPageState extends State<SettingsPage> {
       });
     });
   }
+
   @override
   Widget build(BuildContext context) {
     Color primary = Theme.of(context).primaryColor;
@@ -158,10 +159,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     onTap: () {
                       Navigator.push(
                         context, 
-                        MaterialPageRoute(builder: (context) => PopScope(
-                          canPop: false,
-                          child: CleanerPage()
-                        ))
+                        MaterialPageRoute(builder: (context) => CleanerPage())
                       );
                     },
                   ),
