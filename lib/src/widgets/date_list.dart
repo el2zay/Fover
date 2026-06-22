@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fover/pages/settings/swipe.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/utils/requests.dart';
@@ -33,7 +34,18 @@ class DateList extends StatelessWidget {
         final album = albums[index];
         return GestureDetector(
             onTap: () {
-              // TODO ontap
+              print("Tapped on album ${album.toString()}");
+              print("Filter date: $filterDate");
+              Navigator.push(
+                context, 
+                MaterialPageRoute(
+                  builder: (context) => SwipePage(
+                    filter: filterDate == 0 ? SwipeFilter.year : SwipeFilter.month,
+                    month: album.month,
+                    year: album.year,
+                  )
+                )
+              );
             },
             child: Container(
               decoration: BoxDecoration(
@@ -86,9 +98,9 @@ class DateList extends StatelessWidget {
                       child: Align(
                         alignment: Alignment.bottomLeft,
                         child: Text(
-                          formatDate(album.toString()),
+                          formatDate(album.toString(), yearsOnly: filterDate == 0),
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 17,
                             fontWeight: FontWeight.bold
                           ),
                           maxLines: 2,
