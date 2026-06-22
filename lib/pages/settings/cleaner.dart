@@ -2,6 +2,7 @@ import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fover/pages/settings/swipe.dart';
+import 'package:fover/src/widgets/albums_list.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/date_list.dart';
 
@@ -22,9 +23,9 @@ class _CleanerPageState extends State<CleanerPage> {
     final height = MediaQuery.of(context).size.height;
     return Scaffold(
       appBar: AppBar(
-        leadingWidth: 60,
+        leadingWidth: 48,
         leading: Transform.scale(
-          scale: 0.8,
+          scale: 0.75,
           child: Button.iconOnly(
             icon: Icon(CupertinoIcons.chevron_left),
             glassIcon: CNSymbol('chevron.left', size: 20),
@@ -104,7 +105,8 @@ class _CleanerPageState extends State<CleanerPage> {
                         end: Alignment.bottomRight
                       ),
                       "Select the albums you want to clean",
-                      () {}
+                      () => Navigator.push(context, MaterialPageRoute(builder: (_) => chooseAlbum(context))
+                      ),
                     ),
                   ],
                 ),
@@ -175,35 +177,80 @@ class _CleanerPageState extends State<CleanerPage> {
   }
 
   // TODO petite transition
-  Widget chooseDate(BuildContext context) {
-      return Scaffold(
-        appBar: AppBar(
-          // TODO en title, un bouton pour switch entre month et year
-
-          // title: CNPopupMenuButton(
-          //     tint: Theme.of(context).primaryColor,
-          //     buttonStyle: CNButtonStyle.glass,
-          //     shrinkWrap: true,
-          //     buttonLabel: "   ${months == true ? "Months" : "Years"}   ",
-          //     items: [
-          //       CNPopupMenuItem(label: "Select a year"),
-          //       CNPopupMenuItem(label: "Select a month"),
-          //     ], 
-          //     onSelected: (value) {
-          //       if (value == 0) {
-          //         setState(() => months = false);
-          //       } else {
-          //         setState(() => months = true);
-          //       }
-          //       setState(() {});
-          //     }
-          //   ),
+   Widget chooseDate(BuildContext context) {
+    bool monthsLocal = months;
+  
+    return StatefulBuilder(
+      builder: (context, setLocalState) {
+        return Scaffold(
+          appBar: AppBar(
+          leading: Transform.scale(
+            scale: 0.7,
+            child: Button.iconOnly(
+              icon: Icon(CupertinoIcons.chevron_left),
+              glassIcon: CNSymbol('chevron.left', size: 20),
+              backgroundColor: Colors.transparent,
+              onPressed: () => Navigator.pop(context),
+              )
+            ),
+            title: CNPopupMenuButton(
+              tint: Theme.of(context).primaryColor,
+              buttonStyle: CNButtonStyle.glass,
+              shrinkWrap: true,
+              buttonLabel: "   ${monthsLocal ? "Months" : "Years"}   ",
+              items: [
+                CNPopupMenuItem(label: "Select a year", checked: !monthsLocal),
+                CNPopupMenuItem(label: "Select a month", checked: monthsLocal),
+              ],
+              onSelected: (value) {
+                setLocalState(() {
+                  monthsLocal = value != 0;
+                });
+              },
+            ),
           ),
-        body: DateList(
-          // TODO rajouter un paramètre mois et année pour filtrer les albums en fonction de ça
-          filterDate: months == true ? 1 : 0,
-        )
-      );
-      
+          body: 
+          // TODO transition entre les 2
+          DateList(
+            filterDate: monthsLocal ? 1 : 0,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget chooseAlbum(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        leading: Transform.scale(
+          scale: 0.7,
+          child: Button.iconOnly(
+            icon: Icon(CupertinoIcons.chevron_left),
+            glassIcon: CNSymbol('chevron.left', size: 20),
+            backgroundColor: Colors.transparent,
+            onPressed: () => Navigator.pop(context),
+            )
+        ),
+        title: Text("Choose an album", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+      ),
+      body: Padding(
+        padding: EdgeInsetsGeometry.all(10),
+        child: AlbumsList(
+          crossAxisCount: 2,
+          showSpecialAlbums: true,
+          onTap: (album) {
+            Navigator.push(
+              context, 
+              MaterialPageRoute(builder: (_) => SwipePage(
+                  filter: SwipeFilter.album, 
+                  album: album
+                )
+              )
+            );
+          },
+        ),
+      ),
+    );
   }
 }
