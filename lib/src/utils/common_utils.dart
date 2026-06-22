@@ -71,7 +71,7 @@ String formatSize(int size) {
   }
 }
 
-String formatDate(String date) {
+String formatDate(String date, {bool yearsOnly = false}) {
   try {
     final parts = date.split('-');
     final year = parts[0];
@@ -80,7 +80,7 @@ String formatDate(String date) {
       'January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December'
     ][monthNum - 1];
-    return '$month $year';
+    return yearsOnly ? year : '$month $year';
   } catch (_) {
     return date;
   }
