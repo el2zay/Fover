@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:fover/main.dart';
 import 'package:fover/pages/library.dart';
+import 'package:fover/src/models/album_entry.dart';
 import 'package:fover/src/models/photo_entry.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart' show formatSize;
@@ -20,14 +21,14 @@ enum SwipeFilter { library, favorites, album, month, year, size }
 
 class SwipePage extends StatefulWidget {
   final SwipeFilter filter;
-  final String? albumName;
+  final AlbumEntry? album;
   final int? month;
   final int? year;
 
   const SwipePage({
     super.key,
     this.filter = SwipeFilter.library,
-    this.albumName,
+    this.album,
     this.month,
     this.year,
   });
@@ -91,8 +92,8 @@ class _SwipePageState extends State<SwipePage> {
         break;
 
       case SwipeFilter.album:
-        photos = widget.albumName != null
-            ? PhotoStore.getAlbum(widget.albumName!)
+        photos = widget.album != null
+            ? PhotoStore.getAlbum(widget.album!.name)
             : [];
         break;
 
