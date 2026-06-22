@@ -7,6 +7,7 @@ import 'package:fover/src/widgets/dialog.dart';
 import 'package:hive_ce_flutter/adapters.dart';
 import 'package:super_context_menu/super_context_menu.dart';
 
+// TODO vérifier si l'album est vide avant de l'afficher dans la liste
 
 class AlbumsList extends StatelessWidget {
   final int crossAxisCount;
@@ -14,6 +15,7 @@ class AlbumsList extends StatelessWidget {
   final double borderRadius;
   final Function(AlbumEntry album)? onTap;
   final bool isAlbumsPage;
+  final bool showSpecialAlbums;
 
   const AlbumsList({
     super.key,
@@ -21,7 +23,8 @@ class AlbumsList extends StatelessWidget {
     this.spacing = 10,
     this.borderRadius = 20,
     this.onTap,
-    this.isAlbumsPage = false
+    this.isAlbumsPage = false,
+    this.showSpecialAlbums = false,
   });
 
   @override
@@ -29,7 +32,13 @@ class AlbumsList extends StatelessWidget {
     return ValueListenableBuilder(
       valueListenable: PhotoStore.albumListenable, 
       builder: (context, Box<AlbumEntry> box, _) {
-        final albums = box.values.toList();
+        List<AlbumEntry> albums = box.values.toList();
+
+        if (showSpecialAlbums) {
+          albums.add(AlbumEntry(name: "Favorites", coverBytes: null, createdAt: DateTime.now()));
+          albums.add(AlbumEntry(name: "Screenshots", coverBytes: null, createdAt: DateTime.now()));
+        }
+
         if (albums.isEmpty) {
           return Center(
             child: Column(
@@ -52,7 +61,7 @@ class AlbumsList extends StatelessWidget {
     
         return GridView.builder(
           padding: EdgeInsets.symmetric(horizontal: spacing, vertical: spacing),
-          shrinkWrap: true,
+          shrinkWrap: isAlbumsPage,
           physics: isAlbumsPage ? const NeverScrollableScrollPhysics() : const AlwaysScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
@@ -62,7 +71,9 @@ class AlbumsList extends StatelessWidget {
           ),
           itemCount: albums.length,
           itemBuilder: (context, index) {
+            print("AlbumsList: index = $index, albums.length = ${albums.length}, showSpecialAlbums = $showSpecialAlbums");
             final album = albums[index];
+
             return ContextMenuWidget(
               contextMenuIsAllowed: (location) => isAlbumsPage,
               menuProvider: (request) {
