@@ -67,7 +67,15 @@ class _CleanerPageState extends State<CleanerPage> {
                         end: Alignment.bottomRight
                       ), 
                       "Fover will randomly select medias to clean",
-                      () => Navigator.push(context, MaterialPageRoute(builder: (_) => SwipePage()))
+                      () => Navigator.push(
+                        context, 
+                        MaterialPageRoute(
+                          builder: (_) => PopScope(
+                            canPop: false,
+                            child: SwipePage()
+                          )
+                        )
+                      )
                     ),
                     buildCard(
                       context,
@@ -79,7 +87,14 @@ class _CleanerPageState extends State<CleanerPage> {
                         end: Alignment.bottomRight  
                       ),
                       "Fover will select your heaviest medias to clean",
-                      () => Navigator.push(context, MaterialPageRoute(builder: (_) => SwipePage(filter: SwipeFilter.size))
+                      () => Navigator.push(
+                        context, 
+                        MaterialPageRoute(
+                          builder: (_) => PopScope(
+                            canPop: false,
+                            child: SwipePage(filter: SwipeFilter.size)
+                          )
+                        )
                       ),
                     ),
                     buildCard(
@@ -242,11 +257,14 @@ class _CleanerPageState extends State<CleanerPage> {
           onTap: (album) {
             Navigator.push(
               context, 
-              MaterialPageRoute(builder: (_) => SwipePage(
+              MaterialPageRoute(
+                builder: (_) => PopScope(
+                  canPop: false,
+                  child: SwipePage(
                   filter: SwipeFilter.album, 
                   album: album
-                )
-              )
+                ))
+              ),
             );
           },
         ),
