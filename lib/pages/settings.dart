@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/main.dart';
 import 'package:fover/pages/settings/cleaner.dart';
+import 'package:fover/pages/settings/quality.dart';
 import 'package:fover/pages/settings/style.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/utils/common_utils.dart';
@@ -179,6 +180,18 @@ class _SettingsPageState extends State<SettingsPage> {
                     title: Text("Import"),
                     trailing: Icon(CupertinoIcons.chevron_forward, color: Colors.grey.withAlpha(150)),
                     onTap: () {
+                    },
+                  ),
+
+                  ListTile(
+                    leading: Icon(CupertinoIcons.slider_horizontal_below_rectangle),
+                    title: Text("Video quality"),
+                    trailing: Icon(CupertinoIcons.chevron_forward, color: Colors.grey.withAlpha(150)),
+                    onTap: () {
+                      Navigator.push(
+                        context, 
+                        MaterialPageRoute(builder: (context) => QualityPage())
+                      );
                     },
                   ),
                   ListTile(
