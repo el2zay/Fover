@@ -17,6 +17,7 @@ import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/utils/editor.dart';
 import 'package:fover/src/utils/requests.dart';
+import 'package:fover/src/utils/video_controller.dart';
 import 'package:fover/src/widgets/adjust_date.dart';
 import 'package:fover/src/widgets/adjust_location.dart';
 import 'package:fover/src/widgets/button.dart';
@@ -67,7 +68,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   late final ExtendedPageController _pageController;
   bool showInfo = false;
   final _sheetController = DraggableScrollableController();
-  late double _imageFocusScale = PhotoStore.isLandscape(widget.encodedPaths[currentIndex]) ? 1 : 0.73;
+  // late double _imageFocusScale = PhotoStore.isLandscape(widget.encodedPaths[currentIndex]) ? 1 : 0.73;
   bool _isDisposed = false;  
   bool showFullText = false;
 
@@ -84,7 +85,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.mimetype[currentIndex].startsWith('video/')) {
-        _loadVideo(currentIndex);
+        loadVideo(currentIndex);
       }
     });
   }
@@ -92,7 +93,18 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   @override
   void dispose() {
     _isDisposed = true;
-    _videoController?.dispose();
+
+    final controller = _videoController;
+    _videoController = null;
+
+    try {
+      controller?.pause();
+    } catch (_) {}
+
+    try {
+      controller?.dispose();
+    } catch (_) {}
+
     _animation?.removeListener(animationListener);
     _animationController.dispose();
     _pageController.dispose();
@@ -101,42 +113,43 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     super.dispose();
   }
 
-  Future<void> _loadVideo(int index) async {
+  Future<void> releaseVideoController() async {
     final oldController = _videoController;
-    if (mounted) setState(() => _videoController = null);
-
-    await oldController?.dispose();
-
-    if (_isDisposed) return;
-
-    final encodedPath = widget.encodedPaths[index];
-    final photo = PhotoStore.get(encodedPath);
-
-    final VideoPlayerController controller;
-
-    if (photo?.localPath != null) {
-      controller = VideoPlayerController.file(File(photo!.localPath!));
-    } else if (detectBackend() == ServerBackend.copyparty) {
-      controller = VideoPlayerController.networkUrl(
-        Uri.parse("${CopypartyService.baseUrl}/photos/$encodedPath"),
-        httpHeaders: {'Authorization': 'Basic ${CopypartyService.credentials}'},
-      );
-    } else {
-      controller = VideoPlayerController.networkUrl(
-        Uri.parse("https://${box.get('apiDomain')}:${box.get('httpsPort')}/api/v15/dl/$encodedPath"),
-        httpHeaders: {"X-Fbx-App-Auth": client!.sessionToken!},
-      );
-    }
+    if (oldController == null) return;
 
     try {
-      await controller.initialize();
-    } catch (_) {
-      controller.dispose();
-      return;
+      await oldController.pause();
+    } catch (_) {}
+
+    try {
+      await oldController.seekTo(Duration.zero);
+    } catch (_) {}
+
+    if (mounted) {
+      setState(() {
+        _videoController = null;
+      });
+    } else {
+      _videoController = null;
     }
 
+    await WidgetsBinding.instance.endOfFrame;
+
+    try {
+      await oldController.dispose();
+    } catch (_) {}
+  }
+
+  Future<void> loadVideo(int index) async {
+    await releaseVideoController();
+
+    if (_isDisposed || !mounted) return;
+
+    final controller = await buildVideoController(widget.encodedPaths[index]);
+    if (controller == null) return;
+
     if (_isDisposed || !mounted) {
-      controller.dispose();
+      await controller.dispose();
       return;
     }
 
@@ -148,7 +161,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
       focused = !focused;
       if (!PhotoStore.isLandscape(widget.encodedPaths[currentIndex])) {
         // _imageFocusScale = focused ? 1 : 0.73;
-        _imageFocusScale = 1.0;
+        // _imageFocusScale = 1.0;
       }
       SystemChrome.setEnabledSystemUIMode(
         focused ? SystemUiMode.immersive : SystemUiMode.edgeToEdge,
@@ -218,17 +231,19 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   controller: _pageController,
                   itemCount: widget.encodedPaths.length,
                   scrollDirection: Axis.horizontal,
-                  onPageChanged: (index) {
+                  onPageChanged: (index) async {
                     setState(() {
                       currentIndex = index;
                       _videoOffset = Offset.zero;
                       _videoScale = 1.0;
-                      // _imageFocusScale = PhotoStore.isLandscape(widget.encodedPaths[index]) ? 1.0 : 0.73;
                     });
-                    _videoController?.pause();
-                    _videoController?.seekTo(Duration.zero);
+
+                    await releaseVideoController();
+
+                    if (!mounted) return;
+
                     if (widget.mimetype[index].startsWith("video/")) {
-                      _loadVideo(index);
+                      await loadVideo(index);
                     }
                   },
                   itemBuilder: (context, index) {
@@ -837,11 +852,6 @@ Widget _buildImage(int index) {
     );
   }
 
-  String cleanName(String filename) {
-  final pattern = RegExp(r'-\d+\.\d+-[a-zA-Z0-9]+\.[a-zA-Z0-9]+$');
-  return filename.replaceFirst(pattern, '');
-  }
-
   DraggableScrollableSheet _buildInfoSheet(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
     final photo = PhotoStore.get(widget.encodedPaths[currentIndex])!;
@@ -1066,10 +1076,12 @@ Widget _buildImage(int index) {
 
 class CupertinoVideoControls extends StatelessWidget {
   final VideoPlayerController controller;
-  const CupertinoVideoControls({super.key, required this.controller});
+  final bool? time;
+  const CupertinoVideoControls({super.key, required this.controller, this.time = true});
 
   @override
   Widget build(BuildContext context) {
+    print('Taille actuelle: ${controller.value.size}');
     return AnimatedSwitcher(
       duration: Duration(milliseconds: 200),
       child: !focused
@@ -1126,10 +1138,11 @@ class CupertinoVideoControls extends StatelessWidget {
                               ),
                             ),
                           ),
-                          Text(
-                            _formatDuration(position),
-                            style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
-                          ),
+                          if (time == true)
+                            Text(
+                              _formatDuration(position),
+                              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                            ),
                         ],
                       );
                     },

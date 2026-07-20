@@ -7,15 +7,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:fover/main.dart';
 import 'package:fover/pages/library.dart';
+import 'package:fover/pages/viewer.dart';
 import 'package:fover/src/models/album_entry.dart';
 import 'package:fover/src/models/photo_entry.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart' show formatSize;
 import 'package:fover/src/utils/requests.dart';
+import 'package:fover/src/utils/video_controller.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/container.dart';
 import 'package:fover/src/widgets/dialog.dart';
 import 'package:intl/intl.dart';
+import 'package:video_player/video_player.dart';
 
 enum SwipeFilter { library, favorites, album, month, year, size }
 
@@ -292,9 +295,11 @@ class _SwipePageState extends State<SwipePage> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(0),
-                  child: PhotoCard(
+                  child: MediaCard(
+                    photo: photo,
                     key: ValueKey(photo.path),
-                    notifier: notifier
+                    notifier: notifier,
+                    isActive: index == this.index,
                   ),
                 ),
                 Positioned(
@@ -400,27 +405,216 @@ class _SwipePageState extends State<SwipePage> {
   
 }
 
-class PhotoCard extends StatelessWidget {
-  final ValueNotifier<Uint8List?> notifier;
-  const PhotoCard({super.key, required this.notifier});
+class MediaCard extends StatefulWidget {
+  final PhotoEntry photo;
+  final ValueNotifier<Uint8List?>? notifier;
+  final bool isActive;
+  const MediaCard({
+    super.key, 
+    required this.photo,
+    this.notifier,
+    required this.isActive,
+  });
+
+  @override
+  State<MediaCard> createState() => _MediaCardState();
+}
+
+class _MediaCardState extends State<MediaCard> {
+  VideoPlayerController? videoController;
+  bool isDisposed = false;
+
+  bool get isVideo => (widget.photo.mimetype ?? '').startsWith('video/');
+
+  @override
+  void initState() {
+    super.initState();
+    if (isVideo) {
+      loadVideo();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant MediaCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final mediaChanged = oldWidget.photo.path != widget.photo.path ||
+        oldWidget.photo.mimetype != widget.photo.mimetype;
+
+    if (mediaChanged) {
+      if (isVideo) {
+        loadVideo();
+      } else {
+        releaseVideoController();
+      }
+      return;
+    }
+
+    final controller = videoController;
+    if (controller == null || !controller.value.isInitialized) return;
+
+    if (widget.isActive) {
+      controller.play();
+    } else {
+      releaseVideoController();
+    }
+  }
+
+  @override
+  void dispose() {
+    isDisposed = true;
+
+    final controller = videoController;
+    videoController = null;
+
+    try {
+      controller?.pause();
+    } catch (_) {}
+
+    try {
+      controller?.dispose();
+    } catch (_) {}
+
+    super.dispose();
+  }
+
+    Future<void> releaseVideoController() async {
+    final oldController = videoController;
+    if (oldController == null) return;
+
+    try {
+      await oldController.pause();
+    } catch (_) {}
+
+    try {
+      await oldController.seekTo(Duration.zero);
+    } catch (_) {}
+
+    if (mounted) {
+      setState(() {
+        videoController = null;
+      });
+    } else {
+      videoController = null;
+    }
+
+    await WidgetsBinding.instance.endOfFrame;
+
+    try {
+      await oldController.dispose();
+    } catch (_) {}
+  }
+
+  Future<void> replaceMedia() async {
+    final oldController = videoController;
+    if (mounted) {
+      setState(() => videoController = null);
+    }
+    await oldController?.dispose();
+
+    if (isDisposed || !mounted) return;
+
+    if (isVideo) {
+      await loadVideo();
+    }
+  }
+
+  Future<void> loadVideo() async {
+    await releaseVideoController();
+
+    if (isDisposed || !mounted) return;
+
+    final controller = await buildVideoController(widget.photo.path);
+    if (controller == null) return;
+
+    try {
+      await controller.setLooping(true);
+      await controller.setVolume(1);
+
+      if (widget.isActive) {
+        await controller.play();
+      }
+    } catch (_) {
+      await controller.dispose();
+      return;
+    }
+
+    if (isDisposed || !mounted) {
+      await controller.dispose();
+      return;
+    }
+
+    setState(() => videoController = controller);
+  }
+
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<Uint8List?>(
-      valueListenable: notifier,
-      builder: (context, bytes, _) {
-        if (bytes == null) {
-          return Container(
-            color: Colors.grey[900],
-            child: Center(child: CupertinoActivityIndicator()),
+    if (!isVideo) {
+      return ValueListenableBuilder<Uint8List?>(
+        valueListenable: widget.notifier!,
+        builder: (context, bytes, _) {
+          if (bytes == null) {
+            return Container(
+              color: Colors.grey[900],
+              child: const Center(child: CupertinoActivityIndicator()),
+            );
+          }
+
+          return Image.memory(
+            bytes,
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
           );
-        }
-        return Image.memory(
-          bytes,
-          width: double.infinity,
-          height: double.infinity,
-        );
-      },
+        },
+      );
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (widget.notifier != null)
+          ValueListenableBuilder<Uint8List?>(
+            valueListenable: widget.notifier!,
+            builder: (context, bytes, _) {
+              if (bytes == null) {
+                return Container(color: Colors.grey[900]);
+              }
+
+              return Image.memory(
+                bytes,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+              );
+            },
+          ),
+
+        if (videoController != null && videoController!.value.isInitialized)
+          FittedBox(
+            fit: BoxFit.cover,
+            clipBehavior: Clip.hardEdge,
+            child: SizedBox(
+              width: videoController!.value.size.width,
+              height: videoController!.value.size.height,
+              child: VideoPlayer(videoController!),
+            ),
+          )
+        else
+          const Center(child: CupertinoActivityIndicator()),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 84,
+            child: videoController != null && videoController!.value.isInitialized
+                ? CupertinoVideoControls(
+                  controller: videoController!,
+                  time: false
+                  )
+                : const SizedBox(),
+          ),
+      ],
     );
   }
 }
