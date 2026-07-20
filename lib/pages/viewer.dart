@@ -282,7 +282,11 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                                           ? Center(
                                             child: AspectRatio(
                                               aspectRatio: _videoController!.value.aspectRatio,
-                                              child: VideoPlayer(_videoController!)
+                                              child: GestureDetector(
+                                                onLongPressStart: (_) => _videoController?.setPlaybackSpeed(2.0),
+                                                onLongPressEnd: (_) => _videoController?.setPlaybackSpeed(1.0),
+                                                child:VideoPlayer(_videoController!)
+                                              ),
                                             ),
                                           )
                                           : const Center(
