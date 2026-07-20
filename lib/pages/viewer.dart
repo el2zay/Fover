@@ -1090,7 +1090,7 @@ class CupertinoVideoControls extends StatelessWidget {
             child: Padding(
               padding: EdgeInsetsGeometry.symmetric(horizontal: 10),
               child: Transform.scale(
-                scaleY: 1.15,
+                scaleY: 1.1,
                 child: MyContainer(
                   child: ValueListenableBuilder<VideoPlayerValue>(
                     valueListenable: controller,
@@ -1100,7 +1100,6 @@ class CupertinoVideoControls extends StatelessWidget {
                       final duration = value.duration;
                       final double maxMs = duration.inMilliseconds.toDouble().clamp(0, double.infinity);
                       final posMs = position.inMilliseconds.clamp(0, duration.inMilliseconds).toDouble();
-
                       return Row(
                         children: [
                           CupertinoButton(
@@ -1114,30 +1113,27 @@ class CupertinoVideoControls extends StatelessWidget {
                           ),
                           SizedBox(
                             width: MediaQuery.of(context).size.width * 0.7,
-                            child: Transform.scale(
-                              scaleY: 1.3,
-                              child: SliderTheme(
-                                data: SliderTheme.of(context).copyWith(
-                                  thumbShape: SliderComponentShape.noThumb,
-                                  overlayShape: SliderComponentShape.noOverlay,
-                                  padding: EdgeInsets.only(left: 15, right: 10),
-                                ),
-                                child: Slider(
-                                  min: 0,
-                                  max: maxMs == 0 ? 1 : maxMs,
-                                  value: maxMs == 0 ? 0 : posMs,
-                                  activeColor: Colors.white,
-                                  inactiveColor: Colors.grey.withAlpha(100),
-                                  thumbColor: Colors.transparent,
-                                  overlayColor: WidgetStateProperty.all(Colors.transparent),
-                                  onChanged: (v) {
-                                    if (duration == Duration.zero) return;
-                                    controller.seekTo(Duration(milliseconds: v.toInt()));
-                                  },
-                                ),
+                            child: SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                thumbShape: RoundSliderThumbShape(enabledThumbRadius: 6),
+                                overlayShape: SliderComponentShape.noOverlay,
+                                padding: EdgeInsets.only(left: 15, right: 10),
+                              ),
+                              child: Slider(
+                                min: 0,
+                                max: maxMs == 0 ? 1 : maxMs,
+                                value: maxMs == 0 ? 0 : posMs,
+                                activeColor: Colors.white,
+                                inactiveColor: Colors.grey.withAlpha(100),
+                                overlayColor: WidgetStateProperty.all(Colors.transparent),
+                                onChanged: (v) {
+                                  if (duration == Duration.zero) return;
+                                  controller.seekTo(Duration(milliseconds: v.toInt()));
+                                },
                               ),
                             ),
                           ),
+
                           if (time == true)
                             Text(
                               _formatDuration(position),
