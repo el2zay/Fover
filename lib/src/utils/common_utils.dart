@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:fover/main.dart';
 import 'package:fover/src/models/photo_entry.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
 
 DateTime? parseExifDate(String? raw) {
   if (raw == null) return null;
@@ -107,6 +108,31 @@ ServerBackend detectBackend() {
   if (box.get("appToken") != null) return ServerBackend.freebox;
   if (box.get("copypartyUrl") != null) return ServerBackend.copyparty;
   return ServerBackend.none;
+}
+
+Future<bool> urlExists(String url, {required Map<String, String> headers}) async {
+  try {
+    final response = await http.head(
+      Uri.parse(url), 
+      headers: headers
+    ).timeout(const Duration(seconds: 3));
+    return response.statusCode == 200;
+  } catch (e) {
+    return false;
+  }
+}
+
+
+String cleanName(String filename, {bool removeExtension = false}) {
+  final pattern = RegExp(r'-\d+\.\d+-[a-zA-Z0-9]+\.[a-zA-Z0-9]+$');
+  String cleaned = filename.replaceAll(pattern, '');
+  if (removeExtension) {
+    final ext = cleaned.lastIndexOf('.');
+    if (ext >= 0) {
+      cleaned = cleaned.substring(0, ext);
+    }
+  }
+  return cleaned;
 }
 
 Future<void> openUrl(Uri url) async {
