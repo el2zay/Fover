@@ -204,12 +204,12 @@ class CopypartyService {
   }
 
   // AI Generated
-  static Future<void> uploadLocalFiles({
+  static Future<List<String>> uploadLocalFiles({
     required List<File> files,
     List<String>? filenames,
   }) async {
     _uploadCancelToken = CancelToken();
-    _cancelRequested = false; 
+    _cancelRequested = false;
 
     final allFilenames = List.generate(
       files.length,
@@ -222,6 +222,7 @@ class CopypartyService {
 
     int bytesUploadedSoFar = 0;
     bool needsCleanup = false;
+    final List<String> uploadedPaths = [];
 
     try {
       for (int i = 0; i < files.length; i++) {
@@ -242,8 +243,8 @@ class CopypartyService {
           ),
         });
 
-        await _dio.post(
-          '$baseUrl/photos?bup',
+        final response = await _dio.post(
+          '$baseUrl/photos?bup&j',
           data: formData,
           options: Options(headers: _headers),
           cancelToken: _uploadCancelToken,
@@ -257,10 +258,27 @@ class CopypartyService {
           break;
         }
 
+        String finalPath = filename;
+        try {
+          final data = response.data;
+          if (data is Map && data['fname'] != null) {
+            finalPath = data['fname'];
+          } else if (data is List && data.isNotEmpty) {
+            finalPath = data.first.toString();
+          } else if (data is String && data.trim().isNotEmpty) {
+            finalPath = data.trim();
+          }
+        } catch (_) {
+        }
+
+        uploadedPaths.add(finalPath);
         bytesUploadedSoFar += fileSize;
-        log('Uploaded $filename');
+        log('Uploaded $filename -> $finalPath');
       }
     } on DioException catch (e) {
+      log('❌ Upload failed: ${e.message}');
+      log('❌ Response status: ${e.response?.statusCode}');
+      log('❌ Response data: ${e.response?.data}');
       if (CancelToken.isCancel(e)) {
         needsCleanup = true;
       }
@@ -283,6 +301,8 @@ class CopypartyService {
       _uploadCancelToken = null;
       _cancelRequested = false;
     }
+
+    return uploadedPaths;
   }
 
   static Future<String?> uploadBytes({

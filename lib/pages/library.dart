@@ -176,6 +176,10 @@ class LibraryPageState extends State<LibraryPage> {
       final provider = DefaultAssetPickerProvider(
         maxAssets: 100,
         requestType: RequestType.common,
+        filterOptions: FilterOptionGroup(
+          imageOption: const FilterOption(needTitle: true),
+          videoOption: const FilterOption(needTitle: true),
+        ),
       );
 
       final delegate = FoverPickerDelegate(
@@ -201,25 +205,58 @@ class LibraryPageState extends State<LibraryPage> {
 
       List<File> files = [];
       final List<String> fileNames = [];
+      final Map<int, int> liveVideoIndexOf = {};
+
       for (final asset in assets) {
         final file = await asset.originFile;
+        if (file == null) continue;
+        final rawTitle = asset.title;
+        final title = (rawTitle == null || rawTitle.isEmpty)
+            ? file.path.split('/').last
+            : rawTitle;
+        final baseName = title.contains('.') ? title.substring(0, title.lastIndexOf('.')) : title;
+        final imageExt = file.path.split('.').last;
 
-        if (file != null) {
-          files.add(file);
-          fileNames.add(_realFileName(file.path, asset.title));
+        final imageIndex = files.length;
+        files.add(file);
+        fileNames.add(_realFileName(file.path, "$baseName.$imageExt"));
+
+        if (asset.isLivePhoto) {
+          final videoFile = await asset.originFileWithSubtype;
+          if (videoFile != null) {
+            final videoExt = videoFile.path.split('.').last;
+            liveVideoIndexOf[imageIndex] = files.length;
+            files.add(videoFile);
+            fileNames.add(_realFileName(videoFile.path, "$baseName.$videoExt"));
+          }
         }
       }
 
+      List<String>? uploadedPaths;
       switch (detectBackend()) {
         case ServerBackend.freebox:
           await FreeboxService.uploadLocalFiles(files: files, filenames: fileNames);
+          break;
         case ServerBackend.copyparty:
-          await CopypartyService.uploadLocalFiles(files: files, filenames: fileNames);
+          uploadedPaths = await CopypartyService.uploadLocalFiles(files: files, filenames: fileNames);
+          break;
         default:
           break;
       }
 
+
+    await refresh();
+
+    if (uploadedPaths != null) {
+      for (final entry in liveVideoIndexOf.entries) {
+        final imagePath = uploadedPaths[entry.key];
+        final videoPath = uploadedPaths[entry.value];
+        log('🔗 Linking $imagePath -> $videoPath');
+        PhotoStore.linkLivePhoto(imagePath: imagePath, videoPath: videoPath);
+      }
       await refresh();
+    }
+
     } catch (e) {
       final content = e.toString().contains("PermissionState.denied") 
         ? "Fover does not have permission to access your gallery." 
@@ -368,21 +405,26 @@ class LibraryPageState extends State<LibraryPage> {
           .toList();
     }
 
-      if (widget.photos != null) {
-        _searchIndex = widget.photos!.map((p) => _SearchEntry(
-          encodedPath: p.path,
-          mimetype: p.mimetype ?? 'image/jpeg',
-          searchableText: "",
-          isFavorite: p.favorite == true,
-          isScreenshot: p.isScreenshot == true,
-          hasDetectedText: p.detectedText?.isNotEmpty == true,
-          sortKey: PhotoStore.getDate(p.path).toIso8601String(),
-        )).toList();
-        return;
-      }
+    if (widget.photos != null) {
+      _searchIndex = widget.photos!.map((p) => _SearchEntry(
+        encodedPath: p.path,
+        mimetype: p.mimetype ?? 'image/jpeg',
+        searchableText: "",
+        isFavorite: p.favorite == true,
+        isScreenshot: p.isScreenshot == true,
+        hasDetectedText: p.detectedText?.isNotEmpty == true,
+        sortKey: PhotoStore.getDate(p.path).toIso8601String(),
+      )).toList();
+      return;
+    }
 
+    final liveVideoPaths = PhotoStore.getAll()
+      .where((p) => p.livePhotoPath != null)
+      .map((p) => p.livePhotoPath)
+      .toSet();
 
     final filteredEntries = entries.where((entry) {
+      final path = entry['path'] as String;
       final stored = PhotoStore.get(entry['path'] as String);
       if (stored?.isOldVersion == true) return false;
 
@@ -393,6 +435,8 @@ class LibraryPageState extends State<LibraryPage> {
       if (widget.album != Album.hidden && stored?.hidden == true) {
         return false;
       }
+
+      if (liveVideoPaths.contains(path)) return false;
 
       if (widget.album == Album.videos) {
         return stored?.mimetype?.startsWith("video/") == true && stored?.deletedAt == null;
@@ -1080,7 +1124,6 @@ class LibraryPageState extends State<LibraryPage> {
                                           );
                                           log('Downloaded to: $path');
                                         } else {
-                                          log("ici");
                                           DownloadService.remove(data.encodedPaths[index]);
                                         }
                                       }
@@ -1563,9 +1606,6 @@ class _MediaTileState extends State<_MediaTile> {
       if (isVideo) {
         return await VideoThumbnail.thumbnailData(
           video: photo.localPath!,
-          imageFormat: ImageFormat.WEBP,
-          maxWidth: 300,
-          quality: 10,
         );
       }
 
