@@ -73,6 +73,7 @@ class PhotoStore {
     String? editedFrom,
     bool isOldVersion = false,
     DateTime? deletedAt,
+    String? livePhotoPath
   }) async {
     if (_photoBox.containsKey(path)) return;
 
@@ -100,7 +101,8 @@ class PhotoStore {
         isScreenshot: isScreenshot,
         editedFrom: editedFrom,
         isOldVersion: isOldVersion,
-        deletedAt: deletedAt
+        deletedAt: deletedAt,
+        livePhotoPath: livePhotoPath
       )
     );
     _scheduleUpload();
@@ -157,7 +159,11 @@ class PhotoStore {
         shutterSpeed: entry.shutterSpeed,
         displayDate: entry.displayDate,
         localPath: entry.localPath,
-        isScreenshot: entry.isScreenshot
+        isScreenshot: entry.isScreenshot,
+        editedFrom: entry.editedFrom,
+        isOldVersion: entry.isOldVersion,
+        displayDateUpdatedAt: entry.displayDateUpdatedAt,
+        livePhotoPath: entry.livePhotoPath
       )
     );
     _scheduleUpload();
@@ -325,6 +331,14 @@ class PhotoStore {
     }
   }
 
+  static void linkLivePhoto({required String imagePath, required String videoPath}) {
+    final imageEntry = _photoBox.get(imagePath);
+    if (imageEntry != null) {
+      imageEntry.livePhotoPath = videoPath;
+      imageEntry.save();
+    }
+    _scheduleUpload();
+  }
 
   static Future<void> existsOnServer() async {
     Set<String> serverFiles = {};
