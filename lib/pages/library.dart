@@ -1034,6 +1034,7 @@ class LibraryPageState extends State<LibraryPage> {
                               selected: (selectedMode || widget.onlySelect) && selectedImages.contains(index), 
                               isVideo: data.mimetypes[index].startsWith('video/'), 
                               isFavorite: photo?.favorite == true, 
+                              isLive: photo?.livePhotoPath != null,
                               trashMode: widget.album == Album.trash, 
                               heroPrefix: _heroPrefix,
                               daysLeft: photo?.deletedAt != null
@@ -1550,6 +1551,7 @@ class _MediaTile extends StatefulWidget {
   final String mimetype;
   final bool selected;
   final bool isVideo;
+  final bool isLive;
   final bool isFavorite;
   final bool trashMode;
   final int? daysLeft;
@@ -1565,6 +1567,7 @@ class _MediaTile extends StatefulWidget {
     required this.mimetype,
     required this.selected,
     required this.isVideo,
+    required this.isLive,
     required this.isFavorite,
     required this.trashMode,
     required this.daysLeft,
@@ -1710,6 +1713,17 @@ class _MediaTileState extends State<_MediaTile> {
                   bottom: 5,
                   right: 5,
                   child: buildDurationBadge(PhotoStore.get(widget.encodedPath)?.duration)
+                ),
+              
+              if (widget.isLive)
+                Positioned(
+                  bottom: 5,
+                  right: 5,
+                  child: CNIcon(
+                    symbol: CNSymbol('livephoto', size: 18),
+                    size: 18,
+                    color: Colors.white,
+                  )
                 ),
 
               if (widget.selected)
