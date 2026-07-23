@@ -33,6 +33,15 @@ import 'package:share_plus/share_plus.dart';
 bool focused = false;
 
 class ViewerPage extends StatefulWidget {
+  final List<String> mimetype;
+  final List<String> encodedPaths;
+  final int index;
+  final bool trashMode;
+  final VoidCallback? onRefresh;
+  final String heroPrefix;
+  final String livePath;
+
+
   const ViewerPage({
     super.key,
     required this.mimetype,
@@ -41,14 +50,8 @@ class ViewerPage extends StatefulWidget {
     this.trashMode = false,
     required this.onRefresh,
     required this.heroPrefix,
+    required this.livePath,
   });
-
-  final List<String> mimetype;
-  final List<String> encodedPaths;
-  final int index;
-  final bool trashMode;
-  final VoidCallback? onRefresh;
-  final String heroPrefix;
 
   @override
   State<ViewerPage> createState() => _ViewerPageState();
@@ -65,6 +68,10 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   Offset _videoOffset = Offset.zero;
   double _videoScale = 1.0;
   VideoPlayerController? _videoController;
+  VideoPlayerController? liveVideoController;
+  VideoPlayerController? _preloadedController;
+  String? _preloadedPath;
+  bool _isPreloading = false;
   late final ExtendedPageController _pageController;
   bool showInfo = false;
   final _sheetController = DraggableScrollableController();
@@ -96,6 +103,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
 
     final controller = _videoController;
     _videoController = null;
+    _removeLive();
 
     try {
       controller?.pause();
@@ -138,6 +146,12 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     try {
       await oldController.dispose();
     } catch (_) {}
+  }
+
+  @override
+  void didUpdateWidget(covariant old) {
+    super.didUpdateWidget(old);
+    if (old.livePath != widget.livePath) _removeLive();
   }
 
   Future<void> loadVideo(int index) async {
@@ -195,6 +209,51 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     _animationController.forward();
   }
 
+  OverlayEntry? _liveOverlay;
+  bool _liveVisible = false;
+
+  void _showLive(VideoPlayerController controller) {
+    _liveVisible = false;
+    _liveOverlay = OverlayEntry(
+      builder: (_) => IgnorePointer(
+        child: AnimatedOpacity(
+          opacity: _liveVisible ? 1 : 0,
+          duration: const Duration(milliseconds: 450),
+          curve: Curves.easeInOut,
+          child: Container(
+            color: Colors.black,
+            child: Center(
+              child: AspectRatio(
+                aspectRatio: controller.value.aspectRatio,
+                child: VideoPlayer(controller),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_liveOverlay!);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _liveVisible = true;
+      _liveOverlay?.markNeedsBuild();
+    });
+  }
+
+  void _removeLive() {
+    if (_liveOverlay == null) return;
+    _liveVisible = false;
+    _liveOverlay?.markNeedsBuild();
+
+    Future.delayed(const Duration(milliseconds: 450), () {
+      _liveOverlay?.remove();
+      _liveOverlay = null;
+      liveVideoController?.dispose();
+      liveVideoController = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return ExtendedImageSlidePage(
@@ -237,7 +296,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                       _videoOffset = Offset.zero;
                       _videoScale = 1.0;
                     });
-
+                    
                     await releaseVideoController();
 
                     if (!mounted) return;
@@ -252,58 +311,78 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                       child: widget.mimetype[index].startsWith("video/")
                         ? index == currentIndex
                           ? GestureDetector(
-                                onTap: _toggleFocus,
-                                onVerticalDragUpdate: (details) {
+                              onTap: _toggleFocus,
+                              onVerticalDragUpdate: (details) {
+                                setState(() {
+                                  _videoOffset += Offset(0, details.delta.dy);
+                                  final progress = (_videoOffset.dy.abs() / 300).clamp(0.0, 1.0);
+                                  _videoScale = 1.0 - (progress * 0.3);
+                                });
+                              },
+                              onVerticalDragEnd: (details) {
+                                final velocity = details.primaryVelocity ?? 0;
+                                if (_videoOffset.dy.abs() > 100 || velocity.abs() > 500) {
+                                  Navigator.pop(context);
+                                } else {
                                   setState(() {
-                                    _videoOffset += Offset(0, details.delta.dy);
-                                    final progress = (_videoOffset.dy.abs() / 300).clamp(0.0, 1.0);
-                                    _videoScale = 1.0 - (progress * 0.3);
+                                    _videoOffset = Offset.zero;
+                                    _videoScale = 1.0;
                                   });
-                                },
-                                onVerticalDragEnd: (details) {
-                                  final velocity = details.primaryVelocity ?? 0;
-                                  if (_videoOffset.dy.abs() > 100 || velocity.abs() > 500) {
-                                    Navigator.pop(context);
-                                  } else {
-                                    setState(() {
-                                      _videoOffset = Offset.zero;
-                                      _videoScale = 1.0;
-                                    });
-                                  }
-                                },
-                                child: Transform.scale(
-                                  scale: _videoScale,
-                                  child: Transform.translate(
-                                    offset: _videoOffset,
-                                    child: Stack(
-                                      fit: StackFit.expand,
-                                      children: [
-                                        _videoController != null && _videoController!.value.isInitialized
-                                          ? Center(
-                                            child: AspectRatio(
-                                              aspectRatio: _videoController!.value.aspectRatio,
-                                              child: GestureDetector(
-                                                onLongPressStart: (_) => _videoController?.setPlaybackSpeed(2.0),
-                                                onLongPressEnd: (_) => _videoController?.setPlaybackSpeed(1.0),
-                                                child:VideoPlayer(_videoController!)
-                                              ),
+                                }
+                              },
+                              child: Transform.scale(
+                                scale: _videoScale,
+                                child: Transform.translate(
+                                  offset: _videoOffset,
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      _videoController != null && _videoController!.value.isInitialized
+                                        ? Center(
+                                          child: AspectRatio(
+                                            aspectRatio: _videoController!.value.aspectRatio,
+                                            child: GestureDetector(
+                                              onLongPressStart: (_) => _videoController?.setPlaybackSpeed(2.0),
+                                              onLongPressEnd: (_) => _videoController?.setPlaybackSpeed(1.0),
+                                              child: VideoPlayer(_videoController!)
                                             ),
-                                          )
-                                          : const Center(
-                                            child: CircularProgressIndicator(color: Colors.white38)
                                           ),
-                                      ],
-                                    ),
+                                        )
+                                        : const Center(
+                                          child: CircularProgressIndicator(color: Colors.white38)
+                                        ),
+                                    ],
                                   ),
                                 ),
-                              )
-                            : const SizedBox()
-                          : _buildImage(index)
-                        );
-                      },
-                    ),
+                              ),
+                            )
+                          : const SizedBox()
+                        : GestureDetector(
+                          onLongPressStart: (_) async {
+                            if (widget.livePath.isEmpty) return;
+                            final controller = await buildVideoController(widget.livePath);
+
+                            if (controller == null || !mounted) {
+                              await controller?.dispose();
+                              return;
+                            }
+
+                            HapticFeedback.mediumImpact();
+                            await controller.play();
+                            controller.addListener(() {
+                              if (controller.value.position >= controller.value.duration) _removeLive();
+                            });
+                            _showLive(controller);
+                          },
+                          onLongPressEnd: (_) => _removeLive(),
+                          onLongPressCancel: () => _removeLive(),
+                          child: _buildImage(index),
+                        )
+                      );
+                    },
                   ),
                 ),
+              ),
 
               if (widget.mimetype[currentIndex].startsWith('video'))
                 Positioned(
@@ -314,7 +393,8 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                       ? CupertinoVideoControls(controller: _videoController!)
                       : const SizedBox(),
                 ),
-               Positioned(
+
+              Positioned(
                 bottom: 0, left: 0, right: 0,
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
