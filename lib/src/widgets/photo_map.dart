@@ -210,6 +210,7 @@ class _PhotoMapState extends State<PhotoMap> {
           index: 0, 
           trashMode: false,
           heroPrefix: '',
+          livePath: [PhotoStore.get(cluster.photos.first.path)?.livePhotoPath ?? ''],
           onRefresh: () {}
         )
       ));

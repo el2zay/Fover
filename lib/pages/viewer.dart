@@ -39,7 +39,7 @@ class ViewerPage extends StatefulWidget {
   final bool trashMode;
   final VoidCallback? onRefresh;
   final String heroPrefix;
-  final String livePath;
+  final List<String> livePath;
 
 
   const ViewerPage({
@@ -69,9 +69,6 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   double _videoScale = 1.0;
   VideoPlayerController? _videoController;
   VideoPlayerController? liveVideoController;
-  VideoPlayerController? _preloadedController;
-  String? _preloadedPath;
-  bool _isPreloading = false;
   late final ExtendedPageController _pageController;
   bool showInfo = false;
   final _sheetController = DraggableScrollableController();
@@ -360,7 +357,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                         : GestureDetector(
                           onLongPressStart: (_) async {
                             if (widget.livePath.isEmpty) return;
-                            final controller = await buildVideoController(widget.livePath);
+                            final controller = await buildVideoController(widget.livePath.elementAt(index));
 
                             if (controller == null || !mounted) {
                               await controller?.dispose();
@@ -410,68 +407,68 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     );
   }
 
-Widget _buildImage(int index) {
-  final photo = PhotoStore.get(widget.encodedPaths[index]);
+  Widget _buildImage(int index) {
+    final photo = PhotoStore.get(widget.encodedPaths[index]);
 
-  // AI Generated
-  ExtendedImage buildExtended(String url, Map<String, String>? headers) {
-    return ExtendedImage.network(
-      url,
-      key: ValueKey(url),
-      fit: BoxFit.contain,
-      mode: ExtendedImageMode.gesture,
-      enableSlideOutPage: true,
-      onDoubleTap: _handleDoubleTap,
-      headers: headers,
-      loadStateChanged: (state) {
-        switch (state.extendedImageLoadState) {
-          case LoadState.loading:
-            return const Center(child: CircularProgressIndicator(color: Colors.white38));
-          case LoadState.failed:
-            return const Center(child: Text('Error loading image'));
-          case LoadState.completed:
-            return null;
+    // AI Generated
+    ExtendedImage buildExtended(String url, Map<String, String>? headers) {
+      return ExtendedImage.network(
+        url,
+        key: ValueKey(url),
+        fit: BoxFit.contain,
+        mode: ExtendedImageMode.gesture,
+        enableSlideOutPage: true,
+        onDoubleTap: _handleDoubleTap,
+        headers: headers,
+        loadStateChanged: (state) {
+          switch (state.extendedImageLoadState) {
+            case LoadState.loading:
+              return const Center(child: CircularProgressIndicator(color: Colors.white38));
+            case LoadState.failed:
+              return const Center(child: Text('Error loading image'));
+            case LoadState.completed:
+              return null;
+          }
+        },
+      );
+    }
+
+    ExtendedImage buildExtendedFile(File file) {
+      return ExtendedImage.file(
+        file,
+        clearMemoryCacheWhenDispose: true,
+        key: ValueKey(photo!.localPath),
+        fit: BoxFit.contain,
+        mode: ExtendedImageMode.gesture,
+        enableSlideOutPage: true,
+        onDoubleTap: _handleDoubleTap,
+      );
+    }
+
+    ExtendedImage raw;
+    //
+
+    if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
+      raw = buildExtendedFile(File(photo.localPath!));
+    } else if (detectBackend() == ServerBackend.copyparty) {
+      final url = '${CopypartyService.baseUrl}/photos/${widget.encodedPaths[index]}';
+      raw = buildExtended(url, {'Authorization': 'Basic ${CopypartyService.credentials}'});
+    } else {
+      final url = 'https${box.get('apiDomain')}:${box.get('httpsPort')}/api/v15/dl/${widget.encodedPaths[index]}';
+      raw = buildExtended(url, {'X-Fbx-App-Auth': client!.sessionToken!});
+    }
+
+    return Hero(
+      tag: '${widget.heroPrefix}${widget.encodedPaths[index]}',
+      flightShuttleBuilder: (flightContext, animation, direction, fromContext, toContext) {
+        if (direction == HeroFlightDirection.pop) {
+          return fromContext.widget;
         }
+        return FadeTransition(opacity: animation, child: raw);
       },
+      child: raw,
     );
   }
-
-  ExtendedImage buildExtendedFile(File file) {
-    return ExtendedImage.file(
-      file,
-      clearMemoryCacheWhenDispose: true,
-      key: ValueKey(photo!.localPath),
-      fit: BoxFit.contain,
-      mode: ExtendedImageMode.gesture,
-      enableSlideOutPage: true,
-      onDoubleTap: _handleDoubleTap,
-    );
-  }
-
-  ExtendedImage raw;
-  //
-
-  if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
-    raw = buildExtendedFile(File(photo.localPath!));
-  } else if (detectBackend() == ServerBackend.copyparty) {
-    final url = '${CopypartyService.baseUrl}/photos/${widget.encodedPaths[index]}';
-    raw = buildExtended(url, {'Authorization': 'Basic ${CopypartyService.credentials}'});
-  } else {
-    final url = 'https${box.get('apiDomain')}:${box.get('httpsPort')}/api/v15/dl/${widget.encodedPaths[index]}';
-    raw = buildExtended(url, {'X-Fbx-App-Auth': client!.sessionToken!});
-  }
-
-  return Hero(
-    tag: '${widget.heroPrefix}${widget.encodedPaths[index]}',
-    flightShuttleBuilder: (flightContext, animation, direction, fromContext, toContext) {
-      if (direction == HeroFlightDirection.pop) {
-        return fromContext.widget;
-      }
-      return FadeTransition(opacity: animation, child: raw);
-    },
-    child: raw,
-  );
-}
 
   PreferredSizeWidget? _buildAppBar() {
     return  AppBar(

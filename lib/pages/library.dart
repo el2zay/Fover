@@ -1082,6 +1082,7 @@ class LibraryPageState extends State<LibraryPage> {
                                         trashMode: widget.album == Album.trash,
                                         onRefresh: refresh,
                                         heroPrefix: _heroPrefix,
+                                        livePath: data.encodedPaths.map((path) => PhotoStore.get(path)?.livePhotoPath ?? "").toList(),
                                       ),
                                       transitionsBuilder: (_, animation, __, child) {
                                       return FadeTransition(
