@@ -2,6 +2,7 @@ import 'package:cupertino_calendar_picker/cupertino_calendar_picker.dart';
 import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fover/main.dart';
 import 'package:fover/src/models/photo_entry.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/widgets/button.dart';
@@ -51,8 +52,8 @@ class _AdjustDateState extends State<AdjustDate> {
             glassConfig: const CNButtonConfig(
               style: CNButtonStyle.prominentGlass,
             ),
-            textColor: Colors.blue,
-            tint: Colors.blue.withAlpha(230),
+            textColor: box.get("primaryColor") ?? Colors.blue,
+            tint: box.get("primaryColor") ?? Colors.blue.withAlpha(230),
             onPressed: () {
               if (newDate != null) {
                 final isReverted = newDate == widget.photo.date && _originalDisplayDate == null;

@@ -1,6 +1,7 @@
 import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fover/main.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
@@ -142,7 +143,7 @@ class FoverPickerDelegate extends DefaultAssetPickerBuilderDelegate<DefaultAsset
               icon: Icon(CupertinoIcons.check_mark, size: 20),
               glassIcon: CNSymbol('checkmark', size: 14, color: provider.selectedAssets.isNotEmpty ? Colors.white70 : Colors.white38),
               enabled: provider.selectedAssets.isNotEmpty,
-              tint: Colors.blue,
+              tint: box.get("primaryColor") ?? Colors.blue,
               glassConfig: const CNButtonConfig(
                 style: CNButtonStyle.prominentGlass
               ),

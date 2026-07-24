@@ -7,6 +7,7 @@ import 'dart:ui' as ui;
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fover/main.dart';
 import 'package:fover/src/services/photo_store.dart' show PhotoStore;
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/widgets/button.dart';
@@ -353,8 +354,8 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
               ),
               actions: [
                 Button.iconOnly(
-                  tint: Colors.blue,
-                  backgroundColor: Colors.blue,
+                  tint: box.get("primaryColor") ?? Colors.blue,
+                  backgroundColor: box.get("primaryColor") ?? Colors.blue,
                   glassConfig: CNButtonConfig(style: CNButtonStyle.prominentGlass),
                   icon: const Icon(Icons.check, color: Colors.white, size: 16),
                   glassIcon: CNSymbol('checkmark', size: 16),

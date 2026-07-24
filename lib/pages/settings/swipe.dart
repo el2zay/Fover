@@ -230,8 +230,8 @@ class _SwipePageState extends State<SwipePage> {
               glassConfig: CNButtonConfig(
                 style: CNButtonStyle.prominentGlass,
               ),
-              tint: Colors.blue,
-              backgroundColor: Colors.blue,
+              tint: box.get("primaryColor") ?? Colors.blue,
+              backgroundColor: box.get("primaryColor") ?? Colors.blue,
               onPressed: () => Navigator.pushReplacement(
                 context, 
                 MaterialPageRoute(

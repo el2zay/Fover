@@ -796,11 +796,11 @@ class LibraryPageState extends State<LibraryPage> {
                                   onPressed: () => Navigator.pop(context),
                                   icon: Icon(CupertinoIcons.check_mark, size: 14),
                                   glassIcon: CNSymbol('checkmark', size: 14),
-                                  tint: Colors.blue,
+                                  tint: box.get("primaryColor") ?? Colors.blue,
                                   glassConfig: CNButtonConfig(
                                     style: CNButtonStyle.prominentGlass,
                                   ),
-                                  backgroundColor: Colors.blue
+                                  backgroundColor: box.get("primaryColor") ?? Colors.blue
                                 );
                               }
                             ),

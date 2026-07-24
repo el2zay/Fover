@@ -7,6 +7,7 @@ import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fover/main.dart';
 import 'package:fover/src/models/photo_entry.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/widgets/button.dart';
@@ -187,7 +188,7 @@ class _AdjustLocationState extends State<AdjustLocation> {
                   leading: Container(
                     padding: EdgeInsets.all(5),
                     decoration: BoxDecoration(
-                      color: Colors.blue,
+                      color: box.get("primaryColor") ?? Colors.blue,
                       shape: BoxShape.circle
                     ),
                     child: Icon(CupertinoIcons.map_pin, color: Colors.black),
