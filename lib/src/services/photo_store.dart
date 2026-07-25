@@ -223,23 +223,46 @@ class PhotoStore {
   static Future<void> softDelete(String path) async {
     final entry = _photoBox.get(path);
     if (entry == null) return;
-    entry.deletedAt = DateTime.now();
-    entry.albums = [];
-    entry.favorite = false;
+
+    final now = DateTime.now();
+    entry.deletedAt = now;
     await entry.save();
+
+    if (entry.livePhotoPath != null) {
+      final videoEntry = _photoBox.get(entry.livePhotoPath);
+      if (videoEntry != null) {
+        videoEntry.deletedAt = now;
+        await videoEntry.save();
+      }
+    }
+
     _scheduleUpload();
   }
 
-  static Future<void> hardDelete(String path) async {
+  //? Rajoutée juste pour éviter de répeter à 2 reprises le même code dans hardDelete
+  static Future<void> _deleteFromBackend(String path) async {
     switch (detectBackend()) {
       case ServerBackend.freebox:
         FreeboxService.deleteLocalFile(path);
       case ServerBackend.copyparty:
-        await CopypartyService.deleteFile(path);
+          await CopypartyService.deleteFile(path);
       default:
         break;
     }
+  }
+
+  static Future<void> hardDelete(String path) async {
+    final entry = _photoBox.get(path);
+    final videoPath = entry?.livePhotoPath;
+
+    if (videoPath != null) {
+      await _deleteFromBackend(videoPath);
+      await _photoBox.delete(videoPath);
+    }
+
+    await _deleteFromBackend(path);
     await _photoBox.delete(path);
+
     _scheduleUpload();
   }
 
@@ -248,6 +271,7 @@ class PhotoStore {
     if (entry == null) return;
     entry.deletedAt = null;
     await entry.save();
+    
     _scheduleUpload();
   }
 
