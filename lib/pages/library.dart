@@ -436,7 +436,6 @@ class LibraryPageState extends State<LibraryPage> {
         return false;
       }
 
-      if (liveVideoPaths.contains(path)) return false;
 
       if (widget.album == Album.videos) {
         return stored?.mimetype?.startsWith("video/") == true && stored?.deletedAt == null;
@@ -459,7 +458,7 @@ class LibraryPageState extends State<LibraryPage> {
       }
 
       return widget.album == Album.trash
-        ? stored?.deletedAt != null
+        ? stored?.deletedAt != null && liveVideoPaths.contains(path) == false
         : stored?.deletedAt == null;
     }).toList();
 
@@ -472,7 +471,21 @@ class LibraryPageState extends State<LibraryPage> {
       );
     }).toList(); 
 
-    enriched.sort((a, b) => a.sortKey.compareTo(b.sortKey));
+    if (widget.album != Album.trash) {
+      enriched.sort((a, b) => a.sortKey.compareTo(b.sortKey));
+    } else {
+      enriched.sort((a, b) {
+        final aDeletedAt = PhotoStore.get(a.entry['path'] as String)?.deletedAt;
+        final bDeletedAt = PhotoStore.get(b.entry['path'] as String)?.deletedAt;
+
+        if (aDeletedAt == null && bDeletedAt == null) return 0;
+        if (aDeletedAt == null) return 1;
+        if (bDeletedAt == null) return -1;
+
+        return bDeletedAt.compareTo(aDeletedAt);
+      });
+    }
+    
 
     _searchIndex = enriched.map((e) {
       final path = e.entry['path'] as String;
@@ -1751,7 +1764,7 @@ class _MediaTileState extends State<_MediaTile> {
   }
 
   Widget buildDurationBadge(int? seconds) {
-    if (seconds == null) return Icon(CupertinoIcons.play_circle_fill, size: 18);
+    if (seconds == null || widget.trashMode) return Icon(CupertinoIcons.play_circle_fill, size: 18);
     final duration = Duration(seconds: seconds);
     final mm = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
     final ss = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
