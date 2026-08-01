@@ -89,6 +89,7 @@ class _SearchEntry {
   final bool isScreenshot;
   final bool hasDetectedText;
   final String sortKey;
+  final DateTime date;
 
   const _SearchEntry({
     required this.encodedPath,
@@ -97,7 +98,8 @@ class _SearchEntry {
     required this.isFavorite,
     required this.isScreenshot,
     required this.hasDetectedText,
-    required this.sortKey
+    required this.sortKey,
+    required this.date,
   });
 }
 
@@ -414,6 +416,7 @@ class LibraryPageState extends State<LibraryPage> {
         isScreenshot: p.isScreenshot == true,
         hasDetectedText: p.detectedText?.isNotEmpty == true,
         sortKey: PhotoStore.getDate(p.path).toIso8601String(),
+        date: PhotoStore.getDate(p.path)
       )).toList();
       return;
     }
@@ -497,7 +500,8 @@ class LibraryPageState extends State<LibraryPage> {
         isFavorite: photo?.favorite == true,
         isScreenshot: photo?.isScreenshot == true,
         hasDetectedText: photo?.detectedText?.isNotEmpty == true,
-        sortKey: e.sortKey
+        sortKey: e.sortKey,
+        date: PhotoStore.getDate(path)
       );
     }).toList();
   }
@@ -748,7 +752,7 @@ class LibraryPageState extends State<LibraryPage> {
                     value: progress,
                     constraints: const BoxConstraints(minHeight: 25, minWidth: 25),
                     backgroundColor: Colors.white.withAlpha(35),
-                    valueColor: AlwaysStoppedAnimation(Colors.blue[700]!),
+                    valueColor: AlwaysStoppedAnimation(box.get("primaryColor") ?? Colors.blue),
                   );
                 },
               ),
@@ -1858,10 +1862,9 @@ _GalleryData _filterIsolate(Map<String, dynamic> args) {
           matchesToken = entry.isScreenshot;
           break;
         case "has:thismonth":
-            final now = DateTime.now();
-            final photoDate = PhotoStore.getDate(entry.encodedPath);
-            matchesToken = photoDate.year == now.year;
-            break;
+          final now = DateTime.now();
+          matchesToken = entry.date.year == now.year && entry.date.month == now.month;
+          break;
         default:
           matchesToken = true;
       }
