@@ -1,22 +1,20 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:fover/main.dart';
 
 class MySnackBar {
   static void show({BuildContext? context, String? message, IconData? icon}) {
     final snackBar = SnackBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      content: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            // color: Colors.greenAccent,
-            border: Border.all(color: box.get("primaryColor"), width: 0.5),
-            borderRadius: BorderRadius.circular(20),
-          ),
+      content: Container(
+        clipBehavior: Clip.hardEdge,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Row(
             children: [
               SizedBox(width: 8),
