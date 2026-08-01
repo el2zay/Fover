@@ -12,6 +12,7 @@ import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/dialog.dart';
+import 'package:fover/src/widgets/snackbar.dart';
 import 'package:gradient_progress_bar/gradient_progress_bar.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -146,10 +147,10 @@ class _SettingsPageState extends State<SettingsPage> {
                       title: Text("Change the photo folder"),
                       trailing: Icon(CupertinoIcons.chevron_forward),
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("Available in a future update!")
-                          )
+                        MySnackBar.show(
+                          context: context, 
+                          message: "Available in a future update!", 
+                          icon: CupertinoIcons.info
                         );
                       },
                     ),
@@ -199,10 +200,10 @@ class _SettingsPageState extends State<SettingsPage> {
                     title: Text("Language"),
                     trailing: Icon(CupertinoIcons.chevron_forward, color: Colors.grey.withAlpha(150)),
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("Available in a future update!"),
-                        )
+                      MySnackBar.show(
+                        context: context, 
+                        message: "Available in a future update!", 
+                        icon: CupertinoIcons.info
                       );
                     },
                   ),
