@@ -46,6 +46,8 @@ PODS:
   - Mantle (2.2.0):
     - Mantle/extobjc (= 2.2.0)
   - Mantle/extobjc (2.2.0)
+  - native_dialog_plus (0.0.1):
+    - Flutter
   - package_info_plus (0.4.5):
     - Flutter
   - photo_manager (3.9.0):
@@ -95,6 +97,7 @@ DEPENDENCIES:
   - ios_color_picker (from `.symlinks/plugins/ios_color_picker/ios`)
   - irondash_engine_context (from `.symlinks/plugins/irondash_engine_context/ios`)
   - local_auth_darwin (from `.symlinks/plugins/local_auth_darwin/darwin`)
+  - native_dialog_plus (from `.symlinks/plugins/native_dialog_plus/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - photo_manager (from `.symlinks/plugins/photo_manager/darwin`)
   - pro_image_editor (from `.symlinks/plugins/pro_image_editor/ios`)
@@ -141,6 +144,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/irondash_engine_context/ios"
   local_auth_darwin:
     :path: ".symlinks/plugins/local_auth_darwin/darwin"
+  native_dialog_plus:
+    :path: ".symlinks/plugins/native_dialog_plus/ios"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
   photo_manager:
@@ -180,6 +185,7 @@ SPEC CHECKSUMS:
   libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
   local_auth_darwin: c3ee6cce0a8d56be34c8ccb66ba31f7f180aaebb
   Mantle: c5aa8794a29a022dfbbfc9799af95f477a69b62d
+  native_dialog_plus: 6579cb8aa89a9866649c821ca42557f514f31e3f
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   photo_manager: 25fd77df14f4f0ba5ef99e2c61814dde77e2bceb
   pro_image_editor: 3dedac450f82a389877286fa9eb08852cefb04ea
