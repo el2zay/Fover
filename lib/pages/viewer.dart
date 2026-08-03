@@ -699,6 +699,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   onPressed: () {
                     showMyDialog(
                       context: context,
+                      title: "Delete photo",
                       content: "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
                       principalButtonText: "Delete",
                       isDestructive: true,
@@ -743,6 +744,11 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                       return;
                     }
 
+                    setState(() {
+                      widget.encodedPaths.removeAt(currentIndex);
+                      widget.mimetype.removeAt(currentIndex);
+                    });
+
                     if (currentIndex >= totalRemaining) {
                       _pageController.animateToPage(
                         totalRemaining - 1, 
@@ -764,13 +770,17 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                       isDestructive: true,
                       onTap: () async {
                         await PhotoStore.hardDelete(widget.encodedPaths[currentIndex]);
-                        Navigator.pop(context);
                         final totalRemaining = widget.encodedPaths.length - 1;
 
                         if (totalRemaining == 0) {
                           Navigator.pop(context);
                           return;
                         }
+
+                        setState(() {
+                          widget.encodedPaths.removeAt(currentIndex);
+                          widget.mimetype.removeAt(currentIndex);
+                        });
 
                         if (currentIndex >= totalRemaining) {
                           _pageController.animateToPage(
