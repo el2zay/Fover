@@ -269,14 +269,14 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
         extendBodyBehindAppBar: true,
         extendBody: true,
         appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(kToolbarHeight),
+          preferredSize: const Size.fromHeight(kToolbarHeight + 24),
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 250),
             child: focused ? const SizedBox.shrink() : _buildAppBar(),
           )
         ),
         body: Stack(
-          children: [ 
+          children: [
             Center(
               child: AnimatedScale(
                 // scale: _imageFocusScale,
@@ -380,7 +380,6 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   ),
                 ),
               ),
-
               if (widget.mimetype[currentIndex].startsWith('video'))
                 Positioned(
                   left: 0,
@@ -398,6 +397,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   child: focused ? const SizedBox.shrink() : _buildBottomToolbar(),
                 ),
               ),
+
 
             if (showInfo)
               _buildInfoSheet(context),
@@ -471,23 +471,40 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   }
 
   PreferredSizeWidget? _buildAppBar() {
-    return  AppBar(
+    return AppBar(
       key: const ValueKey('toolbar'),
+      toolbarHeight: kToolbarHeight + 24,
       centerTitle: true,
-      
       backgroundColor: Colors.transparent,
-      leading: Row(
+      leadingWidth: 70,
+      leading: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(width: 10),
-          Flexible(
-            child: Button.iconOnly(
-              glassConfig: const CNButtonConfig(),
-              padding: const EdgeInsets.all(8),
-              icon: const Icon(Icons.arrow_back_ios, size: 18),
-              glassIcon: CNSymbol('chevron.left', size: 18),
-              onPressed: () => Navigator.pop(context),
-            ),
+          const SizedBox(height: 2),
+          Button.iconOnly(
+            glassConfig: const CNButtonConfig(),
+            padding: const EdgeInsets.all(8),
+            icon: const Icon(Icons.arrow_back_ios, size: 18),
+            glassIcon: CNSymbol('chevron.left', size: 18),
+            onPressed: () => Navigator.pop(context),
           ),
+          const SizedBox(height: 4),
+          // Container(
+          //   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+          //   decoration: BoxDecoration(
+          //     color: Colors.grey[900],
+          //     borderRadius: BorderRadius.all(Radius.circular(10)),
+          //   ),
+          //   child: Row(
+          //     mainAxisSize: MainAxisSize.min,
+          //     children: [
+          //       CNIcon(symbol: CNSymbol('livephoto', color: Colors.white70, size: 14)),
+          //       const SizedBox(width: 3),
+          //       const Text("LIVE", style: TextStyle(color: Colors.white70, fontSize: 12)),
+          //     ],
+          //   ),
+          // ),
         ],
       ),
       title: Row(
@@ -680,41 +697,35 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                   icon: const Icon(CupertinoIcons.trash),
                   glassIcon: CNSymbol('trash', size: 18),
                   onPressed: () {
-                    showGeneralDialog(
-                      barrierDismissible: false,
+                    showMyDialog(
                       context: context,
-                      pageBuilder: (context, animation, secondaryAnimation) {
-                        return MyDialog(
-                          content: "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
-                          principalButton: TextButton(
-                            child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
-                            onPressed: () async {
-                              await PhotoStore.softDelete(widget.encodedPaths[currentIndex]);
-                              Navigator.pop(context);
-                              final totalRemaining = widget.encodedPaths.length - 1;
+                      content: "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
+                      principalButtonText: "Delete",
+                      isDestructive: true,
 
-                              if (totalRemaining == 0) {
-                                Navigator.pop(context);
-                                return;
-                              }
+                      onTap: () async {
+                        await PhotoStore.softDelete(widget.encodedPaths[currentIndex]);
+                        // Navigator.pop(context);
+                        final totalRemaining = widget.encodedPaths.length - 1;
 
-                              setState(() {
-                                widget.encodedPaths.removeAt(currentIndex);
-                                widget.mimetype.removeAt(currentIndex);
-                              });
+                        if (totalRemaining == 0) {
+                          Navigator.pop(context);
+                          return;
+                        }
 
-                              if (currentIndex >= totalRemaining) {
-                                _pageController.animateToPage(
-                                  totalRemaining - 1, 
-                                  duration: const Duration(milliseconds: 300), 
-                                  curve: Curves.easeInOut
-                                );
-                                setState(() => currentIndex = totalRemaining - 1);
-                              }
-                              
-                            }
-                          ),
-                        );
+                        setState(() {
+                          widget.encodedPaths.removeAt(currentIndex);
+                          widget.mimetype.removeAt(currentIndex);
+                        });
+
+                        if (currentIndex >= totalRemaining) {
+                          _pageController.animateToPage(
+                            totalRemaining - 1, 
+                            duration: const Duration(milliseconds: 300), 
+                            curve: Curves.easeInOut
+                          );
+                          setState(() => currentIndex = totalRemaining - 1);
+                        }
                       }
                     );
                   },
@@ -722,6 +733,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
               ] else ...[
                 Button(
                   label: "Recover",
+                  textColor: Colors.white,
                   onPressed: () async {
                     await PhotoStore.restore(widget.encodedPaths[currentIndex]);
                     final totalRemaining = widget.encodedPaths.length - 1;
@@ -743,36 +755,31 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                 ),
                 Button(
                   label: "Delete",
+                  textColor: Colors.white,
                   onPressed: () {
-                    showGeneralDialog(
-                      barrierDismissible: false,
+                    showMyDialog(
                       context: context,
-                      pageBuilder: (context, animation, secondaryAnimation) {
-                        return MyDialog(
-                          content: "This action cannot be undone. The image will also be deleted from your server.",
-                          principalButton: TextButton(
-                            child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
-                            onPressed: () async {
-                              await PhotoStore.hardDelete(widget.encodedPaths[currentIndex]);
-                              Navigator.pop(context);
-                              final totalRemaining = widget.encodedPaths.length - 1;
+                      content: "This action cannot be undone. The image will also be deleted from your server.",
+                      principalButtonText: "Delete",
+                      isDestructive: true,
+                      onTap: () async {
+                        await PhotoStore.hardDelete(widget.encodedPaths[currentIndex]);
+                        Navigator.pop(context);
+                        final totalRemaining = widget.encodedPaths.length - 1;
 
-                              if (totalRemaining == 0) {
-                                Navigator.pop(context);
-                                return;
-                              }
+                        if (totalRemaining == 0) {
+                          Navigator.pop(context);
+                          return;
+                        }
 
-                              if (currentIndex >= totalRemaining) {
-                                _pageController.animateToPage(
-                                  totalRemaining - 1, 
-                                  duration: const Duration(milliseconds: 300), 
-                                  curve: Curves.easeInOut
-                                );
-                                setState(() => currentIndex = totalRemaining - 1);
-                              }
-                            }
-                          ),
-                        );
+                        if (currentIndex >= totalRemaining) {
+                          _pageController.animateToPage(
+                            totalRemaining - 1, 
+                            duration: const Duration(milliseconds: 300), 
+                            curve: Curves.easeInOut
+                          );
+                          setState(() => currentIndex = totalRemaining - 1);
+                        }
                       }
                     );
                   }
