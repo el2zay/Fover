@@ -6,12 +6,38 @@ import 'package:pro_video_editor/core/platform/io/io_helper.dart';
 
 void showMyDialog({required BuildContext context, String title = '', required String content, String? principalButtonText, Function()? onTap, bool isDestructive = false, Function()? onCancel, bool needCancel = true}) {
   if (Platform.isAndroid) {
-    // showDialog(
-    //   context: context,
-    //   builder: (BuildContext context) {
-    //     // TODO pour android
-    //   }
-    // );
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: title.isNotEmpty ? Text(title) : null,
+          content: Text(content, style: TextStyle(fontSize: 15)),
+          actions: [
+            if (needCancel)
+              TextButton(
+                onPressed: onCancel ?? () {
+                  Navigator.of(context).pop();
+                },
+                child: Text("Cancel", style: TextStyle(fontSize: 16)),
+              ),
+            if (principalButtonText != null)
+              TextButton(
+                onPressed: () {
+                  onTap?.call();
+                  Navigator.of(context).pop();
+                },
+                child: Text(
+                  principalButtonText, 
+                  style: TextStyle(
+                    color: isDestructive ? Colors.red : null,
+                    fontSize: 16
+                  ) 
+                ),
+              ),
+          ],
+        );
+      }
+    );
   } else {    
     NativeDialogPlus(
       actions: [
