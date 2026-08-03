@@ -184,29 +184,18 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
                     } on TimeoutException {
                       if (!mounted) return;
                       setState(() => isLoading = false);
-                      showGeneralDialog(
-                        barrierDismissible: false,
+                      showMyDialog(
                         context: context,
-                        pageBuilder: (context, animation, secondaryAnimation) {
-                          return MyDialog(
-                            content: "Connection timed out. Please check your URL and your Internet connection.",
-                            principalButton: null,
-                          );
-                        },
+                        title: "Connection timed out",
+                        content: "Please check your URL and your Internet connection.",
                       );
                     } catch (e) {
                       if (!mounted) return;
                       setState(() => isLoading = false);
-                      showGeneralDialog(
-                        barrierDismissible: false,
-                        // ignore: use_build_context_synchronously
+                      showMyDialog(
                         context: context,
-                        pageBuilder: (context, animation, secondaryAnimation) {
-                          return MyDialog(
-                            content: e.toString().replaceAll("Exception: ", ""),
-                            principalButton: null
-                          );
-                        }
+                        title: "Connection failed",
+                        content: e.toString().replaceAll("Exception: ", ""),
                       );
                     }
                   },

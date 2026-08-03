@@ -71,7 +71,6 @@ class AlbumsList extends StatelessWidget {
           ),
           itemCount: albums.length,
           itemBuilder: (context, index) {
-            print("AlbumsList: index = $index, albums.length = ${albums.length}, showSpecialAlbums = $showSpecialAlbums");
             final album = albums[index];
 
             return ContextMenuWidget(
@@ -99,20 +98,14 @@ class AlbumsList extends StatelessWidget {
                       image: MenuImage.icon(CupertinoIcons.trash),
                       attributes: MenuActionAttributes(destructive: true),
                       callback: () {
-                        showGeneralDialog(
-                          barrierDismissible: false,
+                        showMyDialog(
                           context: context,
-                          pageBuilder: (context, animation, secondaryAnimation) {
-                            return MyDialog(
-                              content: "This action cannot be undone. The album will also be deleted from your server.",
-                              principalButton: TextButton(
-                                child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
-                                onPressed: () async {
-                                  await PhotoStore.deleteAlbum(album.name);
-                                  if (context.mounted) Navigator.pop(context);
-                                }
-                              ),
-                            );
+                          title: "Delete Album",
+                          content: "This action cannot be undone. The album will also be deleted from your server.",
+                          principalButtonText: "Delete",
+                          isDestructive: true,
+                          onTap: () async {
+                            await PhotoStore.deleteAlbum(album.name);
                           }
                         );
                       }

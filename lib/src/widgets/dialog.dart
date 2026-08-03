@@ -1,12 +1,47 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fover/src/widgets/container.dart';
+import 'package:native_dialog_plus/native_dialog_plus.dart';
+import 'package:pro_video_editor/core/platform/io/io_helper.dart';
 
-class MyDialog extends StatelessWidget {
+void showMyDialog({required BuildContext context, String title = '', required String content, String? principalButtonText, Function()? onTap, bool isDestructive = false, Function()? onCancel, bool needCancel = true}) {
+  if (Platform.isAndroid) {
+    // showDialog(
+    //   context: context,
+    //   builder: (BuildContext context) {
+    //     // TODO pour android
+    //   }
+    // );
+  } else {    
+    NativeDialogPlus(
+      actions: [
+        if (needCancel)
+          NativeDialogPlusAction(
+            text: "Cancel",
+            style: NativeDialogPlusActionStyle.cancel,
+            onPressed: onCancel ?? () {}
+          ),
+        if (principalButtonText != null)
+        NativeDialogPlusAction(
+          text: principalButtonText,
+          onPressed: onTap,
+          style: isDestructive 
+            ? NativeDialogPlusActionStyle.destructive 
+            : NativeDialogPlusActionStyle.defaultStyle,
+          ),
+        ],
+        title: title,
+        message: content,
+    ).show();
+  }
+}
+
+class MyOldDialog extends StatelessWidget {
   final String content;
   final TextButton? principalButton;
+  final Function()? onCancel;
   final bool? needCancel;
-  const MyDialog({super.key, required this.content, required this.principalButton, this.needCancel = true});
+  const MyOldDialog({super.key, required this.content, this.principalButton, this.onCancel, this.needCancel = true});
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +81,7 @@ class MyDialog extends StatelessWidget {
                     TextButton(
                       child: Text("Cancel", style: TextStyle(fontSize: 16, color: CupertinoColors.activeBlue)),
                       onPressed: () {
+                        if (onCancel != null) onCancel!();
                         Navigator.pop(context);
                       }
                     ),

@@ -14,6 +14,7 @@ import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/dialog.dart';
 import 'package:fover/src/widgets/snackbar.dart';
 import 'package:gradient_progress_bar/gradient_progress_bar.dart';
+import 'package:native_dialog_plus/native_dialog_plus.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -236,26 +237,21 @@ class _SettingsPageState extends State<SettingsPage> {
                     title: Text("Log out", style: TextStyle(color: Colors.red)),
                     onTap: () {
                       // TODO freebox
-                      showGeneralDialog(
-                        context: context, 
-                        pageBuilder: (context, animation, secondaryAnimation) {
-                          return MyDialog(
-                            content: "Are you sure you want to log out?",
-                            principalButton: TextButton(
-                              child: Text("Log out", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
-                              onPressed: () async {
-                                Navigator.pop(context);
+                      showMyDialog(
+                        context: context,
+                        content: "Are you sure you want to log out?",
+                        principalButtonText: "Log out",
+                        isDestructive: true,
+                        onTap: () async {
+                          Navigator.pop(context);
 
-                                await CopypartyService.disconnect();
-                                await box.delete('appToken');
+                          await CopypartyService.disconnect();
+                          await box.delete('appToken');
 
-                                showTabBar.value = false;
+                          showTabBar.value = false;
 
-                                await Future.delayed(const Duration(milliseconds: 100));
-                                Phoenix.rebirth(context);
-                              }
-                            ),
-                          );
+                          await Future.delayed(const Duration(milliseconds: 100));
+                          Phoenix.rebirth(context);
                         }
                       );
                     },

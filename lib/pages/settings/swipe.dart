@@ -57,7 +57,7 @@ class _SwipePageState extends State<SwipePage> {
         barrierDismissible: false,
         context: context,
         pageBuilder: (context, animation, secondaryAnimation) {
-          return MyDialog(
+          return MyOldDialog(
             content: "Please wait while the medias are loading...",
             onCancel: () {
               Navigator.pop(context);
@@ -172,22 +172,16 @@ class _SwipePageState extends State<SwipePage> {
             glassIcon: CNSymbol('chevron.left', size: 16),
             onPressed: () {
               if (selectedPhotos.isNotEmpty) {
-                showGeneralDialog(
-                  barrierDismissible: false,
+                showMyDialog(
                   context: context,
-                  pageBuilder: (context, animation,   secondaryAnimation) {
-                    return MyDialog(
-                      content: "Are you sure you want to exit? Your current selection will be lost.",
-                      principalButton: TextButton(
-                        child: Text("Exit", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
-                        onPressed: () { 
-                          Navigator.pop(context);
-                          Future.delayed(Duration(milliseconds: 150), () {
-                            Navigator.pop(context);
-                          });
-                        }
-                      ),
-                    );
+                  content: "Are you sure you want to exit? Your current selection will be lost.",
+                  principalButtonText: "Exit",
+                  isDestructive: true,
+                  onTap: () { 
+                    Navigator.pop(context);
+                    Future.delayed(Duration(milliseconds: 150), () {
+                      Navigator.pop(context);
+                    });
                   }
                 );
               } else {
@@ -644,21 +638,16 @@ class _ReviewPageState extends State<ReviewPage> {
           child: Button.iconOnly(
             icon: Icon(CupertinoIcons.xmark),
             glassIcon: CNSymbol('xmark', size: 16),
-            onPressed: () => showGeneralDialog(
-              barrierDismissible: false,
-              context: context, 
-              pageBuilder: (context, animation, secondaryAnimation) {
-                return MyDialog(
-                  content: "Are you sure you want to go back? Your current selection will be lost.",
-                  principalButton: TextButton(
-                    child: Text("Go back", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
-                    onPressed: () { 
-                      Navigator.popUntil(context, (route) => route.isFirst);
-                      return;
-                    }
-                  ),
-                );
-              })
+            onPressed: () => showMyDialog(
+              context: context,
+              content: "Are you sure you want to go back? Your current selection will be lost.",
+              principalButtonText: "Go back",
+              isDestructive: true,
+              onTap: () { 
+                Navigator.popUntil(context, (route) => route.isFirst);
+                return;
+              }
+            )
           ),
         ),
         actions: [
@@ -674,7 +663,7 @@ class _ReviewPageState extends State<ReviewPage> {
               barrierDismissible: false,
               context: context,
               pageBuilder: (context, animation, secondaryAnimation) {
-                return MyDialog(
+                return MyOldDialog(
                   content: "These images will be permanently deleted from your server. This action cannot be undone.",
                   principalButton: TextButton(
                     child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),

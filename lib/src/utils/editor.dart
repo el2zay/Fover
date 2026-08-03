@@ -281,10 +281,8 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
       designMode: ImageEditorDesignMode.cupertino,
       dialogConfigs: DialogConfigs(
         widgets: DialogWidgets(
-          loadingDialog: (message, configs) => MyDialog(
+          loadingDialog: (message, configs) => MyOldDialog(
             content: message,
-            needCancel: false,
-            principalButton: null,
           ),
         ),
       ),

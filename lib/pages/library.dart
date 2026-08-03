@@ -263,20 +263,13 @@ class LibraryPageState extends State<LibraryPage> {
       final content = e.toString().contains("PermissionState.denied") 
         ? "Fover does not have permission to access your gallery." 
         : e.toString().replaceAll("Exception", "");
-      showGeneralDialog(
-        barrierDismissible: false,
-        // ignore: use_build_context_synchronously
-        context: context, 
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return MyDialog(
-            content: content, 
-            principalButton: TextButton(
-              onPressed: () {
-                AppSettings.openAppSettings(type: AppSettingsType.appLocale);
-              }, 
-              child: Text("Grant access",  style: TextStyle(fontSize: 16, color: CupertinoColors.activeBlue))
-            )
-          );
+        showMyDialog(
+          // ignore: use_build_context_synchronously
+          context: context,
+          content: content, 
+          principalButtonText: "Grant access",
+          onTap: () {
+            AppSettings.openAppSettings(type: AppSettingsType.appLocale);
         }
       );
     }
@@ -1253,21 +1246,15 @@ class LibraryPageState extends State<LibraryPage> {
                                       image: MenuImage.icon(CupertinoIcons.trash),
                                       attributes: MenuActionAttributes(destructive: true),
                                       callback: () {
-                                        showGeneralDialog(
-                                          barrierDismissible: false,
-                                          context: context,
-                                          pageBuilder: (context, animation, secondaryAnimation) {
-                                            return MyDialog(
-                                              content: "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
-                                              principalButton: TextButton(
-                                                child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
-                                              onPressed: () {
-                                                  PhotoStore.softDelete(data.encodedPaths[index]);
-                                                  _removeLocally([index]);
-                                                  Navigator.pop(context);
-                                                }
-                                              ),
-                                            );
+                                      showMyDialog(
+                                        context: context,
+                                        title: "Delete photo",
+                                        content: "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
+                                        principalButtonText: "Delete",
+                                        isDestructive: true,
+                                        onTap: () {
+                                            PhotoStore.softDelete(data.encodedPaths[index]);
+                                            _removeLocally([index]);
                                           }
                                         );
                                       }
@@ -1288,24 +1275,18 @@ class LibraryPageState extends State<LibraryPage> {
                                       image: MenuImage.icon(CupertinoIcons.trash),
                                       attributes: MenuActionAttributes(destructive: true),
                                       callback: () {
-                                        showGeneralDialog(
-                                          barrierDismissible: false,
+                                        showMyDialog(
                                           context: context,
-                                          pageBuilder: (context, animation, secondaryAnimation) {
-                                            return MyDialog(
-                                              content: "This action cannot be undone. The image will also be deleted from your server.",
-                                              principalButton: TextButton(
-                                                child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
-                                                onPressed: () async {
-                                                  final navigator = Navigator.of(context);
-                                                  await PhotoStore.hardDelete(data.encodedPaths[index]);
-                                                  if (!mounted) return;
-                                                  navigator.pop();
-                                                  _removeLocally([index]);
-                                                }
-                                              ),
-                                            );
-                                          }
+                                          title: "Delete photo",
+                                          content: "This action cannot be undone. The image will also be deleted from your server.",
+                                          principalButtonText: "Delete",
+                                          isDestructive: true,
+                                          onTap: () async {
+                                            await PhotoStore.hardDelete(data.encodedPaths[index]);
+                                            if (!mounted) return;
+                                            _removeLocally([index]);
+                                          },
+                                          // onCancel: () {},
                                         );
                                       }
                                     ),
@@ -1514,33 +1495,27 @@ class LibraryPageState extends State<LibraryPage> {
                               Button.iconOnly(
                                 enabled: selectedImages.isNotEmpty,
                                 onPressed: () {
-                                  showGeneralDialog(
-                                    barrierDismissible: false,
+                                  final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
+                                  showMyDialog(
                                     context: context,
-                                    pageBuilder: (context, animation, secondaryAnimation) {
-                                      final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
-                                      return MyDialog(
-                                        content: widget.album == Album.trash 
-                                          ? "This action cannot be undone. The image will also be deleted from your server."
-                                          : "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
-                                        principalButton: TextButton(
-                                          child: Text("Delete", style: TextStyle(fontSize: 16, color: CupertinoColors.destructiveRed)),
-                                          onPressed: () {
-                                            for (final path in selectedPaths) {
-                                              if (widget.album == Album.trash) {
-                                                PhotoStore.hardDelete(path);
-                                              } else {
-                                                PhotoStore.softDelete(path);
-                                              }
-                                            }
+                                    title: "Delete photo",
+                                    content: widget.album == Album.trash 
+                                      ? "This action cannot be undone. The image will also be deleted from your server."
+                                      : "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
+                                    principalButtonText: "Delete",
+                                    isDestructive: true,
+                                    onTap: () {
+                                      for (final path in selectedPaths) {
+                                        if (widget.album == Album.trash) {
+                                          PhotoStore.hardDelete(path);
+                                        } else {
+                                            PhotoStore.softDelete(path);
+                                          }
+                                      }
 
-                                            _removeLocally(selectedImages);
-                                            Navigator.pop(context);
-                                            setState(() => selectedMode = false);
-                                            showTabBar.value = true;
-                                          },
-                                        ),
-                                      );
+                                      _removeLocally(selectedImages);
+                                      setState(() => selectedMode = false);
+                                      showTabBar.value = true;
                                     }
                                   );
                                 },
