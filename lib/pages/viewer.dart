@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fover/main.dart';
 import 'package:fover/pages/library.dart';
+import 'package:fover/src/models/photo_entry.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/download.dart';
 import 'package:fover/src/services/photo_store.dart';
@@ -474,12 +475,10 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     return AppBar(
       key: const ValueKey('toolbar'),
       toolbarHeight: kToolbarHeight + 24,
-      centerTitle: true,
+      centerTitle: false,
       backgroundColor: Colors.transparent,
       leadingWidth: 70,
-      leading: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
+      leading: Row(
         children: [
           const SizedBox(height: 2),
           Button.iconOnly(
@@ -489,22 +488,6 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
             glassIcon: CNSymbol('chevron.left', size: 18),
             onPressed: () => Navigator.pop(context),
           ),
-          const SizedBox(height: 4),
-          // Container(
-          //   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-          //   decoration: BoxDecoration(
-          //     color: Colors.grey[900],
-          //     borderRadius: BorderRadius.all(Radius.circular(10)),
-          //   ),
-          //   child: Row(
-          //     mainAxisSize: MainAxisSize.min,
-          //     children: [
-          //       CNIcon(symbol: CNSymbol('livephoto', color: Colors.white70, size: 14)),
-          //       const SizedBox(width: 3),
-          //       const Text("LIVE", style: TextStyle(color: Colors.white70, fontSize: 12)),
-          //     ],
-          //   ),
-          // ),
         ],
       ),
       title: Row(
@@ -538,125 +521,128 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
       ),
       actionsPadding: const EdgeInsets.only(right: 15),
       actions: [
-        CupertinoTheme(
-          data: CupertinoThemeData(brightness: Theme.brightnessOf(context)),
-          child: Transform.scale(
-            scale: 1.2,
-            child: PopMenu(
-              showCopy: widget.mimetype[currentIndex].startsWith('image/'),
-              isViewer: true,
-              isHidden: PhotoStore.get(widget.encodedPaths[currentIndex])?.hidden == true,
-              isDownloaded: DownloadService.isDownloaded(widget.encodedPaths[currentIndex]),
-              isFavorite: PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true,
-              canRevert: PhotoStore.get(widget.encodedPaths[currentIndex])?.editedFrom != null,
-              onSelected: (action) async {
-                switch (action) {
-                  case PopMenuAction.download:
-                    final photo = PhotoStore.get(widget.encodedPaths[currentIndex]);
-                      if (!DownloadService.isDownloaded(widget.encodedPaths[currentIndex])) {
-                        final path = await DownloadService.download(
-                          encodedPath: widget.encodedPaths[currentIndex],
-                          filename: photo?.name ?? widget.encodedPaths[currentIndex],
-                        );
-                        if (!mounted) return;
-                        setState(() {});
+        _buildTopButton()
+      ]
+      // actions: [
+      //   CupertinoTheme(
+      //     data: CupertinoThemeData(brightness: Theme.brightnessOf(context)),
+      //     child: Transform.scale(
+      //       scale: 1.2,
+      //       child: PopMenu(
+      //         showCopy: widget.mimetype[currentIndex].startsWith('image/'),
+      //         isViewer: true,
+      //         isHidden: PhotoStore.get(widget.encodedPaths[currentIndex])?.hidden == true,
+      //         isDownloaded: DownloadService.isDownloaded(widget.encodedPaths[currentIndex]),
+      //         isFavorite: PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true,
+      //         canRevert: PhotoStore.get(widget.encodedPaths[currentIndex])?.editedFrom != null,
+      //         onSelected: (action) async {
+      //           switch (action) {
+      //             case PopMenuAction.download:
+      //               final photo = PhotoStore.get(widget.encodedPaths[currentIndex]);
+      //                 if (!DownloadService.isDownloaded(widget.encodedPaths[currentIndex])) {
+      //                   final path = await DownloadService.download(
+      //                     encodedPath: widget.encodedPaths[currentIndex],
+      //                     filename: photo?.name ?? widget.encodedPaths[currentIndex],
+      //                   );
+      //                   if (!mounted) return;
+      //                   setState(() {});
                         
-                        log('Downloaded to: $path');
-                      } else {
-                        log("ici");
-                        DownloadService.remove(widget.encodedPaths[currentIndex]);
-                      }
-                    break;
-                  case PopMenuAction.copy:
-                    final bytes = await fetchFullBytes(widget.encodedPaths[currentIndex]);
-                    if (bytes == null) return;
-                    await FlutterClipboard.copyImage(bytes);
-                    break;
-                  case PopMenuAction.revert:
-                    final originalPath = PhotoStore.get(widget.encodedPaths[currentIndex])?.editedFrom;
-                    if (originalPath == null) break;
+      //                   log('Downloaded to: $path');
+      //                 } else {
+      //                   log("ici");
+      //                   DownloadService.remove(widget.encodedPaths[currentIndex]);
+      //                 }
+      //               break;
+      //             case PopMenuAction.copy:
+      //               final bytes = await fetchFullBytes(widget.encodedPaths[currentIndex]);
+      //               if (bytes == null) return;
+      //               await FlutterClipboard.copyImage(bytes);
+      //               break;
+      //             case PopMenuAction.revert:
+      //               final originalPath = PhotoStore.get(widget.encodedPaths[currentIndex])?.editedFrom;
+      //               if (originalPath == null) break;
 
-                    await PhotoStore.revertEdit(widget.encodedPaths[currentIndex]);
+      //               await PhotoStore.revertEdit(widget.encodedPaths[currentIndex]);
 
-                    setState(() {
-                      widget.encodedPaths[currentIndex] = originalPath;
-                    });
+      //               setState(() {
+      //                 widget.encodedPaths[currentIndex] = originalPath;
+      //               });
                     
-                    widget.onRefresh?.call();
-                    break;
-                  case PopMenuAction.share:
-                    break;
-                  case PopMenuAction.favorite:
-                    final isFavorite = PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true;
-                    await PhotoStore.update(path: widget.encodedPaths[currentIndex], favorite: !isFavorite);
-                    setState(() {});
-                    break;
-                  case PopMenuAction.duplicate:
-                    await PhotoStore.duplicate(path: widget.encodedPaths[currentIndex]);
-                    widget.onRefresh?.call();
-                    break;
-                  case PopMenuAction.hide:
-                    await PhotoStore.update(path: widget.encodedPaths[currentIndex], hidden: true);
-                    widget.onRefresh?.call();
-                    break;
-                  case PopMenuAction.addToAlbum:
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
-                      builder: (context) {
-                        return AddToAlbumSheet(
-                          photoPath: [widget.encodedPaths[currentIndex]],
-                        );
-                      }
-                    );
-                    break;
-                  case PopMenuAction.adjustDate:
-                    setState(() {
-                      focused = true;
-                    });
-                    showCupertinoSheet(
-                      // Impossible a drag
-                      enableDrag: false,
-                      // barrierColor: Colors.transparent,
-                      // isScrollControlled: true,
-                      // constraints: BoxConstraints(
-                      //   minHeight: 0,
-                      //   maxHeight: MediaQuery.of(context).size.height * 0.93,
-                      // ),
-                      context: context,
-                      builder: (context) {
-                        return AdjustDate(
-                          encodedPath: widget.encodedPaths[currentIndex],
-                          photo: PhotoStore.get(widget.encodedPaths[currentIndex])!,
-                          initialDate: PhotoStore.getOriginalDate(widget.encodedPaths[currentIndex]),
-                        );
-                      },
-                    ).then((_) {
-                      setState(() {
-                        focused = false;
-                      });
-                    });
-                    break;
-                  case PopMenuAction.adjustLocation:
-                    setState(() {
-                      focused = true;
-                    });
+      //               widget.onRefresh?.call();
+      //               break;
+      //             case PopMenuAction.share:
+      //               break;
+      //             case PopMenuAction.favorite:
+      //               final isFavorite = PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true;
+      //               await PhotoStore.update(path: widget.encodedPaths[currentIndex], favorite: !isFavorite);
+      //               setState(() {});
+      //               break;
+      //             case PopMenuAction.duplicate:
+      //               await PhotoStore.duplicate(path: widget.encodedPaths[currentIndex]);
+      //               widget.onRefresh?.call();
+      //               break;
+      //             case PopMenuAction.hide:
+      //               await PhotoStore.update(path: widget.encodedPaths[currentIndex], hidden: true);
+      //               widget.onRefresh?.call();
+      //               break;
+      //             case PopMenuAction.addToAlbum:
+      //               showModalBottomSheet(
+      //                 context: context,
+      //                 isScrollControlled: true,
+      //                 constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
+      //                 builder: (context) {
+      //                   return AddToAlbumSheet(
+      //                     photoPath: [widget.encodedPaths[currentIndex]],
+      //                   );
+      //                 }
+      //               );
+      //               break;
+      //             case PopMenuAction.adjustDate:
+      //               setState(() {
+      //                 focused = true;
+      //               });
+      //               showCupertinoSheet(
+      //                 // Impossible a drag
+      //                 enableDrag: false,
+      //                 // barrierColor: Colors.transparent,
+      //                 // isScrollControlled: true,
+      //                 // constraints: BoxConstraints(
+      //                 //   minHeight: 0,
+      //                 //   maxHeight: MediaQuery.of(context).size.height * 0.93,
+      //                 // ),
+      //                 context: context,
+      //                 builder: (context) {
+      //                   return AdjustDate(
+      //                     encodedPath: widget.encodedPaths[currentIndex],
+      //                     photo: PhotoStore.get(widget.encodedPaths[currentIndex])!,
+      //                     initialDate: PhotoStore.getOriginalDate(widget.encodedPaths[currentIndex]),
+      //                   );
+      //                 },
+      //               ).then((_) {
+      //                 setState(() {
+      //                   focused = false;
+      //                 });
+      //               });
+      //               break;
+      //             case PopMenuAction.adjustLocation:
+      //               setState(() {
+      //                 focused = true;
+      //               });
 
-                    showCupertinoSheet(
-                      context: context, 
-                      builder: (context) {
-                        return AdjustLocation(
-                          photo: PhotoStore.get(widget.encodedPaths[currentIndex])!
-                        );
-                      }
-                  );
-                }
-              },
-            )
-          ),
-        ),
-      ],
+      //               showCupertinoSheet(
+      //                 context: context, 
+      //                 builder: (context) {
+      //                   return AdjustLocation(
+      //                     photo: PhotoStore.get(widget.encodedPaths[currentIndex])!
+      //                   );
+      //                 }
+      //             );
+      //           }
+      //         },
+      //       )
+      //     ),
+      //   ),
+      // ],
     );
   }
 
@@ -696,40 +682,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                 Button.iconOnly(
                   icon: const Icon(CupertinoIcons.trash),
                   glassIcon: CNSymbol('trash', size: 18),
-                  onPressed: () {
-                    showMyDialog(
-                      context: context,
-                      title: "Delete photo",
-                      content: "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
-                      principalButtonText: "Delete",
-                      isDestructive: true,
-
-                      onTap: () async {
-                        await PhotoStore.softDelete(widget.encodedPaths[currentIndex]);
-                        // Navigator.pop(context);
-                        final totalRemaining = widget.encodedPaths.length - 1;
-
-                        if (totalRemaining == 0) {
-                          Navigator.pop(context);
-                          return;
-                        }
-
-                        setState(() {
-                          widget.encodedPaths.removeAt(currentIndex);
-                          widget.mimetype.removeAt(currentIndex);
-                        });
-
-                        if (currentIndex >= totalRemaining) {
-                          _pageController.animateToPage(
-                            totalRemaining - 1, 
-                            duration: const Duration(milliseconds: 300), 
-                            curve: Curves.easeInOut
-                          );
-                          setState(() => currentIndex = totalRemaining - 1);
-                        }
-                      }
-                    );
-                  },
+                  onPressed: () => _deleteMedia()
                 ),
               ] else ...[
                 Button(
@@ -803,6 +756,253 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     );
   }
 
+  Widget _buildTopButton() {
+    // TODO a faire sur les tablettes android
+    if (isTablet) {
+      return CNGlassButtonGroup(
+        key: _infoButtonKey,
+        axis: Axis.horizontal,
+        spacing: 10.0,
+        spacingForGlass: 60.0,
+        buttons: [
+          CNButtonData.icon(
+            icon: CNSymbol('slider.horizontal.3'),
+            config: const CNButtonDataConfig(
+              style: CNButtonStyle.prominentGlass,
+              glassEffectUnionId: 'media-controls',
+              glassEffectId: '',
+              glassEffectInteractive: true,
+            ),
+            onPressed: () async => await _editMedia(),
+          ),
+          CNButtonData.icon(
+            icon: CNSymbol('info.circle'),
+            config: const CNButtonDataConfig(
+              style: CNButtonStyle.prominentGlass,
+              glassEffectUnionId: 'media-controls',
+              glassEffectId: '',
+              glassEffectInteractive: true,
+            ),
+            onPressed: () => _showOverlay(alreadyPressed)
+          ),
+          CNButtonData.icon(
+            icon: CNSymbol('trash'),
+            config: const CNButtonDataConfig(
+              style: CNButtonStyle.prominentGlass,
+              glassEffectUnionId: 'media-controls',
+              glassEffectId: '',
+              glassEffectInteractive: true,
+            ),
+            onPressed: () => _deleteMedia()
+          ),
+          CNButtonData.icon(
+            icon: CNSymbol('ellipsis'),
+            config: const CNButtonDataConfig(
+              style: CNButtonStyle.prominentGlass,
+              glassEffectUnionId: 'media-controls',
+              glassEffectId: '',
+              glassEffectInteractive: true,
+            )
+          )
+        ]
+      );
+    }
+    return SizedBox();
+  }
+
+  OverlayEntry? _infoOverlay;
+  final _cardVisible = ValueNotifier<bool>(false);
+  bool alreadyPressed = false;
+  final GlobalKey _infoButtonKey = GlobalKey();
+
+  void _dismissCard() {
+    _cardVisible.value = false;
+  }
+
+  void _showOverlay(bool alreadyPressed) {
+    if (_cardVisible.value) {
+      _dismissCard();
+      return;
+    }
+    
+    if (_infoOverlay != null) return;
+
+    final RenderBox? buttonBox =
+      _infoButtonKey.currentContext?.findRenderObject() as RenderBox?;
+
+    if (buttonBox == null) return;
+
+    final Offset buttonPosition = buttonBox.localToGlobal(Offset.zero);
+    final Size buttonSize = buttonBox.size;
+    final double screenWidth = MediaQuery.of(context).size.width;
+
+    const double cardMaxWidth = 300.0;
+
+    final double buttonCenterX = buttonPosition.dx + buttonSize.width / 2;
+    double left = buttonCenterX - cardMaxWidth / 2;
+    left = left.clamp(12.0, screenWidth - cardMaxWidth - 12.0);
+
+    final photo = PhotoStore.get(widget.encodedPaths[currentIndex])!;
+    final descriptionController = TextEditingController(text: photo.description);
+
+    _cardVisible.value = false;
+    _infoOverlay = OverlayEntry(
+      builder: (context) => Stack(
+        alignment: Alignment.topCenter,
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _dismissCard,
+              behavior: HitTestBehavior.opaque,
+              child: const SizedBox.expand(),
+            ),
+          ),
+          Positioned(
+            top: buttonPosition.dy + buttonSize.height + 16,
+            left: left,
+            child: SizedBox(
+              width: cardMaxWidth,
+              child: GestureDetector(
+                onTap: () {},
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: _cardVisible,
+                  builder: (context, visible, child) => AnimatedOpacity(
+                    opacity: visible ? 1.0 : 0.0,
+                    duration: Duration(milliseconds: visible ? 350 : 180),
+                    curve: visible ? Curves.easeOutCubic : Curves.easeInCubic,
+                    onEnd: () {
+                      if (!visible) {
+                        _infoOverlay?.remove();
+                        _infoOverlay = null;
+                      }
+                    },
+                    child: AnimatedScale(
+                      scale: visible ? 1.0 : 0.92,
+                      duration: Duration(milliseconds: visible ? 350 : 180),
+                      curve: visible ? Curves.easeOutCubic : Curves.easeInCubic,
+                      alignment: Alignment.topCenter,
+                      child: child!,
+                    ),
+                  ),
+                  child: CNGlassCard(
+                    tint: Theme.of(context).scaffoldBackgroundColor.withAlpha(50),
+                    cornerRadius: 20,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                    child: infoListView(
+                      ScrollController(),
+                      Theme.of(context).primaryColor,
+                      descriptionController,
+                      context,
+                      photo,
+                    )
+                  )
+                ),
+              )
+            )
+          )
+        ]
+      )
+    );
+
+    Overlay.of(context).insert(_infoOverlay!);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _cardVisible.value = true;
+    });
+  }
+
+  Future _editMedia() async {
+    setState(() => focused = true);
+    final isVideo = widget.mimetype[currentIndex].startsWith('video');
+    String? localVideoPath;
+
+    if (isVideo) {
+      final dir = await getTemporaryDirectory();
+      final tmpFile = 
+        File('${dir.path}/edit_tmp_${DateTime.now().millisecondsSinceEpoch}.mp4');
+
+      final bytes = await fetchFullBytes(widget.encodedPaths[currentIndex]);
+      if (!mounted || bytes == null) return;
+      await tmpFile.writeAsBytes(bytes);
+      localVideoPath = tmpFile.path;
+    }
+
+    final bytes = isVideo ? null : await fetchFullBytes(widget.encodedPaths[currentIndex]);
+    if (!mounted) return;
+    setState(() => focused = false);
+    if (!isVideo && bytes == null) return;
+
+    final newPath = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PopScope(
+          canPop: false,
+          child: PhotoEditorPage(
+            bytes: bytes ?? Uint8List(0), 
+            encodedPath: widget.encodedPaths[currentIndex], 
+            localVideoPath: localVideoPath, 
+            isVideo: isVideo
+          )
+        )
+      )
+    );
+
+    if (localVideoPath != null) {
+      try {
+        File(localVideoPath).deleteSync();
+      } catch (_) {}
+    
+      if (!mounted || newPath == null) return;
+      widget.onRefresh?.call();
+      if (!mounted) return;
+      setState(() {
+        widget.encodedPaths[currentIndex] = newPath;
+      });
+    } else if (newPath != null) {
+      if (!mounted) return;
+      widget.onRefresh?.call();
+      if (!mounted) return;
+      setState(() {
+        widget.encodedPaths[currentIndex] = newPath;
+      });
+    }
+  }
+
+  void _deleteMedia() {
+    showMyDialog(
+      context: context,
+      title: "Delete photo",
+      content: "This photo will be deleted from all your devices. It will be kept in \"Deleted recently\" for 30 days.",
+      principalButtonText: "Delete",
+      isDestructive: true,
+
+      onTap: () async {
+        await PhotoStore.softDelete(widget.encodedPaths[currentIndex]);
+        // Navigator.pop(context);
+        final totalRemaining = widget.encodedPaths.length - 1;
+
+        if (totalRemaining == 0) {
+          Navigator.pop(context);
+          return;
+        }
+
+        setState(() {
+          widget.encodedPaths.removeAt(currentIndex);
+          widget.mimetype.removeAt(currentIndex);
+        });
+
+        if (currentIndex >= totalRemaining) {
+          _pageController.animateToPage(
+            totalRemaining - 1, 
+            duration: const Duration(milliseconds: 300), 
+            curve: Curves.easeInOut
+          );
+          setState(() => currentIndex = totalRemaining - 1);
+        }
+      }
+    );
+  }
+
   Widget _buildMediaControls() {
     bool isFavorite = PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true;
     if (is26OrNewer) {
@@ -843,62 +1043,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
           ),
           CNButtonData.icon(
             icon: const CNSymbol('slider.horizontal.3', size: 22),
-            onPressed: () async {
-              setState(() => focused = true);
-              final isVideo = widget.mimetype[currentIndex].startsWith('video');
-              String? localVideoPath;
-
-              if (isVideo) {
-                final dir = await getTemporaryDirectory();
-                final tmpFile = 
-                  File('${dir.path}/edit_tmp_${DateTime.now().millisecondsSinceEpoch}.mp4');
-
-                final bytes = await fetchFullBytes(widget.encodedPaths[currentIndex]);
-                if (!mounted || bytes == null) return;
-                await tmpFile.writeAsBytes(bytes);
-                localVideoPath = tmpFile.path;
-              }
-
-              final bytes = isVideo ? null : await fetchFullBytes(widget.encodedPaths[currentIndex]);
-              if (!mounted) return;
-              setState(() => focused = false);
-              if (!isVideo && bytes == null) return;
-
-              final newPath = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PopScope(
-                    canPop: false,
-                    child: PhotoEditorPage(
-                      bytes: bytes ?? Uint8List(0), 
-                      encodedPath: widget.encodedPaths[currentIndex], 
-                      localVideoPath: localVideoPath, 
-                      isVideo: isVideo
-                    )
-                  )
-                )
-              );
-
-              if (localVideoPath != null) {
-                try {
-                  File(localVideoPath).deleteSync();
-                } catch (_) {}
-              
-                if (!mounted || newPath == null) return;
-                widget.onRefresh?.call();
-                if (!mounted) return;
-                setState(() {
-                  widget.encodedPaths[currentIndex] = newPath;
-                });
-              } else if (newPath != null) {
-                if (!mounted) return;
-                widget.onRefresh?.call();
-                if (!mounted) return;
-                setState(() {
-                  widget.encodedPaths[currentIndex] = newPath;
-                });
-              }
-            },
+            onPressed: () async => await _editMedia(),
             config: const CNButtonDataConfig(
               style: CNButtonStyle.prominentGlass,
               glassEffectUnionId: 'media-controls',
@@ -943,7 +1088,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
             icon: const Icon(CupertinoIcons.slider_horizontal_3),
             glassIcon: CNSymbol('slider.horizontal.3', size: 18),
             backgroundColor: Colors.transparent,
-            onPressed: () {},
+            onPressed: () async => await _editMedia()
           ),
         ],
       ),
@@ -975,180 +1120,188 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
             color: Theme.of(context).scaffoldBackgroundColor,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          child: ListView(
-            controller: scrollController,
+          child: infoListView(scrollController, primary, descriptionController, context, photo)
+        );
+      }
+    );
+  }
+
+  Widget infoListView(ScrollController scrollController, Color primary, TextEditingController descriptionController, BuildContext context, PhotoEntry photo) {
+    return Material(
+      color: Colors.transparent,
+      child: ListView(
+        controller: scrollController,
+        shrinkWrap: true,
+        children: [
+          // Row(
+          //   mainAxisAlignment: MainAxisAlignment.center,
+          //   children: [
+          //     Container(
+          //       margin: EdgeInsets.symmetric(vertical: 10),
+          //       width: 40,
+          //       height: 4,
+          //       decoration: BoxDecoration(
+          //         color: primary.withAlpha(80),
+          //         borderRadius: BorderRadius.circular(2),
+          //       ),
+          //     ),
+          //   ],
+          // ),
+          TextField(
+            keyboardType: TextInputType.text,
+            controller: descriptionController,
+            decoration: InputDecoration(
+              hintText: "Add a description",
+              hintStyle: TextStyle(color: primary.withAlpha(100), fontSize: 16, fontWeight: FontWeight.w500),
+              border: InputBorder.none,
+            ),
+            onSubmitted: (value) async {
+              await PhotoStore.update(path: widget.encodedPaths[currentIndex], description: value);
+            },
+            style: TextStyle(color: primary, fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    margin: EdgeInsets.symmetric(vertical: 10),
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: primary.withAlpha(80),
-                      borderRadius: BorderRadius.circular(2),
+              Text(
+                DateFormat('d MMMM yyyy — HH:mm', 'en').format(PhotoStore.getDate(widget.encodedPaths[currentIndex]).toLocal()),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    focused = true;
+                  });
+                  showModalBottomSheet(
+                    barrierColor: Colors.transparent,
+                    isScrollControlled: true,
+                    constraints: BoxConstraints(
+                      minHeight: 0,
+                      maxHeight: MediaQuery.of(context).size.height * 0.92,
                     ),
-                  ),
-                ],
-              ),
-              TextField(
-                keyboardType: TextInputType.text,
-                controller: descriptionController,
-                decoration: InputDecoration(
-                  hintText: "Add a description",
-                  hintStyle: TextStyle(color: primary.withAlpha(100), fontSize: 16, fontWeight: FontWeight.w500),
-                  border: InputBorder.none,
-                ),
-                onSubmitted: (value) async {
-                  await PhotoStore.update(path: widget.encodedPaths[currentIndex], description: value);
-                },
-                style: TextStyle(color: primary, fontSize: 16, fontWeight: FontWeight.w500),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    DateFormat('d MMMM yyyy — HH:mm', 'en').format(PhotoStore.getDate(widget.encodedPaths[currentIndex]).toLocal()),
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        focused = true;
-                      });
-                      showModalBottomSheet(
-                        barrierColor: Colors.transparent,
-                        isScrollControlled: true,
-                        constraints: BoxConstraints(
-                          minHeight: 0,
-                          maxHeight: MediaQuery.of(context).size.height * 0.92,
-                        ),
-                        context: context,
-                        
-                        builder: (context) {
-                          return AdjustDate(
-                            encodedPath: widget.encodedPaths[currentIndex],
-                            photo: photo,
-                            initialDate: PhotoStore.getOriginalDate(widget.encodedPaths[currentIndex]),
-                          );
-                        },
-                      ).then((_) {
-                        setState(() {
-                          focused = false;
-                        });
-                      });
+                    context: context,
+                    
+                    builder: (context) {
+                      return AdjustDate(
+                        encodedPath: widget.encodedPaths[currentIndex],
+                        photo: photo,
+                        initialDate: PhotoStore.getOriginalDate(widget.encodedPaths[currentIndex]),
+                      );
                     },
-                    child: Text("Adjust", style: TextStyle(fontSize: 16, color: CupertinoColors.activeBlue))
-                  )
-                ],
-              ),
-              Text(cleanName(photo.name), style: TextStyle(color: Colors.grey)),
-              Container(
-                margin: EdgeInsets.symmetric(vertical: 20),
-                padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-                decoration: BoxDecoration(
-                  color: primary.withAlpha(20),
-                  borderRadius: BorderRadius.circular(10)
+                  ).then((_) {
+                    setState(() {
+                      focused = false;
+                    });
+                  });
+                },
+                child: Text("Adjust", style: TextStyle(fontSize: 16, color: CupertinoColors.activeBlue))
+              )
+            ],
+          ),
+          Text(cleanName(photo.name), style: TextStyle(color: Colors.grey)),
+          Container(
+            margin: EdgeInsets.symmetric(vertical: 20),
+            padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+            decoration: BoxDecoration(
+              color: primary.withAlpha(20),
+              borderRadius: BorderRadius.circular(10)
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(photo.cameraModel ?? "Unknown", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                SizedBox(height: 8),
+                Text(
+                  // Si c'est une vidéo
+                  widget.mimetype[currentIndex].startsWith('video/')
+                    ? formatSize(photo.size)
+                    : "${getMP(photo)} MP • ${photo.width} x ${photo.height} • ${formatSize(photo.size)}",
+                  style: TextStyle(fontSize: 13, color: primary.withAlpha(150))
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                SizedBox(height: 10),
+                Divider(color: primary.withAlpha(80), height: 0),
+                Row(
                   children: [
-                    Text(photo.cameraModel ?? "Unknown", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                    SizedBox(height: 8),
-                    Text(
-                      // Si c'est une vidéo
-                      widget.mimetype[currentIndex].startsWith('video/')
-                        ? formatSize(photo.size)
-                        : "${getMP(photo)} MP • ${photo.width} x ${photo.height} • ${formatSize(photo.size)}",
-                      style: TextStyle(fontSize: 13, color: primary.withAlpha(150))
-                    ),
-                    SizedBox(height: 10),
-                    Divider(color: primary.withAlpha(80), height: 0),
-                    Row(
-                      children: [
-                        infoBox(photo.iso != null ? "ISO ${photo.iso}" : "—"),
-                        infoBox( photo.focalLength != null ? "${photo.focalLength} mm" : "—"),
-                        infoBox(photo.exposureValue != null ? "${photo.exposureValue} ev" : "—"),
-                        infoBox(photo.focus != null ? "ƒ${photo.focus}" : "—"),
-                      ],
-                    ),
+                    infoBox(photo.iso != null ? "ISO ${photo.iso}" : "—"),
+                    infoBox( photo.focalLength != null ? "${photo.focalLength} mm" : "—"),
+                    infoBox(photo.exposureValue != null ? "${photo.exposureValue} ev" : "—"),
+                    infoBox(photo.focus != null ? "ƒ${photo.focus}" : "—"),
                   ],
                 ),
+              ],
+            ),
+          ),
+          // Text("A retirer : Coordonnées GPS de l'image si disponible : "),
+          // Text("${photo.latitude}, ${photo.longitude}")
+          photo.detectedText != null && photo.detectedText!.isNotEmpty 
+          ? Container(
+              margin: EdgeInsets.symmetric(vertical: 15),
+              padding: EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: primary.withAlpha(20),
+                borderRadius: BorderRadius.circular(15)
               ),
-              // Text("A retirer : Coordonnées GPS de l'image si disponible : "),
-              // Text("${photo.latitude}, ${photo.longitude}")
-              photo.detectedText != null && photo.detectedText!.isNotEmpty 
-              ? Container(
-                  margin: EdgeInsets.symmetric(vertical: 15),
-                  padding: EdgeInsets.all(15),
-                  decoration: BoxDecoration(
-                    color: primary.withAlpha(20),
-                    borderRadius: BorderRadius.circular(15)
-                  ),
-                  child: Column(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Detected Text", style: TextStyle(fontSize: 14, color: primary.withAlpha(130))),
+                  SizedBox(height: 5),
+                  Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Detected Text", style: TextStyle(fontSize: 14, color: primary.withAlpha(130))),
-                      SizedBox(height: 5),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SelectableText(
-                            scrollPhysics: NeverScrollableScrollPhysics(),
-                            selectionColor: Colors.blue.withAlpha(70),
-                            photo.detectedText!,
-                            maxLines: !showFullText ? 3 : null,
-                            style: TextStyle(height: 1.5, color: primary.withAlpha(200)),
-                          ),
-                          if (!showFullText && photo.detectedText!.split('\n').length > 3)
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  showFullText = true;
-                                });
-                              },
-                              child: Text(
-                                'Show more...',
-                                style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.w500), 
-                              ),
-                            )
-                        ],
+                      SelectableText(
+                        scrollPhysics: NeverScrollableScrollPhysics(),
+                        selectionColor: Colors.blue.withAlpha(70),
+                        photo.detectedText!,
+                        maxLines: !showFullText ? 3 : null,
+                        style: TextStyle(height: 1.5, color: primary.withAlpha(200)),
                       ),
+                      if (!showFullText && photo.detectedText!.split('\n').length > 3)
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              showFullText = true;
+                            });
+                          },
+                          child: Text(
+                            'Show more...',
+                            style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.w500), 
+                          ),
+                        )
                     ],
                   ),
-                ) 
-                : SizedBox(),
-              SizedBox(height: 10),
-              if (photo.longitude != null && Platform.isIOS)
-                ClipRRect(
-                  borderRadius: BorderRadiusGeometry.all(Radius.circular(20)),
-                  child: SizedBox(
-                    height: 220,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.translucent,
-                      onTap: () {
-                        showModalBottomSheet(
-                          isDismissible: false,
-                          enableDrag: false,
-                          isScrollControlled: true,
-                          context: context, 
-                          builder: (context) {
-                            return PhotoMap(photo: photo, fullscreen: true);
-                          }
-                        );
-                      },
-                      child: AbsorbPointer(child:PhotoMap(photo: photo)),
-                    ),
-                  ),
+                ],
+              ),
+            ) 
+            : SizedBox(),
+          SizedBox(height: 10),
+          if (photo.longitude != null && Platform.isIOS)
+            ClipRRect(
+              borderRadius: BorderRadiusGeometry.all(Radius.circular(20)),
+              child: SizedBox(
+                height: 220,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: () {
+                    showModalBottomSheet(
+                      isDismissible: false,
+                      enableDrag: false,
+                      isScrollControlled: true,
+                      context: context, 
+                      builder: (context) {
+                        return PhotoMap(photo: photo, fullscreen: true);
+                      }
+                    );
+                  },
+                  child: AbsorbPointer(child:PhotoMap(photo: photo)),
                 ),
-            ]
-          )
-        );
-      }
+              ),
+            ),
+        ]
+      ),
     );
   }
   
