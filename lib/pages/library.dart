@@ -122,6 +122,8 @@ class LibraryPageState extends State<LibraryPage> {
   final ValueNotifier<bool> _isDragging = ValueNotifier(false);
   List<_SearchEntry> _searchIndex = [];
   String get _heroPrefix => widget.searchText.isEmpty ? 'library' : 'search';
+  final GlobalKey _uploadButtonKey = GlobalKey();
+
 
  static const formatMap = <String, FileFormat>{
     'image/jpeg': Formats.jpeg,
@@ -611,76 +613,95 @@ class LibraryPageState extends State<LibraryPage> {
     
     if (_uploadOverlay != null) return;
 
-    _cardVisible.value = false; 
+    final RenderBox? buttonBox =
+      _uploadButtonKey.currentContext?.findRenderObject() as RenderBox?;
+
+    if (buttonBox == null) return;
+
+    final Offset buttonPosition = buttonBox.localToGlobal(Offset.zero);
+    final Size buttonSize = buttonBox.size;
+    final double screenWidth = MediaQuery.of(context).size.width;
+
+    const double cardMaxWidth = 260.0;
+
+    final double buttonCenterX = buttonPosition.dx + buttonSize.width / 2;
+    double left = buttonCenterX - cardMaxWidth / 2;
+    left = left.clamp(12.0, screenWidth - cardMaxWidth - 12.0);
+
+    _cardVisible.value = false;
     _uploadOverlay = OverlayEntry(
       builder: (context) => Stack(
+        alignment: Alignment.topCenter,
         children: [
-        Positioned.fill(
-          child: GestureDetector(
-            onTap: _dismissCard, 
-            behavior: HitTestBehavior.opaque,
-            child: const SizedBox.expand(),
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _dismissCard,
+              behavior: HitTestBehavior.opaque,
+              child: const SizedBox.expand(),
+            ),
           ),
-        ),
-        Positioned(
-          top: MediaQuery.of(context).padding.top + kToolbarHeight + 10,
-          left: MediaQuery.of(context).size.width * 0.15,
-          child: GestureDetector(
-            onTap: () {}, 
-            child: ValueListenableBuilder<bool>(
-              valueListenable: _cardVisible,
-              builder: (context, visible, child) => AnimatedOpacity(
-                opacity: visible ? 1.0 : 0.0,
-                duration: Duration(milliseconds: visible ? 350 : 180),
-                curve: visible ? Curves.easeOutCubic : Curves.easeInCubic,
-                onEnd: () {
-                  if (!visible) {
-                    _uploadOverlay?.remove();
-                    _uploadOverlay = null;
-                  }
-                },
-                child: AnimatedScale(
-                  scale: visible ? 1.0 : 0.92,
-                  duration: Duration(milliseconds: visible ? 350 : 180),
-                  curve: visible ? Curves.easeOutCubic : Curves.easeInCubic,
-                  alignment: Alignment.topCenter,
-                  child: child!,
-                ),
-              ),
-              child: ValueListenableBuilder(
-                valueListenable: CopypartyService.uploadProgress,
-                builder: (context, progress, _) => Material(
-                  color: Colors.transparent,
-                  child: CNGlassCard(
-                    tint: Colors.white.withAlpha(5),
-                    child: Padding(
-                      padding: const EdgeInsetsGeometry.symmetric(horizontal: 10, vertical: 0),
-                      child: Column(
-                        children: [
-                          Text("Do you want to cancel the upload?", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                          SizedBox(height: 10),
-                          CupertinoButton.tinted(
-                            color: Colors.grey,
-                            borderRadius: BorderRadius.all(Radius.circular(20)),
-                            minimumSize: Size(0, 30),
-                            padding: EdgeInsets.symmetric(horizontal: 40, vertical: 0),
-                            child: Text("Cancel", style: TextStyle(
-                              fontSize: 15, 
-                              fontWeight: FontWeight.w500,
-                              color: Colors.redAccent
-                              )
-                            ),
-                            onPressed: () {
-                              _dismissCard();
-                              CopypartyService.cancelUpload();
-                            }
-                          )
-                        ],
-                      ),
-                    )
+          Positioned(
+            top: buttonPosition.dy + buttonSize.height + 16,
+            left: left,
+            child: SizedBox(
+              width: cardMaxWidth,
+              child: GestureDetector(
+                onTap: () {},
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: _cardVisible,
+                  builder: (context, visible, child) => AnimatedOpacity(
+                    opacity: visible ? 1.0 : 0.0,
+                    duration: Duration(milliseconds: visible ? 350 : 180),
+                    curve: visible ? Curves.easeOutCubic : Curves.easeInCubic,
+                    onEnd: () {
+                      if (!visible) {
+                        _uploadOverlay?.remove();
+                        _uploadOverlay = null;
+                      }
+                    },
+                    child: AnimatedScale(
+                      scale: visible ? 1.0 : 0.92,
+                      duration: Duration(milliseconds: visible ? 350 : 180),
+                      curve: visible ? Curves.easeOutCubic : Curves.easeInCubic,
+                      alignment: Alignment.topCenter,
+                      child: child!,
+                    ),
                   ),
-                ),
-              ),
+                    child: ValueListenableBuilder(
+                      valueListenable: CopypartyService.uploadProgress,
+                      builder: (context, progress, _) => Material(
+                        color: Colors.transparent,
+                        child: CNGlassCard(
+                          tint: Colors.white.withAlpha(5),
+                          child: Padding(
+                            padding: const EdgeInsetsGeometry.symmetric(horizontal: 10, vertical: 0),
+                            child: Column(
+                              children: [
+                                Text("Do you want to cancel the upload?", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                                SizedBox(height: 10),
+                                CupertinoButton.tinted(
+                                  color: Colors.grey,
+                                  borderRadius: BorderRadius.all(Radius.circular(20)),
+                                  minimumSize: Size(0, 30),
+                                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 0),
+                                  child: Text("Cancel", style: TextStyle(
+                                    fontSize: 15, 
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.redAccent
+                                    )
+                                  ),
+                                  onPressed: () {
+                                    _dismissCard();
+                                    CopypartyService.cancelUpload();
+                                  }
+                                )
+                              ],
+                            ),
+                          )
+                        ),
+                      ),
+                    ),
+                )
               )
             )
           )
@@ -728,6 +749,7 @@ class LibraryPageState extends State<LibraryPage> {
         actions: showButtons || !widget.onlySelect ? [
           if (widget.albumName == null)
             GestureDetector(
+              key: _uploadButtonKey,
               onTap: () {
                 _showUploadOverlay(alreadyPressed);
                 setState(() => alreadyPressed = !alreadyPressed);
@@ -750,6 +772,7 @@ class LibraryPageState extends State<LibraryPage> {
                 },
               ),
             ),
+
           SizedBox(width: 15),
           if (widget.album == Album.none)...[
              widget.albumName == null && box.get("navBarStyle") != 0 ?
