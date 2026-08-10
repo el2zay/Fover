@@ -479,6 +479,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
       backgroundColor: Colors.transparent,
       leadingWidth: isTablet ? 200 : null,
       leading: isTablet
+      leading: isTablet && !widget.trashMode
         ? _buildLeadingButton()
         : Row(
         children: [
@@ -645,6 +646,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
           ),
         ),
       ],
+      actions: !widget.trashMode ? [_buildTopButton()] : null
     );
   }
 
@@ -805,6 +807,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
             await SharePlus.instance.share(
               ShareParams(
                 previewThumbnail: XFile.fromData(bytes),
+                sharePositionOrigin: Rect.fromLTWH(0, 0, MediaQuery.of(context).size.width, MediaQuery.of(context).size.height),
                 files: [
                   XFile.fromData(
                     bytes,
