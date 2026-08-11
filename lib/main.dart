@@ -11,6 +11,7 @@ import 'package:fover/pages/onboarding/first.dart';
 import 'package:fover/pages/library.dart';
 import 'package:fover/pages/search.dart';
 import 'package:fover/pages/settings.dart';
+import 'package:fover/pages/viewer.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/freebox_service.dart';
 import 'package:fover/src/services/photo_store.dart';
@@ -98,6 +99,9 @@ class MainApp extends StatefulWidget {
 }
 
 final GlobalKey<LibraryPageState> libraryKey = GlobalKey<LibraryPageState>();
+final GlobalKey<ViewerPageState> viewerKey = GlobalKey<ViewerPageState>();
+
+
 class _MainAppState extends State<MainApp> {
   int _currentIndex = 0;
 
