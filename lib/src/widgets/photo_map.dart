@@ -9,6 +9,7 @@ import 'package:cupertino_native_better/cupertino_native.dart' show CNSymbol;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:fover/main.dart';
 import 'package:fover/pages/viewer.dart';
 import 'package:fover/src/models/photo_entry.dart';
 import 'package:fover/src/services/copyparty_service.dart';
@@ -205,6 +206,7 @@ class _PhotoMapState extends State<PhotoMap> {
     if (cluster.photos.length == 1) {
       Navigator.push(context, MaterialPageRoute(
         builder: (_) => ViewerPage(
+          key: viewerKey,
           mimetype: [cluster.photos.first.mimetype ?? 'image/jpeg'], 
           encodedPaths: [cluster.photos.first.path],
           index: 0, 

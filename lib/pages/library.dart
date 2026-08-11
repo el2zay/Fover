@@ -1109,6 +1109,7 @@ class LibraryPageState extends State<LibraryPage> {
                                       transitionDuration: const Duration(milliseconds: 300),
                                       reverseTransitionDuration: const Duration(milliseconds: 300),
                                       pageBuilder: (_, __, ___) => ViewerPage(
+                                        key: viewerKey,
                                         mimetype: mimetypes,
                                         index: index,
                                         encodedPaths: data.encodedPaths,
