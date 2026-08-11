@@ -1,6 +1,8 @@
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:fover/main.dart';
+import 'package:fover/pages/viewer.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 
@@ -28,151 +30,200 @@ class PopMenu extends StatelessWidget {
   final bool isFavorite;
   final bool isHidden;
   final bool canRevert;
+  final bool isTablet;
   final Function(PopMenuAction) onSelected;
 
   const PopMenu({
-    super.key, 
+    super.key,
     this.scale = 0.7,
-    required this.showCopy, 
-    required this.isViewer, 
-    this.isDownloaded = false, 
+    required this.showCopy,
+    required this.isViewer,
+    this.isDownloaded = false,
     this.isFavorite = false,
     required this.isHidden,
     this.canRevert = false,
-    required this.onSelected
+    this.isTablet = false,
+    required this.onSelected,
   });
+
+  List<({
+    PopMenuAction action,
+    String label,
+    String sfSymbol,
+    IconData cupertinoIcon,
+  })> _buildEntries() {
+    return [
+      (
+        action: PopMenuAction.download,
+        label: isDownloaded ? 'Remove download' : 'Download',
+        sfSymbol: 'arrow.down.circle',
+        cupertinoIcon: isDownloaded
+            ? CupertinoIcons.arrow_down_circle_fill
+            : CupertinoIcons.arrow_down_circle,
+      ),
+      if (showCopy && isViewer)
+        (
+          action: PopMenuAction.copy,
+          label: 'Copy',
+          sfSymbol: 'doc.on.doc',
+          cupertinoIcon: CupertinoIcons.doc_on_doc,
+        ),
+      if (canRevert)
+        (
+          action: PopMenuAction.revert,
+          label: 'Revert to original',
+          sfSymbol: 'arrow.counterclockwise.circle',
+          cupertinoIcon: CupertinoIcons.arrow_counterclockwise_circle,
+        ),
+      if (!isViewer)
+        (
+          action: PopMenuAction.share,
+          label: 'Share',
+          sfSymbol: 'square.and.arrow.up',
+          cupertinoIcon: CupertinoIcons.share_up,
+        ),
+      if (!isViewer)
+        (
+          action: PopMenuAction.favorite,
+          label: isFavorite ? 'Remove from favorites' : 'Add to favorites',
+          sfSymbol: 'heart',
+          cupertinoIcon:
+              isFavorite ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
+        ),
+      if (isViewer)
+        (
+          action: PopMenuAction.duplicate,
+          label: 'Duplicate',
+          sfSymbol: 'plus.square.on.square',
+          cupertinoIcon: CupertinoIcons.plus_square_on_square,
+        ),
+      (
+        action: PopMenuAction.hide,
+        label: isHidden ? 'Unhide' : 'Hide',
+        sfSymbol: isHidden ? 'eye' : 'eye.slash',
+        cupertinoIcon: isHidden ? CupertinoIcons.eye : CupertinoIcons.eye_slash,
+      ),
+      (
+        action: PopMenuAction.addToAlbum,
+        label: 'Add to Album',
+        sfSymbol: 'plus.rectangle.on.rectangle',
+        cupertinoIcon: CupertinoIcons.plus_rectangle_on_rectangle,
+      ),
+      if (isViewer) ...[
+
+        (
+          action: PopMenuAction.adjustDate,
+          label: 'Adjust the date and time',
+          sfSymbol: 'calendar.badge.clock',
+          cupertinoIcon: CupertinoIcons.calendar,
+        ),
+        (
+          action: PopMenuAction.adjustLocation,
+          label: 'Adjust the location',
+          sfSymbol: 'mappin.circle',
+          cupertinoIcon: CupertinoIcons.map_pin_ellipse,
+        ),
+      ],
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
+    final entries = _buildEntries();
+
+    if (isTablet) {
+      return CNGlassButtonGroup(
+        buttons: [
+          CNButtonData.icon(
+            icon: CNSymbol('slider.horizontal.3'),
+            config: const CNButtonDataConfig(
+              style: CNButtonStyle.prominentGlass,
+              glassEffectUnionId: 'media-controls',
+              glassEffectId: '',
+              glassEffectInteractive: true,
+            ),
+            onPressed: () => viewerKey.currentState?.editMedia()
+          ),
+          CNButtonData.icon(
+            icon: CNSymbol('info.circle'),
+            config: const CNButtonDataConfig(
+              style: CNButtonStyle.prominentGlass,
+              glassEffectUnionId: 'media-controls',
+              glassEffectId: '',
+              glassEffectInteractive: true,
+            ),
+            onPressed: () async => viewerKey.currentState?.showOverlay(viewerKey.currentState!.alreadyPressed),
+          ),
+          CNButtonData.icon(
+            icon: CNSymbol('trash', size: 22),
+            config: const CNButtonDataConfig(
+              style: CNButtonStyle.prominentGlass,
+              glassEffectUnionId: 'media-controls',
+              glassEffectId: '',
+              glassEffectInteractive: true,
+            ),
+            onPressed: () => viewerKey.currentState?.deleteMedia()
+          ),
+          CNButtonData.popup(
+            customIcon: CupertinoIcons.ellipsis,
+            tint: Colors.white,
+            config: CNButtonDataConfig(
+              style: CNButtonStyle.prominentGlass,
+              glassEffectUnionId: 'media-controls',
+              glassEffectId: '',
+              glassEffectInteractive: true,
+            ),
+            popupItems: entries
+                .map((e) => CNButtonDataPopupItem(
+                      label: e.label,
+                      sfSymbol: e.sfSymbol,
+                    ))
+                .toList(),
+            onMenuSelected: (index) {
+              onSelected(entries[index].action);
+            },
+          ),
+        ],
+      );
+    }
+
     if (is26OrNewer) {
-        final items = [];
-        final actions = <PopMenuAction?>[];
-
-        void add(dynamic item, PopMenuAction? action) {
-          items.add(item);
-          actions.add(action);
-        }
-
-        add(CNPopupMenuItem(label: isDownloaded ? 'Remove download' : 'Download', icon: CNSymbol('arrow.down.circle', size: 20)), PopMenuAction.download);
-        if (showCopy && isViewer) {
-          add(CNPopupMenuItem(label: 'Copy', icon: CNSymbol('doc.on.doc', size: 20)), PopMenuAction.copy);
-        }
-        if (canRevert) {
-          add(CNPopupMenuItem(label: 'Revert to original', icon: CNSymbol('arrow.counterclockwise.circle')), PopMenuAction.revert);
-        }
-        if (!isViewer) {
-          add(CNPopupMenuItem(label: 'Share', icon: CNSymbol('square.and.arrow.up', size: 20)), PopMenuAction.share);
-        }
-        if (!isViewer) {
-          add(CNPopupMenuItem(label: isFavorite ? 'Remove from favorites' : 'Add to favorites', icon: CNSymbol('heart', size: 18)), PopMenuAction.favorite);
-        }
-        add(CNPopupMenuItem(label: isHidden ? 'Unhide' : 'Hide', icon: CNSymbol(isHidden ? 'eye' : 'eye.slash', size: 20)), PopMenuAction.hide);
-        add(CNPopupMenuItem(label: 'Add to Album', icon: CNSymbol('plus.rectangle.on.rectangle', size: 20)), PopMenuAction.addToAlbum);
-        if (isViewer) {
-          add(CNPopupMenuDivider(), null); 
-          add(CNPopupMenuItem(label: 'Adjust the date and time', icon: CNSymbol('calendar.badge.clock', size: 20)), PopMenuAction.adjustDate);
-          add(CNPopupMenuItem(label: 'Adjust the location', icon: CNSymbol('mappin.circle', size: 20)), PopMenuAction.adjustLocation);
-        }
-
+      final items = entries
+          .map<dynamic>((e) => CNPopupMenuItem(
+                label: e.label,
+                icon: CNSymbol(e.sfSymbol, size: 18),
+              ))
+          .toList();
 
       return CNPopupMenuButton.icon(
         size: 40,
         buttonIcon: CNSymbol('ellipsis', size: 15),
         items: items.cast(),
-        onSelected: (id) {
-          final action = actions[id];
-          if (action != null) onSelected(action);
+        onSelected: (index) {
+          onSelected(entries[index].action);
         },
       );
-    } else {
-      return PullDownButton(
-        itemBuilder: (context) => [
-          PullDownMenuItem(
-            title: isDownloaded ? 'Remove download' : 'Download',
-            icon: isDownloaded ? CupertinoIcons.arrow_down_circle_fill : CupertinoIcons.arrow_down_circle,
-            onTap: () {
-              onSelected(PopMenuAction.download);
-            },
-          ),
-          if (showCopy && isViewer)
-            PullDownMenuItem(
-              title: 'Copy',
-              icon: CupertinoIcons.doc_on_doc,
-              onTap: () {
-                onSelected(PopMenuAction.copy);
-              },
-            ),
-          if (canRevert)
-            PullDownMenuItem(
-              title: 'Revert to original',
-              onTap: () => onSelected(PopMenuAction.revert),
-            ),
-          if (!isViewer) 
-            PullDownMenuItem(
-              title: 'Share',
-              icon: CupertinoIcons.share_up,
-              onTap: () {
-                onSelected(PopMenuAction.share);
-              },
-            ),
-          if (!isViewer)
-            PullDownMenuItem(
-              title: isFavorite ? "Remove from favorites" : "Add to favorites",
-              icon: isFavorite ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
-              onTap: () {
-                onSelected(PopMenuAction.favorite);
-              },
-            ),
-          if (isViewer)
-            PullDownMenuItem(
-              title: 'Duplicate',
-              icon: CupertinoIcons.plus_square_on_square,
-              onTap: () {
-                onSelected(PopMenuAction.duplicate);
-              },
-            ),
-          PullDownMenuItem(
-            title: isHidden ? 'Unhide' : 'Hide',
-            icon: isHidden 
-              ? CupertinoIcons.eye
-              : CupertinoIcons.eye_slash,
-            onTap: () {
-              onSelected(PopMenuAction.hide);
-            },
-          ),
-          PullDownMenuItem(
-            title: 'Add to Album',
-            icon: CupertinoIcons.plus_rectangle_on_rectangle,
-            onTap: () {
-              onSelected(PopMenuAction.addToAlbum);
-            },
-          ),
-          if (isViewer)...[
-            PullDownMenuItem(
-              title: 'Adjust the date and time',
-              icon: CupertinoIcons.calendar,
-              onTap: () {
-                onSelected(PopMenuAction.adjustDate);
-              },
-            ),
-            PullDownMenuItem(
-              title: 'Adjust the location',
-              icon: CupertinoIcons.map_pin_ellipse,
-              onTap: () {
-                onSelected(PopMenuAction.adjustLocation);
-              },
-            )
-          ]
-        ],
-        buttonBuilder: (context, showMenu) => CupertinoButton(
-          onPressed: showMenu,
-          padding: EdgeInsets.zero,
-          child: Transform.scale(
-            scale: scale,
-            child: Button.iconOnly(icon: Icon(CupertinoIcons.ellipsis, color: CupertinoColors.white), onPressed: showMenu),
+    }
+
+    return PullDownButton(
+      itemBuilder: (context) => entries
+          .map((e) => PullDownMenuItem(
+                title: e.label,
+                icon: e.cupertinoIcon,
+                onTap: () => onSelected(e.action),
+              ))
+          .toList(),
+      buttonBuilder: (context, showMenu) => CupertinoButton(
+        onPressed: showMenu,
+        padding: EdgeInsets.zero,
+        child: Transform.scale(
+          scale: scale,
+          child: Button.iconOnly(
+            icon: const Icon(CupertinoIcons.ellipsis, color: CupertinoColors.white),
+            onPressed: showMenu,
           ),
         ),
-      );
-    }
+      ),
+    );
   }
 }

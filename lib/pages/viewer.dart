@@ -55,10 +55,10 @@ class ViewerPage extends StatefulWidget {
   });
 
   @override
-  State<ViewerPage> createState() => _ViewerPageState();
+  State<ViewerPage> createState() => ViewerPageState();
 }
 
-class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMixin {
+class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMixin {
   bool _showSwiper = true;
   late int currentIndex;
   late AnimationController _animationController;
@@ -478,7 +478,6 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
       centerTitle: false,
       backgroundColor: Colors.transparent,
       leadingWidth: isTablet ? 200 : null,
-      leading: isTablet
       leading: isTablet && !widget.trashMode
         ? _buildLeadingButton()
         : Row(
@@ -523,129 +522,6 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
         ],
       ),
       actionsPadding: const EdgeInsets.only(right: 15),
-      // actions: [
-      //   if (isTablet) _buildTopButton()
-      // ]
-      actions: [
-        CupertinoTheme(
-          data: CupertinoThemeData(brightness: Theme.brightnessOf(context)),
-          child: Transform.scale(
-            scale: 1.2,
-            child: PopMenu(
-              showCopy: widget.mimetype[currentIndex].startsWith('image/'),
-              isViewer: true,
-              isHidden: PhotoStore.get(widget.encodedPaths[currentIndex])?.hidden == true,
-              isDownloaded: DownloadService.isDownloaded(widget.encodedPaths[currentIndex]),
-              isFavorite: PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true,
-              canRevert: PhotoStore.get(widget.encodedPaths[currentIndex])?.editedFrom != null,
-              onSelected: (action) async {
-                switch (action) {
-                  case PopMenuAction.download:
-                    final photo = PhotoStore.get(widget.encodedPaths[currentIndex]);
-                      if (!DownloadService.isDownloaded(widget.encodedPaths[currentIndex])) {
-                        final path = await DownloadService.download(
-                          encodedPath: widget.encodedPaths[currentIndex],
-                          filename: photo?.name ?? widget.encodedPaths[currentIndex],
-                        );
-                        if (!mounted) return;
-                        setState(() {});
-                        
-                        log('Downloaded to: $path');
-                      } else {
-                        log("ici");
-                        DownloadService.remove(widget.encodedPaths[currentIndex]);
-                      }
-                    break;
-                  case PopMenuAction.copy:
-                    final bytes = await fetchFullBytes(widget.encodedPaths[currentIndex]);
-                    if (bytes == null) return;
-                    await FlutterClipboard.copyImage(bytes);
-                    break;
-                  case PopMenuAction.revert:
-                    final originalPath = PhotoStore.get(widget.encodedPaths[currentIndex])?.editedFrom;
-                    if (originalPath == null) break;
-
-                    await PhotoStore.revertEdit(widget.encodedPaths[currentIndex]);
-
-                    setState(() {
-                      widget.encodedPaths[currentIndex] = originalPath;
-                    });
-                    
-                    widget.onRefresh?.call();
-                    break;
-                  case PopMenuAction.share:
-                    break;
-                  case PopMenuAction.favorite:
-                    final isFavorite = PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true;
-                    await PhotoStore.update(path: widget.encodedPaths[currentIndex], favorite: !isFavorite);
-                    setState(() {});
-                    break;
-                  case PopMenuAction.duplicate:
-                    await PhotoStore.duplicate(path: widget.encodedPaths[currentIndex]);
-                    widget.onRefresh?.call();
-                    break;
-                  case PopMenuAction.hide:
-                    await PhotoStore.update(path: widget.encodedPaths[currentIndex], hidden: true);
-                    widget.onRefresh?.call();
-                    break;
-                  case PopMenuAction.addToAlbum:
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
-                      builder: (context) {
-                        return AddToAlbumSheet(
-                          photoPath: [widget.encodedPaths[currentIndex]],
-                        );
-                      }
-                    );
-                    break;
-                  case PopMenuAction.adjustDate:
-                    setState(() {
-                      focused = true;
-                    });
-                    showCupertinoSheet(
-                      // Impossible a drag
-                      enableDrag: false,
-                      // barrierColor: Colors.transparent,
-                      // isScrollControlled: true,
-                      // constraints: BoxConstraints(
-                      //   minHeight: 0,
-                      //   maxHeight: MediaQuery.of(context).size.height * 0.93,
-                      // ),
-                      context: context,
-                      builder: (context) {
-                        return AdjustDate(
-                          encodedPath: widget.encodedPaths[currentIndex],
-                          photo: PhotoStore.get(widget.encodedPaths[currentIndex])!,
-                          initialDate: PhotoStore.getOriginalDate(widget.encodedPaths[currentIndex]),
-                        );
-                      },
-                    ).then((_) {
-                      setState(() {
-                        focused = false;
-                      });
-                    });
-                    break;
-                  case PopMenuAction.adjustLocation:
-                    setState(() {
-                      focused = true;
-                    });
-
-                    showCupertinoSheet(
-                      context: context, 
-                      builder: (context) {
-                        return AdjustLocation(
-                          photo: PhotoStore.get(widget.encodedPaths[currentIndex])!
-                        );
-                      }
-                  );
-                }
-              },
-            )
-          ),
-        ),
-      ],
       actions: !widget.trashMode ? [_buildTopButton()] : null
     );
   }
@@ -686,7 +562,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
                 Button.iconOnly(
                   icon: const Icon(CupertinoIcons.trash),
                   glassIcon: CNSymbol('trash', size: 18),
-                  onPressed: () => _deleteMedia()
+                  onPressed: () => deleteMedia()
                 ),
               ] else ...[
                 Button(
@@ -826,54 +702,240 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
   Widget _buildTopButton() {
     // TODO a faire sur les tablettes android
     if (isTablet) {
-      return CNGlassButtonGroup(
-        key: _infoButtonKey,
-        axis: Axis.horizontal,
-        spacing: 10.0,
-        buttons: [
-          CNButtonData.icon(
-            icon: CNSymbol('slider.horizontal.3'),
-            config: const CNButtonDataConfig(
-              style: CNButtonStyle.prominentGlass,
-              glassEffectUnionId: 'media-controls',
-              glassEffectId: '',
-              glassEffectInteractive: true,
-            ),
-            onPressed: () async => await _editMedia(),
-          ),
-          CNButtonData.icon(
-            icon: CNSymbol('info.circle'),
-            config: const CNButtonDataConfig(
-              style: CNButtonStyle.prominentGlass,
-              glassEffectUnionId: 'media-controls',
-              glassEffectId: '',
-              glassEffectInteractive: true,
-            ),
-            onPressed: () => _showOverlay(alreadyPressed)
-          ),
-          CNButtonData.icon(
-            icon: CNSymbol('trash', size: 22),
-            config: const CNButtonDataConfig(
-              style: CNButtonStyle.prominentGlass,
-              glassEffectUnionId: 'media-controls',
-              glassEffectId: '',
-              glassEffectInteractive: true,
-            ),
-            onPressed: () => _deleteMedia()
-          ),
-          CNButtonData.icon(
-            icon: CNSymbol('ellipsis'),
-            config: const CNButtonDataConfig(
-              style: CNButtonStyle.prominentGlass,
-              glassEffectUnionId: 'media-controls',
-              glassEffectId: '',
-              glassEffectInteractive: true,
-            )
-          ),
-        ]
+      return PopMenu(
+        showCopy: widget.mimetype[currentIndex].startsWith('image/'),
+        isViewer: true,
+        isTablet: isTablet,
+        isHidden: PhotoStore.get(widget.encodedPaths[currentIndex])?.hidden == true,
+        isDownloaded: DownloadService.isDownloaded(widget.encodedPaths[currentIndex]),
+        isFavorite: PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true,
+        canRevert: PhotoStore.get(widget.encodedPaths[currentIndex])?.editedFrom != null,
+        onSelected: (action) async {
+          switch (action) {
+            case PopMenuAction.download:
+              final photo = PhotoStore.get(widget.encodedPaths[currentIndex]);
+                if (!DownloadService.isDownloaded(widget.encodedPaths[currentIndex])) {
+                  final path = await DownloadService.download(
+                    encodedPath: widget.encodedPaths[currentIndex],
+                    filename: photo?.name ?? widget.encodedPaths[currentIndex],
+                  );
+                  if (!mounted) return;
+                  setState(() {});
+                  
+                  log('Downloaded to: $path');
+                } else {
+                  log("ici");
+                  DownloadService.remove(widget.encodedPaths[currentIndex]);
+                }
+              break;
+            case PopMenuAction.copy:
+              final bytes = await fetchFullBytes(widget.encodedPaths[currentIndex]);
+              if (bytes == null) return;
+              await FlutterClipboard.copyImage(bytes);
+              break;
+            case PopMenuAction.revert:
+              final originalPath = PhotoStore.get(widget.encodedPaths[currentIndex])?.editedFrom;
+              if (originalPath == null) break;
+
+              await PhotoStore.revertEdit(widget.encodedPaths[currentIndex]);
+
+              setState(() {
+                widget.encodedPaths[currentIndex] = originalPath;
+              });
+              
+              widget.onRefresh?.call();
+              break;
+            case PopMenuAction.share:
+              break;
+            case PopMenuAction.favorite:
+              final isFavorite = PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true;
+              await PhotoStore.update(path: widget.encodedPaths[currentIndex], favorite: !isFavorite);
+              setState(() {});
+              break;
+            case PopMenuAction.duplicate:
+              await PhotoStore.duplicate(path: widget.encodedPaths[currentIndex]);
+              widget.onRefresh?.call();
+              break;
+            case PopMenuAction.hide:
+              await PhotoStore.update(path: widget.encodedPaths[currentIndex], hidden: true);
+              widget.onRefresh?.call();
+              break;
+            case PopMenuAction.addToAlbum:
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
+                builder: (context) {
+                  return AddToAlbumSheet(
+                    photoPath: [widget.encodedPaths[currentIndex]],
+                  );
+                }
+              );
+              break;
+            case PopMenuAction.adjustDate:
+              setState(() {
+                focused = true;
+              });
+              showCupertinoSheet(
+                // Impossible a drag
+                enableDrag: false,
+                // barrierColor: Colors.transparent,
+                // isScrollControlled: true,
+                // constraints: BoxConstraints(
+                //   minHeight: 0,
+                //   maxHeight: MediaQuery.of(context).size.height * 0.93,
+                // ),
+                context: context,
+                builder: (context) {
+                  return AdjustDate(
+                    encodedPath: widget.encodedPaths[currentIndex],
+                    photo: PhotoStore.get(widget.encodedPaths[currentIndex])!,
+                    initialDate: PhotoStore.getOriginalDate(widget.encodedPaths[currentIndex]),
+                  );
+                },
+              ).then((_) {
+                setState(() {
+                  focused = false;
+                });
+              });
+              break;
+            case PopMenuAction.adjustLocation:
+              setState(() {
+                focused = true;
+              });
+
+              showCupertinoSheet(
+                context: context, 
+                builder: (context) {
+                  return AdjustLocation(
+                    photo: PhotoStore.get(widget.encodedPaths[currentIndex])!
+                  );
+                }
+            );
+          }
+        },
+      );
+    } else {
+      return CupertinoTheme(
+        data: CupertinoThemeData(brightness: Theme.brightnessOf(context)),
+        child: Transform.scale(
+          scale: 1.2,
+          child: PopMenu(
+            showCopy: widget.mimetype[currentIndex].startsWith('image/'),
+            isViewer: true,
+            isTablet: isTablet,
+            isHidden: PhotoStore.get(widget.encodedPaths[currentIndex])?.hidden == true,
+            isDownloaded: DownloadService.isDownloaded(widget.encodedPaths[currentIndex]),
+            isFavorite: PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true,
+            canRevert: PhotoStore.get(widget.encodedPaths[currentIndex])?.editedFrom != null,
+            onSelected: (action) async {
+              switch (action) {
+                case PopMenuAction.download:
+                  final photo = PhotoStore.get(widget.encodedPaths[currentIndex]);
+                    if (!DownloadService.isDownloaded(widget.encodedPaths[currentIndex])) {
+                      final path = await DownloadService.download(
+                        encodedPath: widget.encodedPaths[currentIndex],
+                        filename: photo?.name ?? widget.encodedPaths[currentIndex],
+                      );
+                      if (!mounted) return;
+                      setState(() {});
+                      
+                      log('Downloaded to: $path');
+                    } else {
+                      log("ici");
+                      DownloadService.remove(widget.encodedPaths[currentIndex]);
+                    }
+                  break;
+                case PopMenuAction.copy:
+                  final bytes = await fetchFullBytes(widget.encodedPaths[currentIndex]);
+                  if (bytes == null) return;
+                  await FlutterClipboard.copyImage(bytes);
+                  break;
+                case PopMenuAction.revert:
+                  final originalPath = PhotoStore.get(widget.encodedPaths[currentIndex])?.editedFrom;
+                  if (originalPath == null) break;
+
+                  await PhotoStore.revertEdit(widget.encodedPaths[currentIndex]);
+
+                  setState(() {
+                    widget.encodedPaths[currentIndex] = originalPath;
+                  });
+                  
+                  widget.onRefresh?.call();
+                  break;
+                case PopMenuAction.share:
+                  break;
+                case PopMenuAction.favorite:
+                  final isFavorite = PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true;
+                  await PhotoStore.update(path: widget.encodedPaths[currentIndex], favorite: !isFavorite);
+                  setState(() {});
+                  break;
+                case PopMenuAction.duplicate:
+                  await PhotoStore.duplicate(path: widget.encodedPaths[currentIndex]);
+                  widget.onRefresh?.call();
+                  break;
+                case PopMenuAction.hide:
+                  await PhotoStore.update(path: widget.encodedPaths[currentIndex], hidden: true);
+                  widget.onRefresh?.call();
+                  break;
+                case PopMenuAction.addToAlbum:
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
+                    builder: (context) {
+                      return AddToAlbumSheet(
+                        photoPath: [widget.encodedPaths[currentIndex]],
+                      );
+                    }
+                  );
+                  break;
+                case PopMenuAction.adjustDate:
+                  setState(() {
+                    focused = true;
+                  });
+                  showCupertinoSheet(
+                    // Impossible a drag
+                    enableDrag: false,
+                    // barrierColor: Colors.transparent,
+                    // isScrollControlled: true,
+                    // constraints: BoxConstraints(
+                    //   minHeight: 0,
+                    //   maxHeight: MediaQuery.of(context).size.height * 0.93,
+                    // ),
+                    context: context,
+                    builder: (context) {
+                      return AdjustDate(
+                        encodedPath: widget.encodedPaths[currentIndex],
+                        photo: PhotoStore.get(widget.encodedPaths[currentIndex])!,
+                        initialDate: PhotoStore.getOriginalDate(widget.encodedPaths[currentIndex]),
+                      );
+                    },
+                  ).then((_) {
+                    setState(() {
+                      focused = false;
+                    });
+                  });
+                  break;
+                case PopMenuAction.adjustLocation:
+                  setState(() {
+                    focused = true;
+                  });
+
+                  showCupertinoSheet(
+                    context: context, 
+                    builder: (context) {
+                      return AdjustLocation(
+                        photo: PhotoStore.get(widget.encodedPaths[currentIndex])!
+                      );
+                    }
+                );
+              }
+            },
+          )
+        )
       );
     }
-    return SizedBox();
   }
 
   OverlayEntry? _infoOverlay;
@@ -885,7 +947,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     _cardVisible.value = false;
   }
 
-  void _showOverlay(bool alreadyPressed) {
+  void showOverlay(bool alreadyPressed) {
     if (_cardVisible.value) {
       _dismissCard();
       return;
@@ -977,7 +1039,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     });
   }
 
-  Future _editMedia() async {
+  Future editMedia() async {
     setState(() => focused = true);
     final isVideo = widget.mimetype[currentIndex].startsWith('video');
     String? localVideoPath;
@@ -1034,7 +1096,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
     }
   }
 
-  void _deleteMedia() {
+  void deleteMedia() {
     showMyDialog(
       context: context,
       title: "Delete photo",
@@ -1109,7 +1171,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
           ),
           CNButtonData.icon(
             icon: const CNSymbol('slider.horizontal.3', size: 22),
-            onPressed: () async => await _editMedia(),
+            onPressed: () async => await editMedia(),
             config: const CNButtonDataConfig(
               style: CNButtonStyle.prominentGlass,
               glassEffectUnionId: 'media-controls',
@@ -1154,7 +1216,7 @@ class _ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateM
             icon: const Icon(CupertinoIcons.slider_horizontal_3),
             glassIcon: CNSymbol('slider.horizontal.3', size: 18),
             backgroundColor: Colors.transparent,
-            onPressed: () async => await _editMedia()
+            onPressed: () async => await editMedia()
           ),
         ],
       ),
