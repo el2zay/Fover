@@ -2,7 +2,6 @@ import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fover/main.dart';
-import 'package:fover/pages/viewer.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 
@@ -127,12 +126,14 @@ class PopMenu extends StatelessWidget {
     ];
   }
 
+
   @override
   Widget build(BuildContext context) {
     final entries = _buildEntries();
 
     if (isTablet) {
       return CNGlassButtonGroup(
+        key: viewerKey.currentState?.infoButtonKey,
         buttons: [
           CNButtonData.icon(
             icon: CNSymbol('slider.horizontal.3'),
@@ -149,10 +150,15 @@ class PopMenu extends StatelessWidget {
             config: const CNButtonDataConfig(
               style: CNButtonStyle.prominentGlass,
               glassEffectUnionId: 'media-controls',
-              glassEffectId: '',
+              glassEffectId: 'info-button',
               glassEffectInteractive: true,
             ),
-            onPressed: () async => viewerKey.currentState?.showOverlay(viewerKey.currentState!.alreadyPressed),
+            onPressed: () {
+              final state = viewerKey.currentState;
+              if (state != null) {
+                state.showOverlay(state.alreadyPressed);
+              }
+            },
           ),
           CNButtonData.icon(
             icon: CNSymbol('trash', size: 22),

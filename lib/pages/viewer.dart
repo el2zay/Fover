@@ -941,7 +941,7 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
   OverlayEntry? _infoOverlay;
   final _cardVisible = ValueNotifier<bool>(false);
   bool alreadyPressed = false;
-  final GlobalKey _infoButtonKey = GlobalKey();
+  final GlobalKey infoButtonKey = GlobalKey();
 
   void _dismissCard() {
     _cardVisible.value = false;
@@ -956,7 +956,7 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
     if (_infoOverlay != null) return;
 
     final RenderBox? buttonBox =
-      _infoButtonKey.currentContext?.findRenderObject() as RenderBox?;
+      infoButtonKey.currentContext?.findRenderObject() as RenderBox?;
 
     if (buttonBox == null) return;
 
