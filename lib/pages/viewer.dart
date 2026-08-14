@@ -964,8 +964,7 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
     final Size buttonSize = buttonBox.size;
     final double screenWidth = MediaQuery.of(context).size.width;
 
-    const double cardMaxWidth = 300.0;
-
+    const double cardMaxWidth = 305.0;
     final double buttonCenterX = buttonPosition.dx + buttonSize.width / 2;
     double left = buttonCenterX - cardMaxWidth / 2;
     left = left.clamp(12.0, screenWidth - cardMaxWidth - 12.0);
@@ -1015,7 +1014,7 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
                   child: CNGlassCard(
                     tint: Theme.of(context).scaffoldBackgroundColor.withAlpha(50),
                     cornerRadius: 20,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                    padding: EdgeInsets.zero,
                     child: infoListView(
                       ScrollController(),
                       Theme.of(context).primaryColor,
@@ -1258,6 +1257,7 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
     return Material(
       color: Colors.transparent,
       child: ListView(
+        padding: EdgeInsets.only(top: 10, left: 15, right: 15, bottom: MediaQuery.of(context).viewInsets.bottom + 20),
         controller: scrollController,
         shrinkWrap: true,
         children: [
@@ -1297,30 +1297,64 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
               ),
               TextButton(
                 onPressed: () {
-                  setState(() {
-                    focused = true;
-                  });
-                  showModalBottomSheet(
-                    barrierColor: Colors.transparent,
-                    isScrollControlled: true,
-                    constraints: BoxConstraints(
-                      minHeight: 0,
-                      maxHeight: MediaQuery.of(context).size.height * 0.92,
-                    ),
-                    context: context,
-                    
-                    builder: (context) {
-                      return AdjustDate(
-                        encodedPath: widget.encodedPaths[currentIndex],
-                        photo: photo,
-                        initialDate: PhotoStore.getOriginalDate(widget.encodedPaths[currentIndex]),
-                      );
-                    },
-                  ).then((_) {
-                    setState(() {
-                      focused = false;
+if (isTablet) {
+      _dismissCard();
+      final screenSize = MediaQuery.of(context).size;
+
+      showGeneralDialog(
+        context: context,
+        barrierColor: Colors.black.withAlpha(100),
+        transitionDuration: const Duration(milliseconds: 200),
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return Center(
+            child: SizedBox(
+              width: screenSize.width * 0.55,
+              height: screenSize.height * 0.55,
+              child: MyContainer(
+                child: AdjustDate(
+                  transparentBackground: true,
+                  encodedPath: widget.encodedPaths[currentIndex],
+                  photo: photo,
+                  initialDate: PhotoStore.getOriginalDate(widget.encodedPaths[currentIndex]),
+                ),
+              ),
+            ),
+          );
+        },
+        // transitionBuilder: (context, animation, secondaryAnimation, child) {
+        //   return FadeTransition(
+        //     opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+        //     child: ScaleTransition(
+        //       scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+        //       child: child,
+        //     ),
+        //   );
+        // },
+      );
+    } 
+    else {
+                    setState(() => focused = true);
+                    showModalBottomSheet(
+                      barrierColor: Colors.transparent,
+                      isScrollControlled: true,
+                      constraints: BoxConstraints(
+                        minHeight: 0,
+                        maxHeight: MediaQuery.of(context).size.height * 0.92,
+                      ),
+                      context: context,
+                      builder: (context) {
+                        return AdjustDate(
+                          encodedPath: widget.encodedPaths[currentIndex],
+                          photo: photo,
+                          initialDate: PhotoStore.getOriginalDate(widget.encodedPaths[currentIndex]),
+                        );
+                      },
+                    ).then((_) {
+                      setState(() {
+                        focused = false;
+                      });
                     });
-                  });
+                  }
                 },
                 child: Text("Adjust", style: TextStyle(fontSize: 16, color: CupertinoColors.activeBlue))
               )
@@ -1328,7 +1362,7 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
           ),
           Text(cleanName(photo.name), style: TextStyle(color: Colors.grey)),
           Container(
-            margin: EdgeInsets.symmetric(vertical: 20),
+            margin: EdgeInsets.symmetric(vertical: 10),
             padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
             decoration: BoxDecoration(
               color: primary.withAlpha(20),
@@ -1364,7 +1398,7 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
           // Text("${photo.latitude}, ${photo.longitude}")
           photo.detectedText != null && photo.detectedText!.isNotEmpty 
           ? Container(
-              margin: EdgeInsets.symmetric(vertical: 15),
+              margin: EdgeInsets.symmetric(vertical: 10),
               padding: EdgeInsets.all(15),
               decoration: BoxDecoration(
                 color: primary.withAlpha(20),
@@ -1414,7 +1448,12 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
                 child: GestureDetector(
                   behavior: HitTestBehavior.translucent,
                   onTap: () {
+                    _dismissCard();
                     showModalBottomSheet(
+                      constraints: BoxConstraints(
+                        minWidth: 0,
+                        maxWidth: MediaQuery.of(context).size.width,
+                      ),
                       isDismissible: false,
                       enableDrag: false,
                       isScrollControlled: true,
@@ -1422,7 +1461,9 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
                       builder: (context) {
                         return PhotoMap(photo: photo, fullscreen: true);
                       }
-                    );
+                    ).then((_) {
+                      showOverlay(alreadyPressed);
+                    });
                   },
                   child: AbsorbPointer(child:PhotoMap(photo: photo)),
                 ),

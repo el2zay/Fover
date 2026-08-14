@@ -12,8 +12,9 @@ class AdjustDate extends StatefulWidget {
   final String encodedPath;
   final PhotoEntry photo;
   final DateTime initialDate;
+  final bool transparentBackground;
   
-  const AdjustDate({super.key, required this.encodedPath, required this.photo, required this.initialDate});
+  const AdjustDate({super.key, required this.encodedPath, required this.photo, required this.initialDate, this.transparentBackground = false});
 
   @override
   State<AdjustDate> createState() => _AdjustDateState();
@@ -34,8 +35,10 @@ class _AdjustDateState extends State<AdjustDate> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: widget.transparentBackground ? Colors.transparent : null,
       appBar: AppBar(
         centerTitle: true,
+        elevation: 0,
         leading: Transform.scale(
           scale: 0.7,
           child: Button.iconOnly(
