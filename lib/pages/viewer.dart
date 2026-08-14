@@ -42,7 +42,6 @@ class ViewerPage extends StatefulWidget {
   final String heroPrefix;
   final List<String> livePath;
 
-
   const ViewerPage({
     super.key,
     required this.mimetype,
@@ -773,32 +772,8 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
               );
               break;
             case PopMenuAction.adjustDate:
-              setState(() {
-                focused = true;
-              });
-              showCupertinoSheet(
-                // Impossible a drag
-                enableDrag: false,
-                // barrierColor: Colors.transparent,
-                // isScrollControlled: true,
-                // constraints: BoxConstraints(
-                //   minHeight: 0,
-                //   maxHeight: MediaQuery.of(context).size.height * 0.93,
-                // ),
-                context: context,
-                builder: (context) {
-                  return AdjustDate(
-                    encodedPath: widget.encodedPaths[currentIndex],
-                    photo: PhotoStore.get(widget.encodedPaths[currentIndex])!,
-                    initialDate: PhotoStore.getOriginalDate(widget.encodedPaths[currentIndex]),
-                  );
-                },
-              ).then((_) {
-                setState(() {
-                  focused = false;
-                });
-              });
-              break;
+              final photo = PhotoStore.get(widget.encodedPaths[currentIndex])!;
+              return showAdjustDate(context, photo);
             case PopMenuAction.adjustLocation:
               setState(() {
                 focused = true;
@@ -891,32 +866,8 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
                   );
                   break;
                 case PopMenuAction.adjustDate:
-                  setState(() {
-                    focused = true;
-                  });
-                  showCupertinoSheet(
-                    // Impossible a drag
-                    enableDrag: false,
-                    // barrierColor: Colors.transparent,
-                    // isScrollControlled: true,
-                    // constraints: BoxConstraints(
-                    //   minHeight: 0,
-                    //   maxHeight: MediaQuery.of(context).size.height * 0.93,
-                    // ),
-                    context: context,
-                    builder: (context) {
-                      return AdjustDate(
-                        encodedPath: widget.encodedPaths[currentIndex],
-                        photo: PhotoStore.get(widget.encodedPaths[currentIndex])!,
-                        initialDate: PhotoStore.getOriginalDate(widget.encodedPaths[currentIndex]),
-                      );
-                    },
-                  ).then((_) {
-                    setState(() {
-                      focused = false;
-                    });
-                  });
-                  break;
+                  final photo = PhotoStore.get(widget.encodedPaths[currentIndex])!;
+                  return showAdjustDate(context, photo);
                 case PopMenuAction.adjustLocation:
                   setState(() {
                     focused = true;
@@ -1296,66 +1247,7 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
               TextButton(
-                onPressed: () {
-if (isTablet) {
-      _dismissCard();
-      final screenSize = MediaQuery.of(context).size;
-
-      showGeneralDialog(
-        context: context,
-        barrierColor: Colors.black.withAlpha(100),
-        transitionDuration: const Duration(milliseconds: 200),
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return Center(
-            child: SizedBox(
-              width: screenSize.width * 0.55,
-              height: screenSize.height * 0.55,
-              child: MyContainer(
-                child: AdjustDate(
-                  transparentBackground: true,
-                  encodedPath: widget.encodedPaths[currentIndex],
-                  photo: photo,
-                  initialDate: PhotoStore.getOriginalDate(widget.encodedPaths[currentIndex]),
-                ),
-              ),
-            ),
-          );
-        },
-        // transitionBuilder: (context, animation, secondaryAnimation, child) {
-        //   return FadeTransition(
-        //     opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-        //     child: ScaleTransition(
-        //       scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
-        //       child: child,
-        //     ),
-        //   );
-        // },
-      );
-    } 
-    else {
-                    setState(() => focused = true);
-                    showModalBottomSheet(
-                      barrierColor: Colors.transparent,
-                      isScrollControlled: true,
-                      constraints: BoxConstraints(
-                        minHeight: 0,
-                        maxHeight: MediaQuery.of(context).size.height * 0.92,
-                      ),
-                      context: context,
-                      builder: (context) {
-                        return AdjustDate(
-                          encodedPath: widget.encodedPaths[currentIndex],
-                          photo: photo,
-                          initialDate: PhotoStore.getOriginalDate(widget.encodedPaths[currentIndex]),
-                        );
-                      },
-                    ).then((_) {
-                      setState(() {
-                        focused = false;
-                      });
-                    });
-                  }
-                },
+                onPressed: () => showAdjustDate(context, photo),
                 child: Text("Adjust", style: TextStyle(fontSize: 16, color: CupertinoColors.activeBlue))
               )
             ],
@@ -1472,6 +1364,57 @@ if (isTablet) {
         ]
       ),
     );
+  }
+
+  void showAdjustDate(BuildContext context, PhotoEntry photo) {
+    if (isTablet) {
+      _dismissCard();
+      final screenSize = MediaQuery.of(context).size;
+    
+      showGeneralDialog(
+        context: context,
+        barrierColor: Colors.black.withAlpha(100),
+        transitionDuration: const Duration(milliseconds: 200),
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return Center(
+            child: SizedBox(
+              width: screenSize.width * 0.55,
+              height: screenSize.height * 0.55,
+              child: MyContainer(
+                child: AdjustDate(
+                  transparentBackground: true,
+                  encodedPath: widget.encodedPaths[currentIndex],
+                  photo: photo,
+                  initialDate: PhotoStore.getOriginalDate(widget.encodedPaths[currentIndex]),
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      setState(() => focused = true);
+      showModalBottomSheet(
+        barrierColor: Colors.transparent,
+        isScrollControlled: true,
+        constraints: BoxConstraints(
+          minHeight: 0,
+          maxHeight: MediaQuery.of(context).size.height * 0.92,
+        ),
+        context: context,
+        builder: (context) {
+          return AdjustDate(
+            encodedPath: widget.encodedPaths[currentIndex],
+            photo: photo,
+            initialDate: PhotoStore.getOriginalDate(widget.encodedPaths[currentIndex]),
+          );
+        },
+      ).then((_) {
+        setState(() {
+          focused = false;
+        });
+      });
+    }
   }
   
   Widget infoBox(String value) {
