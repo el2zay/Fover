@@ -1021,7 +1021,11 @@ class LibraryPageState extends State<LibraryPage> {
                         top:  MediaQuery.of(context).padding.top + 5
                       ),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 3 : 5,
+                        crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait && !isTablet
+                          ? 3 
+                          :  MediaQuery.of(context).orientation == Orientation.portrait && isTablet
+                            ? 4 
+                            : 5,
                         crossAxisSpacing: 2,
                         mainAxisSpacing: 2,
                       ),
