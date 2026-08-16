@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cupertino_native_better/cupertino_native_better.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -126,12 +128,45 @@ class PopMenu extends StatelessWidget {
     ];
   }
 
-
   @override
   Widget build(BuildContext context) {
     final entries = _buildEntries();
 
-    if (isTablet) {
+    Widget buildPullDownButton({
+      bool isTablet = false,
+    }) {
+      return PullDownButton(
+        animationBuilder: (context, state, child) => child,
+        itemBuilder: (context) => entries
+            .map((e) => PullDownMenuItem(
+                  title: e.label,
+                  icon: e.cupertinoIcon,
+                  onTap: () => onSelected(e.action),
+                ))
+            .toList(),
+        buttonBuilder: (context, showMenu) => CupertinoButton(
+          onPressed: showMenu,
+          padding: EdgeInsets.zero,
+          child: Transform.scale(
+            scale: isTablet && Platform.isAndroid 
+              ? 1.0 
+              : scale,
+            child: Button.iconOnly(
+              backgroundColor: isTablet ? Colors.transparent : Colors.white12,
+              icon: Icon(
+                isTablet && Platform.isAndroid
+                  ? Icons.menu
+                  : CupertinoIcons.ellipsis, 
+                color: CupertinoColors.white,
+              ),
+              onPressed: showMenu,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (isTablet && is26OrNewer) {
       return CNGlassButtonGroup(
         key: viewerKey.currentState?.infoButtonKey,
         buttons: [
@@ -191,6 +226,40 @@ class PopMenu extends StatelessWidget {
           ),
         ],
       );
+    } else if (isTablet) {
+      return Container(
+        key: viewerKey.currentState?.infoButtonKey,
+        decoration: BoxDecoration(
+          color: Colors.white12,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Button.iconOnly(
+              icon: const Icon(CupertinoIcons.slider_horizontal_3),
+              backgroundColor: Colors.transparent,
+              onPressed: () => viewerKey.currentState?.editMedia(),
+            ),
+            Button.iconOnly(
+              icon: const Icon(CupertinoIcons.info),
+              backgroundColor: Colors.transparent,
+              onPressed: () {
+                final state = viewerKey.currentState;
+                if (state != null) {
+                  state.showOverlay(state.alreadyPressed);
+                }
+              },
+            ),
+            Button.iconOnly(
+              icon: const Icon(CupertinoIcons.trash),
+              backgroundColor: Colors.transparent,
+              onPressed: () => viewerKey.currentState?.deleteMedia(),
+            ),
+            buildPullDownButton(isTablet: true)
+          ],
+        )
+      );
     }
 
     if (is26OrNewer) {
@@ -209,27 +278,7 @@ class PopMenu extends StatelessWidget {
           onSelected(entries[index].action);
         },
       );
-    }
-
-    return PullDownButton(
-      itemBuilder: (context) => entries
-          .map((e) => PullDownMenuItem(
-                title: e.label,
-                icon: e.cupertinoIcon,
-                onTap: () => onSelected(e.action),
-              ))
-          .toList(),
-      buttonBuilder: (context, showMenu) => CupertinoButton(
-        onPressed: showMenu,
-        padding: EdgeInsets.zero,
-        child: Transform.scale(
-          scale: scale,
-          child: Button.iconOnly(
-            icon: const Icon(CupertinoIcons.ellipsis, color: CupertinoColors.white),
-            onPressed: showMenu,
-          ),
-        ),
-      ),
-    );
+    } 
+    return buildPullDownButton(isTablet: false);
   }
 }
