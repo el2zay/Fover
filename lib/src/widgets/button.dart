@@ -71,20 +71,23 @@ class Button extends StatelessWidget {
             onPressed: enabled ? onPressed : null ,
             enabled: enabled,
           )
-        : ElevatedButton(
-            onPressed: enabled ? onPressed : null,
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
+        : Container(
+          margin: const EdgeInsets.symmetric(horizontal: 5),
+          child: ElevatedButton(
+              onPressed: enabled ? onPressed : null,
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                backgroundColor: backgroundColor ?? Colors.grey[800]?.withAlpha(150),
+                textStyle: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: textColor)
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              backgroundColor: backgroundColor ?? Colors.grey[800]?.withAlpha(150),
-              textStyle: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: textColor)
+              child: icon ?? Text(
+                label ?? '', 
+                style: TextStyle(color: enabled ? textColor ?? Colors.white : Colors.grey[700], fontWeight: FontWeight.normal)
+                ),
             ),
-            child: icon ?? Text(
-              label ?? '', 
-              style: TextStyle(color: enabled ? textColor ??Colors.white : Colors.grey[700], fontWeight: FontWeight.normal)
-              ),
-          );
+        );
   }
 }
