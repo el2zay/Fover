@@ -274,8 +274,8 @@ class _AlbumsPageState extends State<AlbumsPage> {
                           child: Icon(CupertinoIcons.chevron_right, size: 24, color: textColor),
                         ),
                       ),
-                      ],
-                    ),
+                    ],
+                  ),
                 ),
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
@@ -287,7 +287,7 @@ class _AlbumsPageState extends State<AlbumsPage> {
                   },
                   child: isUnfolded
                     ? AlbumsList(
-                        crossAxisCount: 2,
+                        crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 2,
                         spacing: 10,
                         borderRadius: 20,
                         onTap: (album) {

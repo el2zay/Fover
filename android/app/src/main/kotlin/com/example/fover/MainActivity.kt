@@ -3,16 +3,16 @@ package com.example.fover
 import android.media.MediaMetadataRetriever
 import android.os.Handler
 import android.os.Looper
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.Executors
 
-class MainActivity : FlutterActivity() {
+class MainActivity : FlutterFragmentActivity() {
 
     private val executor = Executors.newSingleThreadExecutor()
-    private val mainHandler = Handler(Looper.getMainLooper()) // ✅
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -37,11 +37,11 @@ class MainActivity : FlutterActivity() {
                             val stream = ByteArrayOutputStream()
                             bitmap?.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, stream)
 
-                            mainHandler.post { // ✅ au lieu de mainLooper.run
+                            mainHandler.post {
                                 result.success(stream.toByteArray())
                             }
                         } catch (e: Exception) {
-                            mainHandler.post { // ✅
+                            mainHandler.post {
                                 result.error("FRAME_ERROR", e.message, null)
                             }
                         } finally {
