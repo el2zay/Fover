@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cupertino_native_better/cupertino_native.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -33,7 +35,6 @@ class _StylePageState extends State<StylePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leadingWidth: 60,
         leading: Transform.scale(
           scale: 0.7,
           child: Button.iconOnly(
@@ -114,88 +115,89 @@ class _StylePageState extends State<StylePage> {
                 )
               ),
               SizedBox(height: 30),
-              Text("NAVIGATION BAR", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: Theme.of(context).primaryColor.withAlpha(80))),
-              SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  GestureDetector(
+              if (Platform.isIOS)... [
+                Text("NAVIGATION BAR", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: Theme.of(context).primaryColor.withAlpha(80))),
+                SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        setState(() => _currentNavBar = 0);
+                      },
+                      child: Column(
+                        children: [
+                          Image.asset("assets/illustrations/style/fover_nav_dark.png", width: MediaQuery.of(context).size.width * 0.45),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: _currentNavBar == 0
+                                ? Colors.lightBlue[700]
+                                : null,
+                              borderRadius: BorderRadius.circular(30)
+                            ),
+                            child: Text(
+                              "Fover", 
+                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)
+                            )
+                          ),
+                        ],
+                      )
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() => _currentNavBar = 1);
+                      },
+                      child: Column(
+                        children: [
+                          Image.asset("assets/illustrations/style/cupertino_nav_dark.png", width: MediaQuery.of(context).size.width * 0.45),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: _currentNavBar == 1
+                                ? Colors.lightBlue[700]
+                                : null,
+                              borderRadius: BorderRadius.circular(30)
+                            ),
+                            child: Text(
+                              "Cupertino", 
+                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)
+                            )
+                          ),
+                        ],
+                      )
+                    ),
+                  ],
+                ),
+                SizedBox(height: 10),
+                Center(
+                  child: GestureDetector(
                     onTap: () {
-                      setState(() => _currentNavBar = 0);
+                      setState(() => _currentNavBar = 2);
                     },
                     child: Column(
                       children: [
-                        Image.asset("assets/illustrations/style/fover_nav_dark.png", width: MediaQuery.of(context).size.width * 0.45),
+                        Image.asset("assets/illustrations/style/material_nav_dark.png", width: MediaQuery.of(context).size.width * 0.45),
+                        SizedBox(height: 5),
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 15, vertical: 5),
                           decoration: BoxDecoration(
-                            color: _currentNavBar == 0
+                            color: _currentNavBar == 2
                               ? Colors.lightBlue[700]
                               : null,
                             borderRadius: BorderRadius.circular(30)
                           ),
                           child: Text(
-                            "Fover", 
+                            "Material", 
                             style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)
                           )
                         ),
                       ],
-                    )
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() => _currentNavBar = 1);
-                    },
-                    child: Column(
-                      children: [
-                        Image.asset("assets/illustrations/style/cupertino_nav_dark.png", width: MediaQuery.of(context).size.width * 0.45),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: _currentNavBar == 1
-                              ? Colors.lightBlue[700]
-                              : null,
-                            borderRadius: BorderRadius.circular(30)
-                          ),
-                          child: Text(
-                            "Cupertino", 
-                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)
-                          )
-                        ),
-                      ],
-                    )
-                  ),
-                ],
-              ),
-              SizedBox(height: 10),
-              Center(
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() => _currentNavBar = 2);
-                  },
-                  child: Column(
-                    children: [
-                      Image.asset("assets/illustrations/style/material_nav_dark.png", width: MediaQuery.of(context).size.width * 0.45),
-                      SizedBox(height: 5),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: _currentNavBar == 2
-                            ? Colors.lightBlue[700]
-                            : null,
-                          borderRadius: BorderRadius.circular(30)
-                        ),
-                        child: Text(
-                          "Material", 
-                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)
-                        )
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-        
-              SizedBox(height: 30),
+                SizedBox(height: 30),
+              ],
               Text("APP ICON", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: Theme.of(context).primaryColor.withAlpha(80))),
               Container(
                 height: 150,
