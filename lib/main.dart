@@ -53,12 +53,20 @@ Future<void> initApp() async {
     }
 
     if (box.get("navBarStyle") == null) {
-      box.put("navBarStyle", 0);
+      box.put("navBarStyle", Platform.isIOS || Platform.isMacOS ? 0 : 2);
     }
 
     if (box.get("primaryColor") == null) {
       box.put("primaryColor", CupertinoColors.activeBlue);
     }
+
+    // if (box.get("qualityMobile") == null) {
+    //   box.put("qualityMobile", 2);
+    // }
+
+    // if (box.get("qualityWiFi") == null) {
+    //   box.put("qualityWiFi", 1);
+    // }
 
 
     if (connectedToInternet) {
@@ -140,7 +148,7 @@ class _MainAppState extends State<MainApp> {
                 child = is26OrNewer && box.get("navBarStyle") == 0 ?
                   CNTabBar(
                     key: const ValueKey('tabbar'),
-                    tint: Colors.blue,
+                    tint: box.get("primaryColor") ?? Colors.blue,
                     iconSize: 18,
                     items: [
                       // CupertinoIcons.gear
@@ -191,7 +199,7 @@ class _MainAppState extends State<MainApp> {
                 : is26OrNewer && box.get("navBarStyle") == 1
                   ? CNTabBar(
                       key: const ValueKey('tabbar'),
-                      tint: Colors.blue,
+                      tint: box.get("primaryColor") ?? Colors.blue,
                       iconSize: 18,
                       items: [
                         CNTabBarItem(
@@ -289,7 +297,7 @@ class _MainAppState extends State<MainApp> {
           )
         ),
         bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          selectedItemColor:  Colors.blue,
+          selectedItemColor: box.get("primaryColor") ?? Colors.blue,
           unselectedItemColor: Colors.grey[600]
         ),
         inputDecorationTheme: InputDecorationTheme(
@@ -341,7 +349,7 @@ class _MainAppState extends State<MainApp> {
           ),
         ),
         bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          selectedItemColor: const Color.fromARGB(255, 52, 161, 250),
+          selectedItemColor: box.get("primaryColor") ?? const Color.fromARGB(255, 52, 161, 250),
         ),
         inputDecorationTheme: InputDecorationTheme(
           hintStyle: TextStyle(color: Colors.white70),
