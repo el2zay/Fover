@@ -473,15 +473,19 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
   PreferredSizeWidget? _buildAppBar() {
     return AppBar(
       key: const ValueKey('toolbar'),
-      toolbarHeight: kToolbarHeight + 24,
+      // toolbarHeight: kToolbarHeight + 24,
       centerTitle: false,
       backgroundColor: Colors.transparent,
-      leadingWidth: isTablet ? 200 : null,
+      leadingWidth: isTablet && Platform.isIOS 
+        ? 200 
+        : isTablet && Platform.isAndroid
+          ? 170
+          : null,
       leading: isTablet && !widget.trashMode
         ? _buildLeadingButton()
         : Row(
         children: [
-          const SizedBox(width: 10),
+          const SizedBox(width: 5),
           Button.iconOnly(
             glassConfig: const CNButtonConfig(),
             padding: const EdgeInsets.all(8),
@@ -637,69 +641,125 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
 
   Widget _buildLeadingButton() {
     bool isFavorite = PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true;
-    return CNGlassButtonGroup(
-      axis: Axis.horizontal,
-      spacing: 8.0,
-      spacingForGlass: 20.0,
-      buttons: [
-        CNButtonData.icon(
-          icon: CNSymbol('chevron.left', size: 22),
-          config: CNButtonDataConfig(
-            style: CNButtonStyle.prominentGlass,
-            glassEffectUnionId: 'media-controls',
-            glassEffectId: 'back-button',
-            glassEffectInteractive: true,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        CNButtonData.icon(
-          icon: CNSymbol(isFavorite ? 'heart.fill' :  'heart', size: 22),
-          onPressed: () async {
-            await PhotoStore.update(path: widget.encodedPaths[currentIndex], favorite: !isFavorite);
-            setState(() {
-              isFavorite = !isFavorite;
-            });
-          },
-          config: CNButtonDataConfig(
-            style: CNButtonStyle.prominentGlass,
-            glassEffectUnionId: 'media-controls',
-            glassEffectId: 'heart-button',
-            glassEffectInteractive: true,
-          ),
-        ),
-        CNButtonData.icon(
-          icon: CNSymbol('square.and.arrow.up', size: 22),
-          config: CNButtonDataConfig(
-            style: CNButtonStyle.prominentGlass,
-            glassEffectUnionId: 'media-controls',
-            glassEffectId: 'share-button',
-            glassEffectInteractive: true,
-          ),
-          onPressed: () async {
-            final bytes = await fetchFullBytes(widget.encodedPaths[currentIndex]);
-            if (!mounted || bytes == null) return;
 
-            await SharePlus.instance.share(
-              ShareParams(
-                previewThumbnail: XFile.fromData(bytes),
-                sharePositionOrigin: Rect.fromLTWH(0, 0, MediaQuery.of(context).size.width, MediaQuery.of(context).size.height),
-                files: [
-                  XFile.fromData(
-                    bytes,
-                    mimeType: widget.mimetype[currentIndex],
-                    name: PhotoStore.get(widget.encodedPaths[currentIndex])?.name ?? "media"
-                  )
-                ]
+    if (is26OrNewer) {
+      return CNGlassButtonGroup(
+        axis: Axis.horizontal,
+        spacing: 8.0,
+        spacingForGlass: 20.0,
+        buttons: [
+          CNButtonData.icon(
+            icon: CNSymbol('chevron.left', size: 22),
+            config: CNButtonDataConfig(
+              style: CNButtonStyle.prominentGlass,
+              glassEffectUnionId: 'media-controls',
+              glassEffectId: 'back-button',
+              glassEffectInteractive: true,
+            ),
+            onPressed: () => Navigator.pop(context),
+          ),
+          CNButtonData.icon(
+            icon: CNSymbol(isFavorite ? 'heart.fill' :  'heart', size: 22),
+            onPressed: () async {
+              await PhotoStore.update(path: widget.encodedPaths[currentIndex], favorite: !isFavorite);
+              setState(() {
+                isFavorite = !isFavorite;
+              });
+            },
+            config: CNButtonDataConfig(
+              style: CNButtonStyle.prominentGlass,
+              glassEffectUnionId: 'media-controls',
+              glassEffectId: 'heart-button',
+              glassEffectInteractive: true,
+            ),
+          ),
+          CNButtonData.icon(
+            icon: CNSymbol('square.and.arrow.up', size: 22),
+            config: CNButtonDataConfig(
+              style: CNButtonStyle.prominentGlass,
+              glassEffectUnionId: 'media-controls',
+              glassEffectId: 'share-button',
+              glassEffectInteractive: true,
+            ),
+            onPressed: () async {
+              final bytes = await fetchFullBytes(widget.encodedPaths[currentIndex]);
+              if (!mounted || bytes == null) return;
+
+              await SharePlus.instance.share(
+                ShareParams(
+                  previewThumbnail: XFile.fromData(bytes),
+                  sharePositionOrigin: Rect.fromLTWH(0, 0, MediaQuery.of(context).size.width, MediaQuery.of(context).size.height),
+                  files: [
+                    XFile.fromData(
+                      bytes,
+                      mimeType: widget.mimetype[currentIndex],
+                      name: PhotoStore.get(widget.encodedPaths[currentIndex])?.name ?? "media"
+                    )
+                  ]
+                )
+              );
+            }
+          ),
+        ],
+      );
+    }
+
+    return Center(
+      child: IntrinsicHeight(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: Colors.white12,
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Row(
+            children: [
+              SizedBox(width: 5),
+              Button.iconOnly(
+                icon: const Icon(Icons.arrow_back_ios, size: 20),
+                backgroundColor: Colors.transparent,
+                onPressed: () => Navigator.pop(context),
+              ),
+              Button.iconOnly(
+                icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
+                backgroundColor: Colors.transparent,
+                onPressed: () async {
+                  await PhotoStore.update(path: widget.encodedPaths[currentIndex], favorite: !isFavorite);
+                  setState(() {
+                    isFavorite = !isFavorite;
+                  });
+                },
+              ),
+              Button.iconOnly(
+                icon: const Icon(Icons.ios_share_rounded),
+                backgroundColor: Colors.transparent,
+                onPressed: () async {
+                  final bytes = await fetchFullBytes(widget.encodedPaths[currentIndex]);
+                  if (!mounted || bytes == null) return;
+
+                  await SharePlus.instance.share(
+                    ShareParams(
+                      previewThumbnail: XFile.fromData(bytes),
+                      sharePositionOrigin: Rect.fromLTWH(0, 0, MediaQuery.of(context).size.width, MediaQuery.of(context).size.height),
+                      files: [
+                        XFile.fromData(
+                          bytes,
+                          mimeType: widget.mimetype[currentIndex],
+                          name: PhotoStore.get(widget.encodedPaths[currentIndex])?.name ?? "media"
+                        )
+                      ]
+                    )
+                  );
+                }
               )
-            );
-          }
-        ),
-      ],
+            ],
+          ),
+        )
+      )
     );
   }
 
   Widget _buildTopButton() {
-    // TODO a faire sur les tablettes android
     if (isTablet) {
       return PopMenu(
         showCopy: widget.mimetype[currentIndex].startsWith('image/'),
