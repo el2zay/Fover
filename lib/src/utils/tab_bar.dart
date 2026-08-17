@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
@@ -19,9 +21,10 @@ class _TabBarDemoPageState extends State<TabBarDemoPage> {
   @override
   Widget build(BuildContext context) {
     if (is26OrNewer) return SizedBox();
-    
-    return Scaffold(
-      body: BottomBar(
+
+    return Container(
+      color: Colors.black.withAlpha(30),
+      child: BottomBar(
         layout: const BottomBarLayout.adaptive(
           maxWidth: 400,
           offset: 32,
@@ -38,7 +41,7 @@ class _TabBarDemoPageState extends State<TabBarDemoPage> {
         ),
         theme: BottomBarThemeData(
           barDecoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
+            color: Theme.of(context).scaffoldBackgroundColor.withAlpha(100),
             borderRadius: BorderRadius.circular(32),
             boxShadow: const [
               BoxShadow(
@@ -56,40 +59,46 @@ class _TabBarDemoPageState extends State<TabBarDemoPage> {
           iconHeight: 40,
         ),
         body: widget.body,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: _DockButton(
-                  icon: CupertinoIcons.photo_on_rectangle,
-                  selected: currentIndex.value == 0,
-                  onTap: () => currentIndex.value = 0,
-                ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(32),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _DockButton(
+                      icon: CupertinoIcons.photo_on_rectangle,
+                      selected: currentIndex.value == 0,
+                      onTap: () => currentIndex.value = 0,
+                    ),
+                  ),
+                  Expanded(
+                    child: _DockButton(
+                      icon: CupertinoIcons.rectangle_stack,
+                      selected: currentIndex.value == 1,
+                      onTap: () => currentIndex.value = 1,
+                    ),
+                  ),
+                  Expanded(
+                    child: _DockButton(
+                      icon: CupertinoIcons.settings,
+                      selected: currentIndex.value == 2,
+                      onTap: () => currentIndex.value = 2,
+                    ),
+                  ),
+                  Expanded(
+                    child: _DockButton(
+                      icon: CupertinoIcons.search,
+                      selected: currentIndex.value == 3,
+                      onTap: () => currentIndex.value = 3,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
               ),
-              Expanded(
-                child: _DockButton(
-                  icon: CupertinoIcons.rectangle_stack,
-                  selected: currentIndex.value == 1,
-                  onTap: () => currentIndex.value = 1,
-                ),
-              ),
-              Expanded(
-                child: _DockButton(
-                  icon: CupertinoIcons.settings,
-                  selected: currentIndex.value == 2,
-                  onTap: () => currentIndex.value = 2,
-                ),
-              ),
-              Expanded(
-                child: _DockButton(
-                  icon: CupertinoIcons.search,
-                  selected: currentIndex.value == 3,
-                  onTap: () => currentIndex.value = 3,
-                ),
-              ),
-              const SizedBox(width: 12),
-            ],
+            ),
           ),
         ),
       ),
