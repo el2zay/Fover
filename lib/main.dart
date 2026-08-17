@@ -17,6 +17,7 @@ import 'package:fover/src/services/freebox_service.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/utils/requests.dart';
+import 'package:fover/src/utils/tab_bar.dart';
 import 'package:freebox/freebox.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -108,10 +109,9 @@ class MainApp extends StatefulWidget {
 
 final GlobalKey<LibraryPageState> libraryKey = GlobalKey<LibraryPageState>();
 final GlobalKey<ViewerPageState> viewerKey = GlobalKey<ViewerPageState>();
-
+final ValueNotifier<int> currentIndex = ValueNotifier(0);
 
 class _MainAppState extends State<MainApp> {
-  int _currentIndex = 0;
 
   bool get isLoggedIn => box.get("appToken") != null || box.get("copypartyUrl") != null;
 
@@ -127,77 +127,80 @@ class _MainAppState extends State<MainApp> {
           extendBody: true,
           body: !isLoggedIn
             ? const FirstPage()
-            : IndexedStack(
-              index: _currentIndex,
-              children:  [
-                LibraryPage(key: libraryKey, onlySelect: false),
-                SafeArea(child: AlbumsPage()),
-                box.get("navBarStyle") == 0 ? SettingsPage() : SearchPage(),
-                box.get("navBarStyle") == 0 ? SearchPage() : Container(),
-              ],
-            ),
-
-          bottomNavigationBar: ValueListenableBuilder(
+            : ValueListenableBuilder<int>(
+                valueListenable: currentIndex,
+                builder: (context, index, _) => TabBarDemoPage(
+                  body: IndexedStack(
+                    index: index,
+                    children: [
+                      LibraryPage(key: libraryKey, onlySelect: false),
+                      SafeArea(child: AlbumsPage()),
+                      box.get("navBarStyle") != 1 ? SettingsPage() : SearchPage(),
+                      box.get("navBarStyle") != 1 ? SearchPage() : Container(),
+                    ],
+                  ),
+                ),
+              ),
+          bottomNavigationBar: ValueListenableBuilder<bool>(
             valueListenable: showTabBar,
             builder: (context, tabBarVisible, _) {
               final loggedIn = isLoggedIn;
-              Widget child;
+
               if (!loggedIn || !tabBarVisible) {
-                child = const SizedBox.shrink(key: ValueKey('empty'));
-              } else {
-                child = is26OrNewer && box.get("navBarStyle") == 0 ?
-                  CNTabBar(
-                    key: const ValueKey('tabbar'),
-                    tint: box.get("primaryColor") ?? Colors.blue,
-                    iconSize: 18,
-                    items: [
-                      // CupertinoIcons.gear
-                      CNTabBarItem(
-                        label: 'Library',
-                        icon: CNSymbol('photo.fill.on.rectangle.fill'),
-                      ),
-                      CNTabBarItem(
-                        label: 'Albums',
-                        icon: CNSymbol('rectangle.stack.fill'),
-                      ),
-                      CNTabBarItem(
-                        label: 'Settings',
-                        icon: CNSymbol('gear'),
-                      ),
-                      // CNTabBarItem(
-                      //   label: 'Search',
-                      //   icon: CNSymbol('magnifyingglass'),
-                      // ),
-                    ],
-                    currentIndex: _currentIndex,
-                    onTap: (i) {
-                      if (i == 0 && _currentIndex == 0) {
-                        libraryKey.currentState?.scrollToBottom();
-                      }
-                      setState(() => _currentIndex = i);
-                    },
-                    searchItem: CNTabBarSearchItem(
-                      icon: CNSymbol(
-                        'magnifyingglass',
-                        color: _currentIndex == 3 ? Colors.blue : null,
-                      ),
-                      onSearchChanged: (query) {
-                        searchQuery.value = query;
-                      },
-                      onSearchSubmit: (query) {
-                        searchQuery.value = query;
-                      },
-                      onSearchActiveChanged: (isActive) {
-                        if (isActive) {
-                          setState(() {
-                            _currentIndex = 3;
-                          });
+                return const SizedBox.shrink(key: ValueKey('empty'));
+              }
+
+              return ValueListenableBuilder<int>(
+                valueListenable: currentIndex,
+                builder: (context, index, __) {
+                  Widget child;
+
+                  if (is26OrNewer && box.get("navBarStyle") == 0) {
+                    child = CNTabBar(
+                      key: const ValueKey('tabbar'),
+                      tint: box.get("primaryColor") ?? Colors.blue,
+                      iconSize: 18,
+                      items: [
+                        CNTabBarItem(
+                          label: 'Library',
+                          icon: CNSymbol('photo.fill.on.rectangle.fill'),
+                        ),
+                        CNTabBarItem(
+                          label: 'Albums',
+                          icon: CNSymbol('rectangle.stack.fill'),
+                        ),
+                        CNTabBarItem(
+                          label: 'Settings',
+                          icon: CNSymbol('gear'),
+                        ),
+                      ],
+                      currentIndex: index,
+                      onTap: (i) {
+                        if (i == 0 && index == 0) {
+                          libraryKey.currentState?.scrollToBottom();
                         }
+                        currentIndex.value = i;
                       },
-                    ),
-                  )
-                : is26OrNewer && box.get("navBarStyle") == 1
-                  ? CNTabBar(
+                      searchItem: CNTabBarSearchItem(
+                        icon: CNSymbol(
+                          'magnifyingglass',
+                          color: index == 3 ? Colors.blue : null,
+                        ),
+                        onSearchChanged: (query) {
+                          searchQuery.value = query;
+                        },
+                        onSearchSubmit: (query) {
+                          searchQuery.value = query;
+                        },
+                        onSearchActiveChanged: (isActive) {
+                          if (isActive) {
+                            currentIndex.value = 3;
+                          }
+                        },
+                      ),
+                    );
+                  } else if (is26OrNewer && box.get("navBarStyle") == 1) {
+                    child = CNTabBar(
                       key: const ValueKey('tabbar'),
                       tint: box.get("primaryColor") ?? Colors.blue,
                       iconSize: 18,
@@ -211,17 +214,17 @@ class _MainAppState extends State<MainApp> {
                           icon: CNSymbol('rectangle.stack.fill'),
                         ),
                       ],
-                      currentIndex: _currentIndex,
+                      currentIndex: index,
                       onTap: (i) {
-                        if (i == 0 && _currentIndex == 0) {
+                        if (i == 0 && index == 0) {
                           libraryKey.currentState?.scrollToBottom();
                         }
-                        setState(() => _currentIndex = i);
+                        currentIndex.value = i;
                       },
                       searchItem: CNTabBarSearchItem(
                         icon: CNSymbol(
                           'magnifyingglass',
-                          color: _currentIndex == 2 ? Colors.blue : null,
+                          color: index == 2 ? Colors.blue : null,
                         ),
                         onSearchChanged: (query) {
                           searchQuery.value = query;
@@ -231,38 +234,23 @@ class _MainAppState extends State<MainApp> {
                         },
                         onSearchActiveChanged: (isActive) {
                           if (isActive) {
-                            setState(() {
-                              _currentIndex = 2;
-                            });
+                            currentIndex.value = 2;
                           }
                         },
                       ),
-                    )
-                  : BottomNavigationBar(
-                      key: const ValueKey('tabbar'),
-                      currentIndex: _currentIndex,
-                      onTap: (value) {
-                        setState(() {
-                          _currentIndex = value;
-                        });
-                      },
-                      items: const [
-                        BottomNavigationBarItem(
-                            icon: Icon(CupertinoIcons.photo), label: "Library"),
-                        BottomNavigationBarItem(
-                            icon: Icon(CupertinoIcons.collections), label: "Albums"),
-                        BottomNavigationBarItem(
-                            icon: Icon(CupertinoIcons.search), label: "Search"),
-                      ],
                     );
-                }
+                  } else {
+                    child = const SizedBox();
+                  }
 
-                return AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: child,
-                );
-              },
-          )
+                  return AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
         ),
       ),
       themeMode: ThemeMode.system,
