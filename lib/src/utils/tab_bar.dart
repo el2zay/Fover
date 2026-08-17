@@ -20,46 +20,43 @@ class TabBarDemoPage extends StatefulWidget {
 class _TabBarDemoPageState extends State<TabBarDemoPage> {
   @override
   Widget build(BuildContext context) {
-    if (is26OrNewer) return SizedBox();
-
-    return Container(
-      color: Colors.black.withAlpha(30),
-      child: BottomBar(
-        layout: const BottomBarLayout.adaptive(
-          maxWidth: 400,
-          offset: 32,
-          borderRadius: BorderRadius.all(Radius.circular(32)),
-          clip: Clip.none,
+    return BottomBar(
+      layout: const BottomBarLayout.adaptive(
+        maxWidth: 400,
+        offset: 32,
+        borderRadius: BorderRadius.all(Radius.circular(32)),
+        clip: Clip.none,
+      ),
+      scrollBehavior: const BottomBarScrollBehavior(
+        hideOnScroll: false,
+      ),
+      motion: const BottomBarMotion.cupertino(
+        preset: BottomBarCupertinoMotion.snappy,
+        duration: Duration(milliseconds: 460),
+        extraBounce: 0.03,
+      ),
+      theme: BottomBarThemeData(
+        barDecoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor.withAlpha(100),
+          borderRadius: BorderRadius.circular(32),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1A000000),
+              blurRadius: 30,
+              offset: Offset(0, 16),
+            ),
+          ],
         ),
-        scrollBehavior: const BottomBarScrollBehavior(
-          hideOnScroll: false,
+        iconDecoration: const BoxDecoration(
+          color: Colors.black,
+          shape: BoxShape.circle,
         ),
-        motion: const BottomBarMotion.cupertino(
-          preset: BottomBarCupertinoMotion.snappy,
-          duration: Duration(milliseconds: 460),
-          extraBounce: 0.03,
-        ),
-        theme: BottomBarThemeData(
-          barDecoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor.withAlpha(100),
-            borderRadius: BorderRadius.circular(32),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x1A000000),
-                blurRadius: 30,
-                offset: Offset(0, 16),
-              ),
-            ],
-          ),
-          iconDecoration: const BoxDecoration(
-            color: Colors.black,
-            shape: BoxShape.circle,
-          ),
-          iconWidth: 40,
-          iconHeight: 40,
-        ),
-        body: widget.body,
-        child: ClipRRect(
+        iconWidth: 40,
+        iconHeight: 40,
+      ),
+      body: widget.body,
+      child: box.get("navBarStyle") == 2
+        ? ClipRRect(
           borderRadius: BorderRadius.circular(32),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
@@ -100,8 +97,7 @@ class _TabBarDemoPageState extends State<TabBarDemoPage> {
               ),
             ),
           ),
-        ),
-      ),
+        ) : SizedBox()
     );
   }
 }
