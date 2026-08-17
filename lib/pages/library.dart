@@ -775,7 +775,7 @@ class LibraryPageState extends State<LibraryPage> {
 
           SizedBox(width: 15),
           if (widget.album == Album.none)...[
-             widget.albumName == null && box.get("navBarStyle") != 0 ?
+             widget.albumName == null && box.get("navBarStyle") == 1 ?
               Button.iconOnly(
                 icon: const Icon(CupertinoIcons.settings, color: Colors.white),
                 glassIcon: CNSymbol('gear', size: 17),
