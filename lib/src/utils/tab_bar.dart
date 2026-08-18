@@ -20,7 +20,9 @@ class TabBarDemoPage extends StatefulWidget {
 class _TabBarDemoPageState extends State<TabBarDemoPage> {
   @override
   Widget build(BuildContext context) {
-    return BottomBar(
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      child: BottomBar(
       layout: const BottomBarLayout.adaptive(
         maxWidth: 400,
         offset: 32,
@@ -56,51 +58,62 @@ class _TabBarDemoPageState extends State<TabBarDemoPage> {
       ),
       body: widget.body,
       child: box.get("navBarStyle") == 2
-        ? ClipRRect(
-          borderRadius: BorderRadius.circular(32),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _DockButton(
-                      icon: CupertinoIcons.photo_on_rectangle,
-                      selected: currentIndex.value == 0,
-                      onTap: () => currentIndex.value = 0,
+        ? ValueListenableBuilder(
+          valueListenable: showTabBar, 
+          builder: (context, value, child) {
+            return AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: value ?
+              ClipRRect(
+                borderRadius: BorderRadius.circular(32),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _DockButton(
+                            icon: CupertinoIcons.photo_on_rectangle,
+                            selected: currentIndex.value == 0,
+                            onTap: () => currentIndex.value = 0,
+                          ),
+                        ),
+                        Expanded(
+                          child: _DockButton(
+                            icon: CupertinoIcons.rectangle_stack,
+                            selected: currentIndex.value == 1,
+                            onTap: () => currentIndex.value = 1,
+                          ),
+                        ),
+                        Expanded(
+                          child: _DockButton(
+                            icon: CupertinoIcons.settings,
+                            selected: currentIndex.value == 2,
+                            onTap: () => currentIndex.value = 2,
+                          ),
+                        ),
+                        Expanded(
+                          child: _DockButton(
+                            icon: CupertinoIcons.search,
+                            selected: currentIndex.value == 3,
+                            onTap: () => currentIndex.value = 3,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
                     ),
                   ),
-                  Expanded(
-                    child: _DockButton(
-                      icon: CupertinoIcons.rectangle_stack,
-                      selected: currentIndex.value == 1,
-                      onTap: () => currentIndex.value = 1,
-                    ),
-                  ),
-                  Expanded(
-                    child: _DockButton(
-                      icon: CupertinoIcons.settings,
-                      selected: currentIndex.value == 2,
-                      onTap: () => currentIndex.value = 2,
-                    ),
-                  ),
-                  Expanded(
-                    child: _DockButton(
-                      icon: CupertinoIcons.search,
-                      selected: currentIndex.value == 3,
-                      onTap: () => currentIndex.value = 3,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                ],
-              ),
-            ),
-          ),
+                ),
+              ) : SizedBox()
+            );
+          }
         ) : SizedBox()
+      )  
     );
   }
 }
+
 
 class _DockButton extends StatelessWidget {
   const _DockButton({
