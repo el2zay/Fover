@@ -145,109 +145,75 @@ class _MainAppState extends State<MainApp> {
             valueListenable: showTabBar,
             builder: (context, tabBarVisible, _) {
               final loggedIn = isLoggedIn;
+              Widget child;
 
               if (!loggedIn || !tabBarVisible) {
-                return const SizedBox.shrink(key: ValueKey('empty'));
+                child = const SizedBox.shrink(key: ValueKey('empty'));
+              } else {
+                child = ValueListenableBuilder<int>(
+                  key: const ValueKey('tabbar-wrapper'),
+                  valueListenable: currentIndex,
+                  builder: (context, index, __) {
+                    if (is26OrNewer && box.get("navBarStyle") == 0) {
+                      return CNTabBar(
+                        key: const ValueKey('tabbar-style0'),
+                        tint: box.get("primaryColor") ?? Colors.blue,
+                        iconSize: 18,
+                        items: [
+                          CNTabBarItem(label: 'Library', icon: CNSymbol('photo.fill.on.rectangle.fill')),
+                          CNTabBarItem(label: 'Albums', icon: CNSymbol('rectangle.stack.fill')),
+                          CNTabBarItem(label: 'Settings', icon: CNSymbol('gear')),
+                        ],
+                        currentIndex: index,
+                        onTap: (i) {
+                          if (i == 0 && index == 0) {
+                            libraryKey.currentState?.scrollToBottom();
+                          }
+                          currentIndex.value = i;
+                        },
+                        searchItem: CNTabBarSearchItem(
+                          icon: CNSymbol('magnifyingglass', color: index == 3 ? Colors.blue : null),
+                          onSearchChanged: (query) => searchQuery.value = query,
+                          onSearchSubmit: (query) => searchQuery.value = query,
+                          onSearchActiveChanged: (isActive) {
+                            if (isActive) currentIndex.value = 3;
+                          },
+                        ),
+                      );
+                    } else if (is26OrNewer && box.get("navBarStyle") == 1) {
+                      return CNTabBar(
+                        key: const ValueKey('tabbar-style1'),
+                        tint: box.get("primaryColor") ?? Colors.blue,
+                        iconSize: 18,
+                        items: [
+                          CNTabBarItem(label: 'Library', icon: CNSymbol('photo.fill.on.rectangle.fill')),
+                          CNTabBarItem(label: 'Albums', icon: CNSymbol('rectangle.stack.fill')),
+                        ],
+                        currentIndex: index,
+                        onTap: (i) {
+                          if (i == 0 && index == 0) {
+                            libraryKey.currentState?.scrollToBottom();
+                          }
+                          currentIndex.value = i;
+                        },
+                        searchItem: CNTabBarSearchItem(
+                          icon: CNSymbol('magnifyingglass', color: index == 2 ? Colors.blue : null),
+                          onSearchChanged: (query) => searchQuery.value = query,
+                          onSearchSubmit: (query) => searchQuery.value = query,
+                          onSearchActiveChanged: (isActive) {
+                            if (isActive) currentIndex.value = 2;
+                          },
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink(key: ValueKey('empty-style'));
+                  },
+                );
               }
 
-              return ValueListenableBuilder<int>(
-                valueListenable: currentIndex,
-                builder: (context, index, __) {
-                  Widget child;
-
-                  if (is26OrNewer && box.get("navBarStyle") == 0) {
-                    child = CNTabBar(
-                      key: const ValueKey('tabbar'),
-                      tint: box.get("primaryColor") ?? Colors.blue,
-                      iconSize: 18,
-                      items: [
-                        CNTabBarItem(
-                          label: 'Library',
-                          icon: CNSymbol('photo.fill.on.rectangle.fill'),
-                        ),
-                        CNTabBarItem(
-                          label: 'Albums',
-                          icon: CNSymbol('rectangle.stack.fill'),
-                        ),
-                        CNTabBarItem(
-                          label: 'Settings',
-                          icon: CNSymbol('gear'),
-                        ),
-                      ],
-                      currentIndex: index,
-                      onTap: (i) {
-                        if (i == 0 && index == 0) {
-                          libraryKey.currentState?.scrollToBottom();
-                        }
-                        currentIndex.value = i;
-                      },
-                      searchItem: CNTabBarSearchItem(
-                        icon: CNSymbol(
-                          'magnifyingglass',
-                          color: index == 3 ? Colors.blue : null,
-                        ),
-                        onSearchChanged: (query) {
-                          searchQuery.value = query;
-                        },
-                        onSearchSubmit: (query) {
-                          searchQuery.value = query;
-                        },
-                        onSearchActiveChanged: (isActive) {
-                          if (isActive) {
-                            currentIndex.value = 3;
-                          }
-                        },
-                      ),
-                    );
-                  } else if (is26OrNewer && box.get("navBarStyle") == 1) {
-                    child = CNTabBar(
-                      key: const ValueKey('tabbar'),
-                      tint: box.get("primaryColor") ?? Colors.blue,
-                      iconSize: 18,
-                      items: [
-                        CNTabBarItem(
-                          label: 'Library',
-                          icon: CNSymbol('photo.fill.on.rectangle.fill'),
-                        ),
-                        CNTabBarItem(
-                          label: 'Albums',
-                          icon: CNSymbol('rectangle.stack.fill'),
-                        ),
-                      ],
-                      currentIndex: index,
-                      onTap: (i) {
-                        if (i == 0 && index == 0) {
-                          libraryKey.currentState?.scrollToBottom();
-                        }
-                        currentIndex.value = i;
-                      },
-                      searchItem: CNTabBarSearchItem(
-                        icon: CNSymbol(
-                          'magnifyingglass',
-                          color: index == 2 ? Colors.blue : null,
-                        ),
-                        onSearchChanged: (query) {
-                          searchQuery.value = query;
-                        },
-                        onSearchSubmit: (query) {
-                          searchQuery.value = query;
-                        },
-                        onSearchActiveChanged: (isActive) {
-                          if (isActive) {
-                            currentIndex.value = 2;
-                          }
-                        },
-                      ),
-                    );
-                  } else {
-                    child = const SizedBox();
-                  }
-
-                  return AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: child,
-                  );
-                },
+              return AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: child,
               );
             },
           ),
