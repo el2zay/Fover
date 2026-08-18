@@ -1547,7 +1547,7 @@ class LibraryPageState extends State<LibraryPage> {
                                     }
                                   );
                                 },
-                                glassIcon: CNSymbol('trash', size: 20),
+                                glassIcon: CNSymbol('trash', size: 16),
                                 icon: Icon(CupertinoIcons.trash, size: 20),
                                 tint: Theme.of(context).scaffoldBackgroundColor,
                               ),
