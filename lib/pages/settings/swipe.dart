@@ -191,29 +191,29 @@ class _SwipePageState extends State<SwipePage> {
           ),
         ),
         title: MyContainer(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 30, vertical: 6),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    DateFormat('d MMMM yyyy', 'en').format(PhotoStore.getDate(_photos[index].path)),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 30, vertical: 6),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  DateFormat('d MMMM yyyy', 'en').format(PhotoStore.getDate(_photos[index].path)),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
-                  Text(
-                    formatSize(_photos[index].size),
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
+                ),
+                Text(
+                  formatSize(_photos[index].size),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
+        ),
         actions: [
           Transform.scale(
             scale: 0.8,
@@ -559,7 +559,7 @@ class _MediaCardState extends State<MediaCard> {
             bytes,
             width: double.infinity,
             height: double.infinity,
-            fit: BoxFit.cover,
+            fit: BoxFit.contain,
           );
         },
       );
@@ -580,14 +580,13 @@ class _MediaCardState extends State<MediaCard> {
                 bytes,
                 width: double.infinity,
                 height: double.infinity,
-                fit: BoxFit.cover,
+                fit: BoxFit.contain,
               );
             },
           ),
 
         if (videoController != null && videoController!.value.isInitialized)
           FittedBox(
-            fit: BoxFit.cover,
             clipBehavior: Clip.hardEdge,
             child: SizedBox(
               width: videoController!.value.size.width,
