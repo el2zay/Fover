@@ -420,6 +420,17 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
         enableSlideOutPage: true,
         onDoubleTap: _handleDoubleTap,
         headers: headers,
+        initGestureConfigHandler: (state) => GestureConfig(
+          inPageView: true,
+          initialScale: 1.0,
+          minScale: 1.0,
+          animationMinScale: 0.7,
+          maxScale: 3.0,
+          animationMaxScale: 3.5,
+          speed: 1.0,
+          inertialSpeed: 100.0,
+          initialAlignment: InitialAlignment.center,
+        ),
         loadStateChanged: (state) {
           switch (state.extendedImageLoadState) {
             case LoadState.loading:
@@ -442,6 +453,17 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
         mode: ExtendedImageMode.gesture,
         enableSlideOutPage: true,
         onDoubleTap: _handleDoubleTap,
+        initGestureConfigHandler: (state) => GestureConfig(
+          inPageView: true,
+          initialScale: 1.0,
+          minScale: 1.0,
+          animationMinScale: 0.7,
+          maxScale: 3.0,
+          animationMaxScale: 3.5,
+          speed: 1.0,
+          inertialSpeed: 100.0,
+          initialAlignment: InitialAlignment.center,
+        ),
       );
     }
 
