@@ -664,7 +664,7 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
   Widget _buildLeadingButton() {
     bool isFavorite = PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true;
 
-    if (is26OrNewer) {
+    if (is26OrNewer && box.get("liquidGlass", defaultValue: false)) {
       return CNGlassButtonGroup(
         axis: Axis.horizontal,
         spacing: 8.0,
@@ -1165,7 +1165,7 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
 
   Widget _buildMediaControls() {
     bool isFavorite = PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true;
-    if (is26OrNewer) {
+    if (is26OrNewer && box.get("liquidGlass", defaultValue: false)) {
       return CNGlassButtonGroup(
         axis: Axis.horizontal,
         spacing: 8.0,

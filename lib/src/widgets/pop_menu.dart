@@ -166,7 +166,7 @@ class PopMenu extends StatelessWidget {
       );
     }
 
-    if (isTablet && is26OrNewer) {
+    if (isTablet && is26OrNewer && box.get("liquidGlass", defaultValue: false)) {
       return CNGlassButtonGroup(
         key: viewerKey.currentState?.infoButtonKey,
         buttons: [
@@ -262,7 +262,7 @@ class PopMenu extends StatelessWidget {
       );
     }
 
-    if (is26OrNewer) {
+    if (is26OrNewer && box.get("liquidGlass", defaultValue: false)) {
       final items = entries
           .map<dynamic>((e) => CNPopupMenuItem(
                 label: e.label,

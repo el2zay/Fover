@@ -38,7 +38,7 @@ class Button extends StatelessWidget {
     EdgeInsetsGeometry? padding,
     bool enabled = true,
   }) {
-    return is26OrNewer
+    return is26OrNewer && box.get("liquidGlass", defaultValue: false)
         ? CNButton.icon(
             icon: glassIcon,
             tint: tint,
@@ -62,7 +62,7 @@ class Button extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return is26OrNewer
+    return is26OrNewer && box.get("liquidGlass", defaultValue: false)
         ? CNButton(
             label: label,
             icon: glassIcon,

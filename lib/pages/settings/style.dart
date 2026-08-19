@@ -73,20 +73,22 @@ class _StylePageState extends State<StylePage> {
                   shrinkWrap: true,
                   physics: NeverScrollableScrollPhysics(),
                   children: [
-                    ListTile(
-                      title: Text("Enable Liquid Glass", style: TextStyle(fontWeight: FontWeight.w500)),
-                      trailing: Transform.scale(
-                        scale: 0.9,
-                          child: CNSwitch(
-                          value: box.get('liquidGlass', defaultValue: true),
-                          color: CupertinoColors.activeGreen,
-                          onChanged: (value) {
-                            box.put('offlineMode', value);
-                            setState(() {});
-                          }
+                    if (is26OrNewer)
+                      ListTile(
+                        contentPadding: EdgeInsets.only(left: 15, right: 10),
+                        title: Text("Enable Liquid Glass buttons", style: TextStyle(fontWeight: FontWeight.w500)),
+                        trailing: Transform.scale(
+                          scale: 0.9,
+                            child: CNSwitch(
+                            value: box.get('liquidGlass', defaultValue: true),
+                            color: CupertinoColors.activeGreen,
+                            onChanged: (value) {
+                              box.put('liquidGlass', value);
+                              setState(() {});
+                            }
+                          ),
                         ),
                       ),
-                    ),
                     Divider(height: 1.5, thickness: 2, color: Theme.of(context).primaryColor.withAlpha(20)),
                     ListTile(
                       title: Text("Primary color", style: TextStyle(fontWeight: FontWeight.w500)),
