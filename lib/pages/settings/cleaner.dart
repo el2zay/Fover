@@ -254,6 +254,7 @@ class _CleanerPageState extends State<CleanerPage> {
         child: AlbumsList(
           crossAxisCount: 2,
           showSpecialAlbums: true,
+          showEmpty: false,
           onTap: (album) {
             Navigator.push(
               context, 

@@ -608,8 +608,13 @@ class PhotoStore {
   static List<PhotoEntry> getDeleted() =>
     _photoBox.values.where((e) => e.deletedAt != null).toList();
 
-  static List<PhotoEntry> getAlbum(String album) =>
-    _photoBox.values.where((e) => (e.albums ?? []).contains(album)).toList();
+  static List<PhotoEntry> getAlbum(String album, {bool showEmpty = true}) {
+    var query = _photoBox.values.where((e) => (e.albums ?? []).contains(album));
+    if (!showEmpty) {
+      query = query.where((e) => e.deletedAt == null && e.isOldVersion != true);
+    }
+    return query.toList()..sort((a, b) => a.date.compareTo(b.date));
+  }
 
   static List<String> getAllAlbums() =>
     _photoBox.values.expand((e) => (e.albums ?? []).toSet()).toList()..sort();

@@ -16,6 +16,7 @@ class AlbumsList extends StatelessWidget {
   final Function(AlbumEntry album)? onTap;
   final bool isAlbumsPage;
   final bool showSpecialAlbums;
+  final bool showEmpty;
 
   const AlbumsList({
     super.key,
@@ -25,6 +26,7 @@ class AlbumsList extends StatelessWidget {
     this.onTap,
     this.isAlbumsPage = false,
     this.showSpecialAlbums = false,
+    this.showEmpty = true,
   });
 
   @override
@@ -39,17 +41,21 @@ class AlbumsList extends StatelessWidget {
           albums.add(AlbumEntry(name: "Screenshots", coverBytes: null, createdAt: DateTime.now()));
         }
 
+        if (!showEmpty) {
+          albums = albums.where((album) => PhotoStore.getAlbum(album.name, showEmpty: false).isNotEmpty).toList();
+        }
+
         if (albums.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(CupertinoIcons.collections_solid, color: CupertinoColors.systemGrey, size: isAlbumsPage ? 30 :  45),
-                SizedBox(height: isAlbumsPage ? 10 : 30),
+                SizedBox(height: isAlbumsPage ? 10 : 20),
                 Text(
-                  "You have not added any albums to your photo library.",
+                  "You have not added any albums  to your photo library.",
                   style: TextStyle(
-                    fontSize: isAlbumsPage ? 16 : 20, 
+                    fontSize: isAlbumsPage ? 16 : 18, 
                     fontWeight: FontWeight.normal
                   ),
                   textAlign: TextAlign.center
