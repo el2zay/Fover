@@ -61,6 +61,10 @@ Future<void> initApp() async {
       box.put("primaryColor", CupertinoColors.activeBlue);
     }
 
+    if (box.get("liquidGlass") == null && is26OrNewer) {
+      box.put("liquidGlass", true);
+    }
+
     // if (box.get("qualityMobile") == null) {
     //   box.put("qualityMobile", 2);
     // }
