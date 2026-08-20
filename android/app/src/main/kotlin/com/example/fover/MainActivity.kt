@@ -1,4 +1,4 @@
-package com.example.fover
+package com.el2zay.fover
 
 import android.media.MediaMetadataRetriever
 import android.os.Handler
