@@ -1,17 +1,5 @@
 PODS:
-  - app_settings (6.1.2):
-    - Flutter
   - apple_maps_flutter (0.0.1):
-    - Flutter
-  - clipboard (3.0.9):
-    - Flutter
-  - CocoaLumberjack (3.9.1):
-    - CocoaLumberjack/Core (= 3.9.1)
-  - CocoaLumberjack/Core (3.9.1)
-  - cupertino_native_better (0.0.1):
-    - Flutter
-    - SVGKit (~> 3.0)
-  - device_info_plus (0.0.1):
     - Flutter
   - Flutter (1.0.0)
   - flutter_image_compress_common (1.0.0):
@@ -19,11 +7,6 @@ PODS:
     - Mantle
     - SDWebImage
     - SDWebImageWebPCoder
-  - flutter_native_splash (2.4.3):
-    - Flutter
-  - geolocator_apple (1.2.0):
-    - Flutter
-    - FlutterMacOS
   - ios_color_picker (0.0.1):
     - Flutter
   - irondash_engine_context (0.0.1):
@@ -40,19 +23,11 @@ PODS:
   - libwebp/sharpyuv (1.6.0)
   - libwebp/webp (1.6.0):
     - libwebp/sharpyuv
-  - local_auth_darwin (0.0.1):
-    - Flutter
-    - FlutterMacOS
   - Mantle (2.2.0):
     - Mantle/extobjc (= 2.2.0)
   - Mantle/extobjc (2.2.0)
   - native_dialog_plus (0.0.1):
     - Flutter
-  - package_info_plus (0.4.5):
-    - Flutter
-  - photo_manager (3.9.0):
-    - Flutter
-    - FlutterMacOS
   - pro_image_editor (12.0.8):
     - Flutter
   - pro_video_editor (0.0.1):
@@ -63,142 +38,67 @@ PODS:
   - SDWebImageWebPCoder (0.15.0):
     - libwebp (~> 1.0)
     - SDWebImage/Core (~> 5.17)
-  - share_plus (0.0.1):
-    - Flutter
-  - shared_preferences_foundation (0.0.1):
-    - Flutter
-    - FlutterMacOS
-  - sqflite_darwin (0.0.4):
-    - Flutter
-    - FlutterMacOS
   - super_native_extensions (0.0.1):
     - Flutter
-  - SVGKit (3.0.0):
-    - CocoaLumberjack (~> 3.0)
-  - url_launcher_ios (0.0.1):
-    - Flutter
-  - video_player_avfoundation (0.0.1):
-    - Flutter
-    - FlutterMacOS
   - video_thumbnail (0.0.1):
     - Flutter
     - libwebp
 
 DEPENDENCIES:
-  - app_settings (from `.symlinks/plugins/app_settings/ios`)
   - apple_maps_flutter (from `.symlinks/plugins/apple_maps_flutter/ios`)
-  - clipboard (from `.symlinks/plugins/clipboard/ios`)
-  - cupertino_native_better (from `.symlinks/plugins/cupertino_native_better/ios`)
-  - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - Flutter (from `Flutter`)
   - flutter_image_compress_common (from `.symlinks/plugins/flutter_image_compress_common/ios`)
-  - flutter_native_splash (from `.symlinks/plugins/flutter_native_splash/ios`)
-  - geolocator_apple (from `.symlinks/plugins/geolocator_apple/darwin`)
   - ios_color_picker (from `.symlinks/plugins/ios_color_picker/ios`)
   - irondash_engine_context (from `.symlinks/plugins/irondash_engine_context/ios`)
-  - local_auth_darwin (from `.symlinks/plugins/local_auth_darwin/darwin`)
   - native_dialog_plus (from `.symlinks/plugins/native_dialog_plus/ios`)
-  - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
-  - photo_manager (from `.symlinks/plugins/photo_manager/darwin`)
   - pro_image_editor (from `.symlinks/plugins/pro_image_editor/ios`)
   - pro_video_editor (from `.symlinks/plugins/pro_video_editor/ios`)
-  - share_plus (from `.symlinks/plugins/share_plus/ios`)
-  - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
-  - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
   - super_native_extensions (from `.symlinks/plugins/super_native_extensions/ios`)
-  - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
-  - video_player_avfoundation (from `.symlinks/plugins/video_player_avfoundation/darwin`)
   - video_thumbnail (from `.symlinks/plugins/video_thumbnail/ios`)
 
 SPEC REPOS:
   trunk:
-    - CocoaLumberjack
     - libwebp
     - Mantle
     - SDWebImage
     - SDWebImageWebPCoder
-    - SVGKit
 
 EXTERNAL SOURCES:
-  app_settings:
-    :path: ".symlinks/plugins/app_settings/ios"
   apple_maps_flutter:
     :path: ".symlinks/plugins/apple_maps_flutter/ios"
-  clipboard:
-    :path: ".symlinks/plugins/clipboard/ios"
-  cupertino_native_better:
-    :path: ".symlinks/plugins/cupertino_native_better/ios"
-  device_info_plus:
-    :path: ".symlinks/plugins/device_info_plus/ios"
   Flutter:
     :path: Flutter
   flutter_image_compress_common:
     :path: ".symlinks/plugins/flutter_image_compress_common/ios"
-  flutter_native_splash:
-    :path: ".symlinks/plugins/flutter_native_splash/ios"
-  geolocator_apple:
-    :path: ".symlinks/plugins/geolocator_apple/darwin"
   ios_color_picker:
     :path: ".symlinks/plugins/ios_color_picker/ios"
   irondash_engine_context:
     :path: ".symlinks/plugins/irondash_engine_context/ios"
-  local_auth_darwin:
-    :path: ".symlinks/plugins/local_auth_darwin/darwin"
   native_dialog_plus:
     :path: ".symlinks/plugins/native_dialog_plus/ios"
-  package_info_plus:
-    :path: ".symlinks/plugins/package_info_plus/ios"
-  photo_manager:
-    :path: ".symlinks/plugins/photo_manager/darwin"
   pro_image_editor:
     :path: ".symlinks/plugins/pro_image_editor/ios"
   pro_video_editor:
     :path: ".symlinks/plugins/pro_video_editor/ios"
-  share_plus:
-    :path: ".symlinks/plugins/share_plus/ios"
-  shared_preferences_foundation:
-    :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
-  sqflite_darwin:
-    :path: ".symlinks/plugins/sqflite_darwin/darwin"
   super_native_extensions:
     :path: ".symlinks/plugins/super_native_extensions/ios"
-  url_launcher_ios:
-    :path: ".symlinks/plugins/url_launcher_ios/ios"
-  video_player_avfoundation:
-    :path: ".symlinks/plugins/video_player_avfoundation/darwin"
   video_thumbnail:
     :path: ".symlinks/plugins/video_thumbnail/ios"
 
 SPEC CHECKSUMS:
-  app_settings: 0341ec6daa4f0c50f5a421bf0ad7c36084db6e90
   apple_maps_flutter: 2237d66a8e242082a2d88134af372f7b3375d7a6
-  clipboard: 85f02e190f24debf05943aff98c26644b2a90245
-  CocoaLumberjack: e4ba3b414dfca8c1916c6303d37f63b3a95134c6
-  cupertino_native_better: 48a6a9cd45efc9ea9e1eec30755b5a8ebe92f1f2
-  device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_image_compress_common: 1697a328fd72bfb335507c6bca1a65fa5ad87df1
-  flutter_native_splash: c32d145d68aeda5502d5f543ee38c192065986cf
-  geolocator_apple: ab36aa0e8b7d7a2d7639b3b4e48308394e8cef5e
   ios_color_picker: 4b4a4d74640e9a310b5e3f8181dea8be86506dba
   irondash_engine_context: 8e58ca8e0212ee9d1c7dc6a42121849986c88486
   libwebp: af5937a13536ef73f3784d69cc342b98961acf33
-  local_auth_darwin: c3ee6cce0a8d56be34c8ccb66ba31f7f180aaebb
   Mantle: c5aa8794a29a022dfbbfc9799af95f477a69b62d
   native_dialog_plus: 6579cb8aa89a9866649c821ca42557f514f31e3f
-  package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
-  photo_manager: 25fd77df14f4f0ba5ef99e2c61814dde77e2bceb
   pro_image_editor: 3dedac450f82a389877286fa9eb08852cefb04ea
   pro_video_editor: 44ef9a6d48dbd757ed428cf35396dd05f35c7830
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
   SDWebImageWebPCoder: 0e06e365080397465cc73a7a9b472d8a3bd0f377
-  share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
-  shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
-  sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   super_native_extensions: b763c02dc3a8fd078389f410bf15149179020cb4
-  SVGKit: 1ad7513f8c74d9652f94ed64ddecda1a23864dea
-  url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
-  video_player_avfoundation: dd410b52df6d2466a42d28550e33e4146928280a
   video_thumbnail: b637e0ad5f588ca9945f6e2c927f73a69a661140
 
 PODFILE CHECKSUM: 3c63482e143d1b91d2d2560aee9fb04ecc74ac7e
