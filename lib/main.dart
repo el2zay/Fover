@@ -15,6 +15,7 @@ import 'package:fover/pages/viewer.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/freebox_service.dart';
 import 'package:fover/src/services/photo_store.dart';
+import 'package:fover/src/services/share_intent_service.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/utils/requests.dart';
 import 'package:fover/src/utils/tab_bar.dart';
@@ -35,6 +36,7 @@ final ValueNotifier<double> tabBarHeight = ValueNotifier(kBottomNavigationBarHei
 
 Future<void> initApp() async {
   await PhotoStore.init();
+  ShareIntentService.init();
 
   if (box.get("appToken") != null || box.get("copypartyUrl") != null) {
     connectedToInternet = await CopypartyService.isUp() && await hasInternet();
