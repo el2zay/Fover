@@ -18,7 +18,7 @@ class DownloadService {
     required String filename,
     void Function(int received, int total)? onProgress,
   }) async {
-    final dir = await getApplicationDocumentsDirectory();
+    final dir = await getApplicationSupportDirectory();
     final downloadsDir = Directory('${dir.path}/downloads');
     if (!downloadsDir.existsSync()) downloadsDir.createSync();
 
