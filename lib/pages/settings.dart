@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/main.dart';
 import 'package:fover/pages/settings/cleaner.dart';
-import 'package:fover/pages/settings/quality.dart';
 import 'package:fover/pages/settings/style.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/utils/common_utils.dart';
@@ -14,7 +13,6 @@ import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/dialog.dart';
 import 'package:fover/src/widgets/snackbar.dart';
 import 'package:gradient_progress_bar/gradient_progress_bar.dart';
-import 'package:native_dialog_plus/native_dialog_plus.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -54,7 +52,7 @@ class _SettingsPageState extends State<SettingsPage> {
     bool isDark = Theme.brightnessOf(context) == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
-        title: Text("Settings", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        title: Text("Settings", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
         leading: box.get("navBarStyle") != 0 ? Row(
           children: [
             Transform.scale(
@@ -84,7 +82,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     SizedBox(height: 15),
                     Center(child: Text("Freebox Server $model", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
                   ],
-                  connectedToInternet ? 
+                  enableSwitch ? 
                     Container(
                       padding: EdgeInsets.only(bottom: 10),
                       margin: EdgeInsets.symmetric(horizontal: 10),
@@ -136,6 +134,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       color: CupertinoColors.activeGreen,
                       onChanged: (value) async {
                         box.put('offlineMode', value);
+                        setState(() {});
                         connectedToInternet = await CopypartyService.isUp() && await hasInternet();
                         print("connectedToInternet: $connectedToInternet");
                         await libraryKey.currentState?.refresh();
@@ -166,17 +165,18 @@ class _SettingsPageState extends State<SettingsPage> {
                       );
                     },
                   ),
-                  ListTile(
-                    leading: Icon(CupertinoIcons.paintbrush),
-                    title: Text("Style"),
-                    trailing: Icon(CupertinoIcons.chevron_forward, color: Colors.grey.withAlpha(150)),
-                    onTap: () {
-                      Navigator.push(
-                        context, 
-                        MaterialPageRoute(builder: (context) => StylePage())
-                      );
-                    },
-                  ),
+                  if (Platform.isIOS)
+                    ListTile(
+                      leading: Icon(CupertinoIcons.paintbrush),
+                      title: Text("Style"),
+                      trailing: Icon(CupertinoIcons.chevron_forward, color: Colors.grey.withAlpha(150)),
+                      onTap: () {
+                        Navigator.push(
+                          context, 
+                          MaterialPageRoute(builder: (context) => StylePage())
+                        );
+                      },
+                    ),
                   ListTile(
                     leading: Icon(CupertinoIcons.arrow_up_to_line_alt),
                     title: Text("Import"),
@@ -185,17 +185,17 @@ class _SettingsPageState extends State<SettingsPage> {
                     },
                   ),
 
-                  ListTile(
-                    leading: Icon(CupertinoIcons.slider_horizontal_below_rectangle),
-                    title: Text("Video quality"),
-                    trailing: Icon(CupertinoIcons.chevron_forward, color: Colors.grey.withAlpha(150)),
-                    onTap: () {
-                      Navigator.push(
-                        context, 
-                        MaterialPageRoute(builder: (context) => QualityPage())
-                      );
-                    },
-                  ),
+                  // ListTile(
+                  //   leading: Icon(CupertinoIcons.slider_horizontal_below_rectangle),
+                  //   title: Text("Video quality"),
+                  //   trailing: Icon(CupertinoIcons.chevron_forward, color: Colors.grey.withAlpha(150)),
+                  //   onTap: () {
+                  //     Navigator.push(
+                  //       context, 
+                  //       MaterialPageRoute(builder: (context) => QualityPage())
+                  //     );
+                  //   },
+                  // ),
                   ListTile(
                     leading: Icon(CupertinoIcons.globe),
                     title: Text("Language"),
@@ -259,7 +259,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ]
               )
             ),
-            Text("Developed in Paris 🥐 by Elie"),
+            // Text("Developed in Paris 🥐 by Elie"),
             SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
