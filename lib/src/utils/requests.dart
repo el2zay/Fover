@@ -17,6 +17,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
+bool _syncInProgress = false;
+
 Future<List<dynamic>> fetchPhotosDir() async {
   List<dynamic> entries = [];
   Uint8List? imageBytes;
@@ -238,7 +240,7 @@ Future<List<dynamic>> fetchPhotosDir() async {
 
 Future<void> uploadHive() async {
 
-  final appDir = (await getApplicationDocumentsDirectory()).path;
+  final appDir = (await getApplicationSupportDirectory()).path;
   final files = [
     File("$appDir/photos.hive"),
     File("$appDir/albums.hive"),
@@ -309,38 +311,44 @@ Future<Uint8List?> downloadHive(String filename) async {
 }
 
 Future<void> syncHive() async {
-  if (PhotoStore.hasPendingUpload()) {
-    PhotoStore.cancelScheduledUpload();
-    await uploadHive();
-  }
-
-  final appDir = (await getApplicationDocumentsDirectory()).path;
-  bool didMerge = false;
-
-  for (final filename in ['photos.hive', 'albums.hive']) {
-    final localFile = File("$appDir/$filename");
-    final serverBytes = await downloadHive(filename);
-    print("downloaded $filename: ${serverBytes?.length ?? 'null'} bytes");
-
-    if (serverBytes == null) continue;
-
-    if (!localFile.existsSync()) {
-      await localFile.writeAsBytes(serverBytes);
-      log("Hive initialisé depuis le serveur : $filename");
-      didMerge = true;
-      continue;
+   if (_syncInProgress) return;
+  _syncInProgress = true;
+  try {
+    if (PhotoStore.hasPendingUpload()) {
+      PhotoStore.cancelScheduledUpload();
+      await uploadHive();
     }
 
-    await mergeHive(localFile, serverBytes, filename);
-    didMerge = true;
-  }
+    final appDir = (await getApplicationSupportDirectory()).path;
+    bool didMerge = false;
 
-  if (didMerge) await uploadHive();
+    for (final filename in ['photos.hive', 'albums.hive']) {
+      final localFile = File("$appDir/$filename");
+      final serverBytes = await downloadHive(filename);
+      print("downloaded $filename: ${serverBytes?.length ?? 'null'} bytes");
+
+      if (serverBytes == null) continue;
+
+      if (!localFile.existsSync()) {
+        await localFile.writeAsBytes(serverBytes);
+        log("Hive initialisé depuis le serveur : $filename");
+        didMerge = true;
+        continue;
+      }
+
+      await mergeHive(localFile, serverBytes, filename);
+      didMerge = true;
+    }
+
+    if (didMerge) await uploadHive();
+  } finally {
+    _syncInProgress = false;
+  }
 }
 
 Future<void> mergeHive(File localFile, Uint8List serverBytes, String filename) async {
   final appDir = localFile.parent.path;
-  final tempPath = "$appDir/temp_$filename";
+  final tempPath = "$appDir/temp_${DateTime.now().microsecondsSinceEpoch}_$filename";
   final tempFile = File(tempPath);
 
   try {
@@ -352,8 +360,6 @@ Future<void> mergeHive(File localFile, Uint8List serverBytes, String filename) a
       await mergeAlbumsBox(localFile.path, tempPath);
     }
   } finally {
-    if (tempFile.existsSync()) await tempFile.delete();
-
     final tempLock = File('$appDir/temp_${filename.replaceAll('.hive', '.lock')}');
     if (tempLock.existsSync()) await tempLock.delete();
   }
@@ -373,6 +379,10 @@ Future<void> mergePhotosBox(String localPath, String serverPath) async {
     PhotoStore.merging = false;
   }
 
+  if (!File('$dir/temp_photos.hive').existsSync()) {
+    print('Fichier temp manquant avant ouverture, abandon du merge');
+    return;
+}
 
   final serverBox = await Hive.openBox<PhotoEntry>(
     "temp_photos",
