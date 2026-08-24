@@ -17,7 +17,8 @@ enum PopMenuAction {
   addToAlbum(6),
   adjustDate(7),
   adjustLocation(8),
-  revert(9);
+  revert(9),
+  removeFromAlbum(10);
 
   final int id;
   const PopMenuAction(this.id);
@@ -32,6 +33,7 @@ class PopMenu extends StatelessWidget {
   final bool isHidden;
   final bool canRevert;
   final bool isTablet;
+  final bool isAlbum;
   final Function(PopMenuAction) onSelected;
 
   const PopMenu({
@@ -44,6 +46,7 @@ class PopMenu extends StatelessWidget {
     required this.isHidden,
     this.canRevert = false,
     this.isTablet = false,
+    this.isAlbum = false,
     required this.onSelected,
   });
 
@@ -62,6 +65,13 @@ class PopMenu extends StatelessWidget {
             ? CupertinoIcons.arrow_down_circle_fill
             : CupertinoIcons.arrow_down_circle,
       ),
+      if (isAlbum)
+        (
+          action: PopMenuAction.removeFromAlbum,
+          label: 'Remove from album',
+          sfSymbol: 'xmark',
+          cupertinoIcon: CupertinoIcons.xmark,
+        ),
       if (showCopy && isViewer)
         (
           action: PopMenuAction.copy,

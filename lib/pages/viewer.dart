@@ -809,6 +809,10 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
                   DownloadService.remove(widget.encodedPaths[currentIndex]);
                 }
               break;
+            
+            case PopMenuAction.removeFromAlbum: 
+              break;
+
             case PopMenuAction.copy:
               final bytes = await fetchFullBytes(widget.encodedPaths[currentIndex]);
               if (bytes == null) return;
@@ -902,6 +906,8 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
                       log("ici");
                       DownloadService.remove(widget.encodedPaths[currentIndex]);
                     }
+                  break;
+                case PopMenuAction.removeFromAlbum: 
                   break;
                 case PopMenuAction.copy:
                   final bytes = await fetchFullBytes(widget.encodedPaths[currentIndex]);

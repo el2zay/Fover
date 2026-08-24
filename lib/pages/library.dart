@@ -1446,6 +1446,7 @@ class LibraryPageState extends State<LibraryPage> {
                                   isDownloaded: selectedImages.every((i) => DownloadService.isDownloaded(data.encodedPaths[i])),
                                   isFavorite: false,
                                   isHidden: selectedImages.every((i) => PhotoStore.get(data.encodedPaths[i])?.hidden == true),
+                                  isAlbum: widget.albumName != null,
                                   onSelected: (action) async {
                                     final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
                                     switch (action) {
@@ -1458,6 +1459,15 @@ class LibraryPageState extends State<LibraryPage> {
                                             DownloadService.download(encodedPath: path, filename: photo!.name);
                                           }
                                         }
+                                        break;
+                                      case PopMenuAction.removeFromAlbum:
+                                        for (final path in selectedPaths) {
+                                          PhotoStore.removeFromAlbum(
+                                            path: path,
+                                            album: widget.albumName!,
+                                          );
+                                        }
+                                        _removeLocally(selectedImages);
                                         break;
                                       case PopMenuAction.copy:
                                         break;
@@ -1537,8 +1547,8 @@ class LibraryPageState extends State<LibraryPage> {
                                         if (widget.album == Album.trash) {
                                           PhotoStore.hardDelete(path);
                                         } else {
-                                            PhotoStore.softDelete(path);
-                                          }
+                                          PhotoStore.softDelete(path);
+                                        }
                                       }
 
                                       _removeLocally(selectedImages);
