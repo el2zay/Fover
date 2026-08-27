@@ -53,6 +53,7 @@ dependencies:
   native_dialog_plus: ^1.1.2
   flutter_floating_bottom_bar: ^2.1.0
   receive_sharing_intent: ^1.9.0
+  lucide_icons_flutter: ^3.1.17
 
 dev_dependencies:
   hive_ce_generator: ^1.11.1
