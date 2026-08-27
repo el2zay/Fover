@@ -14,6 +14,7 @@ import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/container.dart';
 import 'package:fover/src/widgets/dialog.dart';
 import 'package:ios_color_picker/show_ios_color_picker.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 import 'package:pro_video_editor/pro_video_editor.dart';
@@ -166,28 +167,19 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
 
   }
 
-  void applyCrayonStyle(PaintEditorState editor) {
-    editor.setMode(PaintMode.freeStyle);
-    editor.setStrokeWidth(5.0);
-    editor.setOpacity(0.75);
-    setState(() => _currentTool = 1);
-  }
-
     void applyMarkerStyle(PaintEditorState editor) {
     editor.setMode(PaintMode.freeStyle);
     editor.setStrokeWidth(18.0);
     editor.setOpacity(0.45);
-    setState(() => _currentTool = 2);
+    setState(() => _currentTool = 1);
   }
 
   OverlayEntry? _toolOverlay;
   final _penKey = GlobalKey();
-  final _crayonKey = GlobalKey();
   final _markerKey = GlobalKey();
   final _eraserKey = GlobalKey();
 
   int _penSizeIndex = 0;
-  int _crayonSizeIndex = 0;
   int _markerSizeIndex = 0;
   int _eraserSizeIndex = 0;
 
@@ -544,7 +536,6 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
           bodyItems: (paintEditor, rebuildStream) {
             _paintEditor = paintEditor;
             const penSizes = [2.0, 4.0, 6.0, 9.0, 13.0];
-            const crayonSizes = [3.0, 5.0, 8.0, 12.0, 16.0];
             const markerSizes = [10.0, 16.0, 22.0, 30.0, 40.0];
             const eraserSizes = [15.0, 20.0, 28.0, 36.0, 46.0];
             return [
@@ -561,11 +552,11 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                   left: 0, 
                   right: 0,
                   child: SafeArea(
-                    child: Container(
-                      padding: EdgeInsetsGeometry.symmetric(horizontal: 30, vertical: 5),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 60),
                       child: MyContainer(
                         child: Padding(
-                          padding: EdgeInsetsGeometry.only(top: 10),
+                          padding: const EdgeInsets.all(8.0),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             crossAxisAlignment: CrossAxisAlignment.center,
@@ -588,32 +579,10 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                                     _dismissToolOverlay();
                                   },
                                 ),
-                                child: Image.asset(
-                                  "assets/icons/editor/pen.png",
-                                  height: _currentTool == 0 ? 60 : 50,
-                                ),
-                              ),
-                              GestureDetector(
-                                key: _crayonKey,
-                                onTap: () {
-                                  applyCrayonStyle(paintEditor);
-                                  paintEditor.setStrokeWidth(crayonSizes[_crayonSizeIndex]);
-                                },
-                                onLongPress: () => _showStrokePicker(
-                                  key: _crayonKey, 
-                                  paintEditor: paintEditor, 
-                                  sizes: const [10, 14, 18, 22, 26],
-                                  selectedIndex: _crayonSizeIndex, 
-                                  onSelected: (size, index) {
-                                    setState(() => _crayonSizeIndex = index);
-                                    applyCrayonStyle(paintEditor);
-                                    paintEditor.setStrokeWidth(crayonSizes[index]);
-                                  }
-                                ),
-                                child: Image.asset(
-                                  "assets/icons/editor/crayon.png",
-                                  height: _currentTool == 1 ? 60 : 50,
-                                ),
+                                child: Icon(
+                                  LucideIcons.pencil,
+                                  color: _currentTool == 0 ? Colors.white : Colors.white54
+                                )
                               ),
                               GestureDetector(
                                 key: _markerKey,
@@ -633,16 +602,16 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                                     _dismissToolOverlay();
                                   },
                                 ),
-                                child: Image.asset(
-                                  "assets/icons/editor/marker.png",
-                                  height: _currentTool == 2 ? 60 : 50,
-                                ),
+                                child: Icon(
+                                  LucideIcons.highlighter,
+                                  color: _currentTool == 1 ? Colors.white : Colors.white54
+                                )
                               ),
                               GestureDetector(
                                 key: _eraserKey,
                                 onTap: () {
                                   paintEditor.setMode(PaintMode.eraser);
-                                  _currentTool = 4;
+                                  _currentTool = 2;
                                 },
                                 onLongPress: () => _showStrokePicker(
                                   key: _eraserKey,
@@ -656,9 +625,17 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                                     _dismissToolOverlay();
                                   },
                                 ),
-                                child: Image.asset(
-                                  "assets/icons/editor/eraser.png",
-                                  height: _currentTool == 4 ? 60 : 50,
+                                child: Icon(
+                                  LucideIcons.eraser,
+                                  color: _currentTool == 2 ? Colors.white : Colors.white54
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  _currentTool = 3;
+                                },
+                                child: Icon(
+                                  LucideIcons.textCursor,
                                 ),
                               ),
                               Row(
@@ -680,7 +657,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                                             setState(() => _currentColor = color);
                                             paintEditor.setColor(color);
                                           }
-                                         );
+                                          );
                                     },
                                     child: Stack(
                                       alignment: Alignment.center,
@@ -722,30 +699,18 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                                       ],
                                     ),
                                   ),
-                                  SizedBox(width: 15),
-                                  CupertinoButton.tinted(
-                                    sizeStyle: CupertinoButtonSize.small,
-                                    padding: EdgeInsets.all(5),
-                                    borderRadius: BorderRadius.all(Radius.circular(30)),
-                                    child: Icon(
-                                      CupertinoIcons.plus, 
-                                      size: 22,
-                                      color: Theme.of(context).primaryColor,
-                                    ), 
-                                    onPressed: () {}
-                                  ),
                                 ],
                               )
                             ],
-                          )
-                        ),
-                      )
+                          ),
+                        )
+                      ),
                     ),
                   ),
                 ),
               ),
             ];
-          }
+          },
         ),
       ),
       cropRotateEditor: CropRotateEditorConfigs(
@@ -991,7 +956,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                     buttons: [
                       CNButtonData.icon(
                         icon: CNSymbol('arrow.uturn.backward', size: 20,
-                            color: !editor.canUndo ? Colors.grey : null),
+                        color: !editor.canUndo ? Colors.grey : null),
                         onPressed: editor.canUndo ? editor.undoAction : null,
                         config: const CNButtonDataConfig(
                           style: CNButtonStyle.prominentGlass,
@@ -1002,7 +967,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                       ),
                       CNButtonData.icon(
                         icon: CNSymbol('arrow.uturn.forward', size: 20,
-                            color: !editor.canRedo ? Colors.grey : null),
+                        color: !editor.canRedo ? Colors.grey : null),
                         onPressed: editor.canRedo ? editor.redoAction : null,
                         config: const CNButtonDataConfig(
                           style: CNButtonStyle.prominentGlass,
