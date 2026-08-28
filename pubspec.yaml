@@ -54,6 +54,7 @@ dependencies:
   flutter_floating_bottom_bar: ^2.1.0
   receive_sharing_intent: ^1.9.0
   lucide_icons_flutter: ^3.1.17
+  google_fonts: ^8.2.1
 
 dev_dependencies:
   hive_ce_generator: ^1.11.1
@@ -66,7 +67,6 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icons/
-    - assets/icons/editor/
     - assets/illustrations/
     - assets/illustrations/freebox/
     - assets/illustrations/style/
