@@ -13,6 +13,7 @@ import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/widgets/button.dart';
 import 'package:fover/src/widgets/container.dart';
 import 'package:fover/src/widgets/dialog.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:ios_color_picker/show_ios_color_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:path_provider/path_provider.dart';
@@ -167,12 +168,13 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
 
   }
 
-    void applyMarkerStyle(PaintEditorState editor) {
+  void applyMarkerStyle(PaintEditorState editor) {
     editor.setMode(PaintMode.freeStyle);
     editor.setStrokeWidth(18.0);
     editor.setOpacity(0.45);
     setState(() => _currentTool = 1);
   }
+
 
   OverlayEntry? _toolOverlay;
   final _penKey = GlobalKey();
@@ -631,11 +633,13 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                                 ),
                               ),
                               GestureDetector(
-                                onTap: () {
-                                  _currentTool = 3;
+                                onTap: () async {
+                                  setState(() => _currentTool = 3);
+                                  _editorKey.currentState!.openTextEditor();
                                 },
                                 child: Icon(
                                   LucideIcons.textCursor,
+                                  color: _currentTool == 3 ? Colors.white : Colors.white54
                                 ),
                               ),
                               Row(
@@ -711,6 +715,39 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
               ),
             ];
           },
+        ),
+      ),
+      textEditor: TextEditorConfigs(
+        showSelectFontStyleBottomBar: true,
+        customTextStyles: [
+          GoogleFonts.roboto(),
+          GoogleFonts.averiaLibre(),
+          GoogleFonts.lato(),
+          GoogleFonts.comicNeue(),
+          GoogleFonts.actor(),
+          GoogleFonts.odorMeanChey(),
+          GoogleFonts.nabla(),
+        ],
+        style: const TextEditorStyle(
+          textFieldMargin: EdgeInsets.only(top: kToolbarHeight),
+          bottomBarBackground: Colors.transparent,
+          bottomBarMainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        ),
+        widgets: TextEditorWidgets(
+          appBar: (textEditor, rebuildStream) => ReactiveAppbar(
+            stream: rebuildStream,
+            builder: (_) => PreferredSize(
+              preferredSize: Size.zero,
+              child: const SizedBox.shrink(),
+            ),
+          ),
+          bodyItems: (textEditor, rebuildStream) => [
+            _buildSubAppBar(
+              rebuildStream: rebuildStream,
+              onCancel: textEditor.close,
+              onDone: textEditor.done,
+            ),
+          ],
         ),
       ),
       cropRotateEditor: CropRotateEditorConfigs(
@@ -949,7 +986,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                   glassIcon: const CNSymbol('xmark', size: 16),
                   onPressed: onCancel,
                 ),
-                if (editor != null)
+                if (editor != null && _currentTool == 0)
                   CNGlassButtonGroup(
                     axis: Axis.horizontal,
                     spacing: 5.0,
