@@ -535,14 +535,15 @@ class PhotoStore {
 
   static Future<void> deleteAlbum(String name) async {
     final album = _albumBox.get(name);
+    if (album == null) return;
+
     for (final photo in getAlbum(name)) {
       await removeFromAlbum(path: photo.path, album: name);
     }
-    if (album == null) return;
 
     album.deletedAt = DateTime.now();
     album.touch('deletedAt');
-    await album.save();
+    await _albumBox.put(name, album);
     _scheduleUpload();
   }
 
@@ -820,7 +821,7 @@ class PhotoStore {
       changed = true;
     }
 
-    if (changed) await local.save();
+    if (changed) await _albumBox.put(name, local);
   }
 
   static String debugCounts() {

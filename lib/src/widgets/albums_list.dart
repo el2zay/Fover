@@ -34,7 +34,7 @@ class AlbumsList extends StatelessWidget {
     return ValueListenableBuilder(
       valueListenable: PhotoStore.albumListenable, 
       builder: (context, Box<AlbumEntry> box, _) {
-        List<AlbumEntry> albums = box.values.toList();
+        List<AlbumEntry> albums = PhotoStore.getAllAlbumEntries();
 
         if (showSpecialAlbums) {
           albums.add(AlbumEntry(name: "Favorites", coverBytes: null, createdAt: DateTime.now()));

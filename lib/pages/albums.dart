@@ -439,9 +439,9 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
             textColor: Colors.blue,
             tint: Colors.blue.withAlpha(230),
             backgroundColor: Colors.transparent,
-            onPressed: () {
+            onPressed: () async {
               if (widget.oldAlbum != null) {
-                PhotoStore.renameAlbum(
+                await PhotoStore.renameAlbum(
                   oldName: widget.oldAlbum!.name,
                   newName: albumNameController.text,
                 );
