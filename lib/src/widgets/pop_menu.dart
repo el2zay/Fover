@@ -162,7 +162,7 @@ class PopMenu extends StatelessWidget {
               ? 1.0 
               : scale,
             child: Button.iconOnly(
-              backgroundColor: isTablet ? Colors.transparent : Colors.white12,
+              backgroundColor: Colors.transparent,
               icon: Icon(
                 isTablet && Platform.isAndroid
                   ? Icons.menu
@@ -239,10 +239,6 @@ class PopMenu extends StatelessWidget {
     } else if (isTablet) {
       return Container(
         key: viewerKey.currentState?.infoButtonKey,
-        decoration: BoxDecoration(
-          color: Colors.white12,
-          borderRadius: BorderRadius.circular(30),
-        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

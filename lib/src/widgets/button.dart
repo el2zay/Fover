@@ -39,25 +39,24 @@ class Button extends StatelessWidget {
     bool enabled = true,
   }) {
     return is26OrNewer && box.get("liquidGlass", defaultValue: false)
-        ? CNButton.icon(
-            icon: glassIcon,
-            tint: tint,
-            config: glassConfig ?? const CNButtonConfig(),
-            enabled: enabled,
-            onPressed: enabled ? onPressed : null,
-          )
-        : IconButton(
-            icon: icon!,
-            onPressed: enabled ? onPressed : null,
-            style: ElevatedButton.styleFrom(
-              alignment: Alignment.centerRight,
-              padding: padding ?? const EdgeInsets.all(12),
-              iconColor: Colors.white,
-              iconSize: 25,
-              shape: const CircleBorder(),
-              backgroundColor: backgroundColor ?? Colors.grey[800]?.withAlpha(150)
-            ),
-          );
+      ? CNButton.icon(
+          icon: glassIcon,
+          tint: tint,
+          config: glassConfig ?? const CNButtonConfig(),
+          enabled: enabled,
+          onPressed: enabled ? onPressed : null,
+        )
+      : IconButton(
+          icon: icon!,
+          onPressed: enabled ? onPressed : null,
+          style: ElevatedButton.styleFrom(
+            alignment: Alignment.centerRight,
+            iconColor: Colors.white,
+            iconSize: 25,
+            shape: const CircleBorder(),
+            backgroundColor: backgroundColor ?? Colors.transparent,
+          ),
+        );
   }
 
   @override
@@ -80,12 +79,12 @@ class Button extends StatelessWidget {
                   borderRadius: BorderRadius.circular(30),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 15),
-                backgroundColor: backgroundColor ?? Colors.grey[800]?.withAlpha(150),
+                backgroundColor: backgroundColor ?? Colors.transparent,
                 textStyle: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: textColor)
               ),
               child: icon ?? Text(
                 label ?? '', 
-                style: TextStyle(color: enabled ? textColor ?? Colors.white : Colors.grey[700], fontWeight: FontWeight.normal)
+                style: TextStyle(color: enabled ? textColor ?? Colors.white : Colors.grey[700], fontWeight: FontWeight.w600)
                 ),
             ),
         );

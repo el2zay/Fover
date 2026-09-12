@@ -16,10 +16,6 @@ class MyContainer extends StatelessWidget {
         ),
         child: child, 
       ) : Container(
-        decoration: BoxDecoration(
-          color: Theme.brightnessOf(context) == Brightness.light ? Colors.grey[300] : Colors.grey[900],
-          borderRadius: BorderRadius.all(Radius.circular(20)),
-        ),
         child: child,
       );
   }

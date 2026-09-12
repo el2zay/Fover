@@ -1221,43 +1221,37 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
       );
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5),
-      decoration: BoxDecoration(
-        color: Colors.white12,
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: Row(
-        children: [
-          Button.iconOnly(
-            icon: Icon(isFavorite ? CupertinoIcons.heart_fill : CupertinoIcons.heart),
-            glassIcon: CNSymbol(isFavorite ? 'heart.fill' : 'heart', size: 18),
-            backgroundColor: Colors.transparent,
-            onPressed: () async {
-              await PhotoStore.update(path: widget.encodedPaths[currentIndex], favorite: !isFavorite);
-              setState(() {
-                isFavorite = !isFavorite;
-              });
-            },
-          ),
-          Button.iconOnly(
-            icon: const Icon(CupertinoIcons.info_circle),
-            glassIcon: CNSymbol('info.circle', size: 18),
-            backgroundColor: Colors.transparent,
-            onPressed: () {
-              setState(() {
-                showInfo = !showInfo;
-              });
-            },
-          ),
-          Button.iconOnly(
-            icon: const Icon(CupertinoIcons.slider_horizontal_3),
-            glassIcon: CNSymbol('slider.horizontal.3', size: 18),
-            backgroundColor: Colors.transparent,
-            onPressed: () async => await editMedia()
-          ),
-        ],
-      ),
+    return Row(
+      spacing: 10,
+      children: [
+        Button.iconOnly(
+          icon: Icon(isFavorite ? CupertinoIcons.heart_fill : CupertinoIcons.heart),
+          glassIcon: CNSymbol(isFavorite ? 'heart.fill' : 'heart', size: 18),
+          backgroundColor: Colors.transparent,
+          onPressed: () async {
+            await PhotoStore.update(path: widget.encodedPaths[currentIndex], favorite: !isFavorite);
+            setState(() {
+              isFavorite = !isFavorite;
+            });
+          },
+        ),
+        Button.iconOnly(
+          icon: const Icon(CupertinoIcons.info_circle),
+          glassIcon: CNSymbol('info.circle', size: 18),
+          backgroundColor: Colors.transparent,
+          onPressed: () {
+            setState(() {
+              showInfo = !showInfo;
+            });
+          },
+        ),
+        Button.iconOnly(
+          icon: const Icon(CupertinoIcons.slider_horizontal_3),
+          glassIcon: CNSymbol('slider.horizontal.3', size: 18),
+          backgroundColor: Colors.transparent,
+          onPressed: () async => await editMedia()
+        ),
+      ],
     );
   }
 
