@@ -37,7 +37,7 @@ Future<List<dynamic>> fetchPhotosDir() async {
       break;
   }
 
-  bool hasBeenEdited = false;
+
   var filesOnly = entries.where((e) =>
       e['name'] != '.' &&
       e['name'] != '..' &&
@@ -46,7 +46,6 @@ Future<List<dynamic>> fetchPhotosDir() async {
 
   for (var entry in filesOnly) {
     if (PhotoStore.get(entry['path']) == null) {
-      hasBeenEdited = true;
       // await PhotoStore.addPhoto(
       //   path: entry['path'],
       //   name: entry['name'],
@@ -57,46 +56,30 @@ Future<List<dynamic>> fetchPhotosDir() async {
 
       Map<String, IfdTag> exifData = {};
       if (entry['mimetype'].contains('image/')) {
-
-        if (detectBackend() == ServerBackend.copyparty) {
-          imageBytes = await CopypartyService.fetchFileRange(entry['path']);
-        } else {
-          final imageResponse = await client?.fetch(
-            url: "v15/dl/${entry['path']}",
-            parseJson: false,
-            headers: {'Range': 'bytes=0-65536'},
-          );
-          if (imageResponse?.data is Uint8List) {
-            imageBytes = imageResponse!.data as Uint8List;
+        try {
+          if (detectBackend() == ServerBackend.copyparty) {
+            imageBytes = await CopypartyService.fetchFileRange(entry['path']);
+          } else {
+            final isHeic = entry['mimetype'] == 'image/heic';
+            final range = isHeic ? 'bytes=0-524287' : 'bytes=0-65536';
+            final imageResponse = await client?.fetch(
+              url: "v15/dl/${entry['path']}",
+              parseJson: false,
+              headers: {'Range': range},
+            );
+            if (imageResponse?.data is Uint8List) {
+              imageBytes = imageResponse!.data as Uint8List;
+            }
           }
+        } catch (e) {
+          log('Fetch failed for ${entry['name']}: $e');
         }
 
-        if (entry['mimetype'].contains('image/')) {
+        if (imageBytes != null) {
           try {
-            if (detectBackend() == ServerBackend.copyparty) {
-              imageBytes = await CopypartyService.fetchFileRange(entry['path']);
-            } else {
-              final isHeic = entry['mimetype'] == 'image/heic';
-              final range = isHeic ? 'bytes=0-524287' : 'bytes=0-65536';
-              final imageResponse = await client?.fetch(
-                url: "v15/dl/${entry['path']}",
-                parseJson: false,
-                headers: {'Range': range},
-              );
-              if (imageResponse?.data is Uint8List) {
-                imageBytes = imageResponse!.data as Uint8List;
-              }
-            }
+            exifData = await readExifFromBytes(imageBytes);
           } catch (e) {
-            log('⚠️ Fetch failed for ${entry['name']}: $e');
-          }
-
-          if (imageBytes != null) {
-            try {
-              exifData = await readExifFromBytes(imageBytes);
-            } catch (e) {
-              log('⚠️ EXIF parse failed for ${entry['name']}: $e');
-            }
+            log('EXIF parse failed for ${entry['name']}: $e');
           }
         }
       }
@@ -239,53 +222,30 @@ Future<List<dynamic>> fetchPhotosDir() async {
 }
 
 Future<void> uploadHive() async {
+  final appDir = PhotoStore.boxDir;
+  final id = PhotoStore.deviceId;
 
-  final appDir = (await getApplicationSupportDirectory()).path;
-  final files = [
-    File("$appDir/photos.hive"),
-    File("$appDir/albums.hive"),
-  ];
+  for (final boxName in ['photos', 'albums']) {
+    final file = File('$appDir/$boxName.hive');
+    if (!file.existsSync()) continue;
 
-  switch (detectBackend()) {
-    case ServerBackend.freebox:
-      await FreeboxService.uploadLocalFiles(files: files);
-      break;
-
-    case ServerBackend.copyparty:
-      for (final file in files) {
-        if (!file.existsSync()) continue;
-
-        final boxName = file.path.split('/').last.replaceAll('.hive', '');
-        if (boxName == "photos" && Hive.isBoxOpen("photos")) {
-          await Hive.box<PhotoEntry>('photos').compact();
-        } else if (boxName == "albums" && Hive.isBoxOpen("albums")) {
-          await Hive.box<AlbumEntry>("albums").compact();
-        }
-
-        final filename = file.path.split('/').last;
-
-        try {
-          await CopypartyService.deleteFile(filename);
-        } catch (e) {
-          final msg = e.toString().toLowerCase();
-
-          final isBlockingError =
-              msg.contains('401') ||
-              msg.contains('403') ||
-              msg.contains('timeout') ||
-              msg.contains('connection refused');
-          
-          if (isBlockingError) rethrow;
-          
-          log('[upload] deleteFile ignored: $msg');
-          }
-
-        await CopypartyService.uploadLocalFiles(files: [file]);
+    if (Hive.isBoxOpen(boxName)) {
+      if (boxName == 'photos') {
+        await Hive.box<PhotoEntry>('photos').compact();
+      } else {
+        await Hive.box<AlbumEntry>('albums').compact();
       }
-      break;
+    }
 
-    default:
-      break;
+    // Nom stable propre à cet appareil
+    final remoteName = '$boxName-$id.hive';
+    try {
+      await CopypartyService.deleteFile(remoteName);
+    } catch (_) {
+      // 404 au premier upload : normal
+    }
+    await CopypartyService.uploadLocalFiles(files: [file], filenames: [remoteName]);
+    log('[up] ↑ $remoteName');
   }
 }
 
@@ -305,161 +265,143 @@ Future<Uint8List?> downloadHive(String filename) async {
         default:
           return null;
     }
-  } catch (_) {
+  } catch (e) {
+    log("Failed to download $filename: $e");
     return null;
   }
 }
 
 Future<void> syncHive() async {
-   if (_syncInProgress) return;
+  if (_syncInProgress) return;
   _syncInProgress = true;
+  PhotoStore.cancelScheduledUpload();
+
   try {
-    if (PhotoStore.hasPendingUpload()) {
-      PhotoStore.cancelScheduledUpload();
-      await uploadHive();
-    }
+    final appDir = PhotoStore.boxDir;
+    final mine = PhotoStore.deviceId;
+    final serverFiles = await CopypartyService.listAllFiles();
 
-    final appDir = (await getApplicationSupportDirectory()).path;
-    bool didMerge = false;
+    for (final boxName in ['photos', 'albums']) {
+      final remotes = serverFiles.where((f) =>
+          f.startsWith('$boxName-') &&
+          f.endsWith('.hive') &&
+          f != '$boxName-$mine.hive');
 
-    for (final filename in ['photos.hive', 'albums.hive']) {
-      final localFile = File("$appDir/$filename");
-      final serverBytes = await downloadHive(filename);
-      print("downloaded $filename: ${serverBytes?.length ?? 'null'} bytes");
+      log('[sync] $boxName : ${remotes.length} fichier(s) distant(s)');
 
-      if (serverBytes == null) continue;
-
-      if (!localFile.existsSync()) {
-        await localFile.writeAsBytes(serverBytes);
-        log("Hive initialisé depuis le serveur : $filename");
-        didMerge = true;
-        continue;
+      for (final remote in remotes) {
+        final bytes = await downloadHive(remote);
+        if (bytes == null || bytes.isEmpty) continue;
+        log('[sync] ↓ $remote (${bytes.length} o)');
+        await mergeHive(File('$appDir/$boxName.hive'), bytes, '$boxName.hive');
       }
-
-      await mergeHive(localFile, serverBytes, filename);
-      didMerge = true;
     }
 
-    if (didMerge) await uploadHive();
+    await uploadHive();
   } finally {
     _syncInProgress = false;
   }
 }
 
 Future<void> mergeHive(File localFile, Uint8List serverBytes, String filename) async {
-  final appDir = localFile.parent.path;
-  final tempPath = "$appDir/temp_${DateTime.now().microsecondsSinceEpoch}_$filename";
-  final tempFile = File(tempPath);
+  final dir = localFile.parent.path;
+  final boxName = filename.replaceAll('.hive', '');
+  final tempName = 'temp_$boxName';
 
+  Future<void> cleanup() async {
+    if (Hive.isBoxOpen(tempName)) {
+      if (boxName == 'photos') {
+        await Hive.box<PhotoEntry>(tempName).close();
+      } else {
+        await Hive.box<AlbumEntry>(tempName).close();
+      }
+    }
+    await Hive.deleteBoxFromDisk(tempName, path: dir);
+  }
+
+  await cleanup();
   try {
-    await tempFile.writeAsBytes(serverBytes);
+    await File('$dir/$tempName.hive').writeAsBytes(serverBytes, flush: true);
+    log('[merge] $tempName.hive écrit (${serverBytes.length} octets)');
 
-    if (filename == "photos.hive") {
-      await mergePhotosBox(localFile.path, tempPath);
-    } else if (filename == "albums.hive") {
-      await mergeAlbumsBox(localFile.path, tempPath);
+    if (boxName == 'photos') {
+      await mergePhotosBox(dir);
+    } else {
+      await mergeAlbumsBox(dir);
     }
   } finally {
-    final tempLock = File('$appDir/temp_${filename.replaceAll('.hive', '.lock')}');
-    if (tempLock.existsSync()) await tempLock.delete();
+    await cleanup();
   }
 }
 
-Future<void> mergePhotosBox(String localPath, String serverPath) async {
-  final dir = File(serverPath).parent.path;
+Future<void> mergePhotosBox(String dir) async {
+  final f = File('$dir/temp_photos.hive');
+  log('[merge] temp_photos.hive : existe=${f.existsSync()} '
+      'taille=${f.existsSync() ? f.lengthSync() : 0}');
+
+  final serverBox = await Hive.openBox<PhotoEntry>('temp_photos', path: dir);
+  log('[merge] ${serverBox.length} entrées côté serveur');
+
   PhotoStore.merging = true;
-
-  try {
-    if (Hive.isBoxOpen("temp_photos")) {
-      await Hive.box<PhotoEntry>("temp_photos").close();
-    }
-  } catch (_) {
-
-  } finally {
-    PhotoStore.merging = false;
-  }
-
-  if (!File('$dir/temp_photos.hive').existsSync()) {
-    print('Fichier temp manquant avant ouverture, abandon du merge');
-    return;
-}
-
-  final serverBox = await Hive.openBox<PhotoEntry>(
-    "temp_photos",
-    path: dir
-  );
-
-  for (final key in serverBox.keys) {
-    final serverEntry = serverBox.get(key);
-    final localEntry = PhotoStore.get(key as String);
-
-    if (localEntry == null && serverEntry != null) {
-      await PhotoStore.addPhoto(
-        path: serverEntry.path, 
-        name: serverEntry.name, 
-        date: serverEntry.date,
-        size: serverEntry.size, 
-        mimetype: serverEntry.mimetype ?? "image/jpeg",
-        duration: serverEntry.duration,
-        latitude: serverEntry.latitude,
-        longitude: serverEntry.longitude,
-        cameraBrand: serverEntry.cameraBrand,
-        cameraModel: serverEntry.cameraModel,
-        height: serverEntry.height,
-        width: serverEntry.width,
-        iso: serverEntry.iso,
-        focalLength: serverEntry.focalLength,
-        exposureValue: serverEntry.exposureValue,
-        focus: serverEntry.focus,
-        isScreenshot: serverEntry.isScreenshot,
-        deletedAt: serverEntry.deletedAt
-      );
-      log("Nouvelle photo du serveur : ${serverEntry.path}");
-    } else if (localEntry != null && serverEntry != null) {
-      print('mergeFrom ${serverEntry.name} | serverDeletedAt=${serverEntry.deletedAt} | localDeletedAt=${localEntry.deletedAt}');
-        await PhotoStore.mergeFrom(key, serverEntry);
-    }
-  }
-
-  await serverBox.close();
-  await Hive.deleteBoxFromDisk("temp_photos");
-}
-
-Future<void> mergeAlbumsBox(String localPath, String serverPath) async {
-  final dir = File(serverPath).parent.path;
-  PhotoStore.merging = true;
-
-  try {
-    if (Hive.isBoxOpen("temp_albums")) {
-      await Hive.box<AlbumEntry>("temp_albums").close();
-    }
-  } catch (_) {
-
-  } finally {
-    PhotoStore.merging = false;
-  }
-
-  final serverBox = await Hive.openBox<AlbumEntry>(
-    "temp_albums",
-    path: dir,
-  );
+  var created = 0, updated = 0, skipped = 0;
 
   try {
     for (final key in serverBox.keys) {
-      final entry = serverBox.get(key as String);
-      if (entry == null) continue;
-      if (PhotoStore.getAlbumEntry(key) == null) {
-        await PhotoStore.createAlbum(
-          name: entry.name,
-          coverBytes: entry.coverBytes,
-          description: entry.description,
-        );
-        log("Nouvel album du serveur : ${entry.name}");
+      final serverEntry = serverBox.get(key);
+      if (serverEntry == null) continue;
+
+      final local = PhotoStore.get(key as String);
+
+      if (serverEntry.deletedAt != null || serverEntry.revs != null) {
+        log('[merge] ${serverEntry.name} | '
+            'serveur: del=${serverEntry.deletedAt} rev=${serverEntry.rev("deletedAt")} '
+            'fav=${serverEntry.favorite} | '
+            'local: ${local == null ? "ABSENTE" : "del=${local.deletedAt} rev=${local.rev("deletedAt")} fav=${local.favorite}"}');
+      }
+
+      if (local == null) {
+        created++;
+      } else {
+        updated++;
+      }
+
+      await PhotoStore.mergeFrom(key, serverEntry);
+
+      if (local == null && PhotoStore.get(key) == null) {
+        created--;
+        skipped++;
+        log('[merge] ${serverEntry.name} ignorée (tombstone expiré)');
       }
     }
+  } catch (e, st) {
+    log('[merge] EXCEPTION : $e\n$st');
+    rethrow;
   } finally {
+    PhotoStore.merging = false;
     await serverBox.close();
-    await Hive.deleteBoxFromDisk("temp_albums");
+    log('[merge] $created créées, $updated fusionnées, $skipped ignorées');
+  }
+}
+
+Future<void> mergeAlbumsBox(String dir) async {
+  final serverBox = await Hive.openBox<AlbumEntry>('temp_albums', path: dir);
+  log('[merge] ${serverBox.length} albums côté serveur');
+
+  PhotoStore.merging = true;
+  try {
+    for (final key in serverBox.keys) {
+      final remote = serverBox.get(key);
+      if (remote == null) continue;
+      log('[merge] album ${remote.name} | del=${remote.deletedAt} '
+          'rev=${remote.rev("deletedAt")}');
+      await PhotoStore.mergeAlbumFrom(key as String, remote);
+    }
+  } catch (e, st) {
+    log('[merge] EXCEPTION albums : $e\n$st');
+    rethrow;
+  } finally {
+    PhotoStore.merging = false;
+    await serverBox.close();
   }
 }
 

@@ -170,16 +170,10 @@ class CopypartyService {
 
   static Future<void> deleteFile(String filename) async {
     final uri = Uri.parse('$baseUrl/photos/$filename');
-    
-    final response = await _client.delete(
-      uri,
-      headers: _headers,
-    );
+    final response = await _client.delete(uri, headers: _headers);
 
-    log('Delete response: ${response.statusCode} ${response.body}');
-
-    if (response.statusCode != 200 && response.statusCode != 204) {
-      log('Failed to delete: ${response.statusCode} ${response.body}');
+    if (response.statusCode != 200 && response.statusCode != 204 && response.statusCode != 404) {
+      throw Exception('Delete failed: ${response.statusCode} ${response.body}');
     }
   }
 
@@ -191,6 +185,12 @@ class CopypartyService {
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final files = (body['files'] as List<dynamic>?) ?? [];
     return files.map((f) => f['href'] as String).toSet();
+  }
+
+  static Future<List<String>> listHiveFiles(String prefix) async {
+    final all = await listAllFiles();
+    return all.where((f) => f.startsWith(prefix) && f.endsWith('.hive')).toList()
+      ..sort();
   }
 
   static String _mimetypeFromFilename(String filename) { 
@@ -207,102 +207,102 @@ class CopypartyService {
   static Future<List<String>> uploadLocalFiles({
     required List<File> files,
     List<String>? filenames,
+    int concurrency = 3,
   }) async {
     _uploadCancelToken = CancelToken();
     _cancelRequested = false;
 
-    final allFilenames = List.generate(
+    final names = List.generate(
       files.length,
       (i) => filenames?[i] ?? files[i].path.split('/').last,
     );
 
-    final totalBytes = (await Future.wait(
-      files.map((f) async => await f.length()),
-    )).fold<int>(0, (sum, size) => sum + size);
+    final sizes = await Future.wait(files.map((f) => f.length()));
+    final totalBytes = sizes.fold<int>(0, (a, b) => a + b);
+    final sent = List<int>.filled(files.length, 0);
+    final results = List<String?>.filled(files.length, null);
 
-    int bytesUploadedSoFar = 0;
-    bool needsCleanup = false;
-    final List<String> uploadedPaths = [];
+    var next = 0;
 
-    try {
-      for (int i = 0; i < files.length; i++) {
-        if (_cancelRequested) {
-          needsCleanup = true;
-          break;
-        }
+    Future<void> worker() async {
+      while (!_cancelRequested) {
+        final i = next++;
+        if (i >= files.length) return;
 
-        final filename = allFilenames[i];
-        final fileSize = await files[i].length();
-
-        final formData = FormData.fromMap({
-          'act': 'bput',
-          'f': await MultipartFile.fromFile(
-            files[i].path,
-            filename: filename,
-            contentType: DioMediaType.parse(_mimetypeFromFilename(filename)),
-          ),
-        });
-
-        final response = await _dio.post(
-          '$baseUrl/photos?bup&j',
-          data: formData,
-          options: Options(headers: _headers),
-          cancelToken: _uploadCancelToken,
-          onSendProgress: (sent, total) {
-            uploadProgress.value = (bytesUploadedSoFar + sent) / totalBytes;
-          },
-        );
-
-        if (_cancelRequested) {
-          needsCleanup = true;
-          break;
-        }
-
-        String finalPath = filename;
         try {
-          final data = response.data;
-          if (data is Map && data['fname'] != null) {
-            finalPath = data['fname'];
-          } else if (data is List && data.isNotEmpty) {
-            finalPath = data.first.toString();
-          } else if (data is String && data.trim().isNotEmpty) {
-            finalPath = data.trim();
+          final response = await _dio.post(
+            '$baseUrl/photos?bup&j',
+            data: FormData.fromMap({
+              'act': 'bput',
+              'f': await MultipartFile.fromFile(
+                files[i].path,
+                filename: names[i],
+                contentType: DioMediaType.parse(_mimetypeFromFilename(names[i])),
+              ),
+            }),
+            options: Options(headers: _headers),
+            cancelToken: _uploadCancelToken,
+            onSendProgress: (s, _) {
+              sent[i] = s;
+              uploadProgress.value =
+                  sent.fold<int>(0, (a, b) => a + b) / totalBytes;
+            },
+          );
+
+          results[i] = _parseUploadedName(response.data, names[i]);
+          if (results[i] != names[i]) {
+            log('⚠️ ${names[i]} renommé par le serveur en ${results[i]}');
           }
-        } catch (_) {
+        } on DioException catch (e) {
+          log('Upload failed for ${names[i]}: ${e.message}');
+          if (CancelToken.isCancel(e)) _cancelRequested = true;
         }
-
-        uploadedPaths.add(finalPath);
-        bytesUploadedSoFar += fileSize;
-        log('Uploaded $filename -> $finalPath');
       }
-    } on DioException catch (e) {
-      log('❌ Upload failed: ${e.message}');
-      log('❌ Response status: ${e.response?.statusCode}');
-      log('❌ Response data: ${e.response?.data}');
-      if (CancelToken.isCancel(e)) {
-        needsCleanup = true;
-      }
-    } finally {
-      if (needsCleanup) {
-        log("Cleaning up ${allFilenames.length} files...");
-        await Future.wait(
-          allFilenames.map((filename) async {
-            try {
-              await deleteFile(filename);
-              log('🗑️ Deleted $filename');
-            } catch (_) {
-              log('$filename not found — skipping');
-            }
-          }),
-        );
-      }
-
-      uploadProgress.value = null;
-      _uploadCancelToken = null;
-      _cancelRequested = false;
     }
 
-    return uploadedPaths;
+    await Future.wait(List.generate(concurrency, (_) => worker()));
+
+    if (_cancelRequested) {
+      await Future.wait(names.map((n) async {
+        try {
+          await deleteFile(n);
+        } catch (_) {}
+      }));
+    }
+
+    uploadProgress.value = null;
+    _uploadCancelToken = null;
+    _cancelRequested = false;
+
+    return results.whereType<String>().toList();
+  }
+
+  static String _parseUploadedName(dynamic data, String fallback) {
+    if (data is Map && data['fname'] != null) return data['fname'] as String;
+    if (data is List && data.isNotEmpty) return data.first.toString();
+    if (data is String && data.trim().isNotEmpty) return data.trim();
+    return fallback;
+  }
+
+  static Future<void> putFile({
+    required File file,
+    required String filename,
+  }) async {
+    final response = await _dio.putUri(
+      Uri.parse('$baseUrl/photos/$filename'),
+      data: file.openRead(),
+      options: Options(
+        headers: {
+          ..._headers,
+          'Content-Length': await file.length(),
+          'Content-Type': 'application/octet-stream',
+        },
+      ),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('PUT $filename failed: ${response.statusCode}');
+    }
   }
 
   static Future<String?> uploadBytes({
