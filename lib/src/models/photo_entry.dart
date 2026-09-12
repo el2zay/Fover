@@ -94,6 +94,50 @@ class PhotoEntry extends HiveObject {
   @HiveField(31)
   String? livePhotoPath;
 
-  PhotoEntry({required this.path, required this.name, required this.date, required this.size, this.description, required this.mimetype, this.duration, this.detectedText, this.albums, this.hidden, this.favorite, this.deletedAt, this.latitude, this.longitude, this.cameraBrand, this.cameraModel, this.height, this.width, this.iso, this.focalLength, this.exposureValue, this.focus, this.shutterSpeed, this.displayDate, this.localPath, this.isScreenshot, this.editedFrom, this.isOldVersion, this.displayDateUpdatedAt, this.livePhotoPath});
+  @HiveField(32)
+  Map<String, int>? revs;
 
+  PhotoEntry({required this.path, required this.name, required this.date, required this.size, this.description, required this.mimetype, this.duration, this.detectedText, this.albums, this.hidden, this.favorite, this.deletedAt, this.latitude, this.longitude, this.cameraBrand, this.cameraModel, this.height, this.width, this.iso, this.focalLength, this.exposureValue, this.focus, this.shutterSpeed, this.displayDate, this.localPath, this.isScreenshot, this.editedFrom, this.isOldVersion, this.displayDateUpdatedAt, this.livePhotoPath, this.revs});
+
+  PhotoEntry clone() {
+    return PhotoEntry(
+      path: path,
+      name: name,
+      date: date,
+      size: size,
+      description: description,
+      mimetype: mimetype,
+      duration: duration,
+      detectedText: detectedText,
+      albums: albums != null ? List<String>.from(albums!) : null,
+      hidden: hidden,
+      favorite: favorite,
+      deletedAt: deletedAt,
+      latitude: latitude,
+      longitude: longitude,
+      cameraBrand: cameraBrand,
+      cameraModel: cameraModel,
+      height: height,
+      width: width,
+      iso: iso,
+      focalLength: focalLength,
+      exposureValue: exposureValue,
+      focus: focus,
+      shutterSpeed: shutterSpeed,
+      displayDate: displayDate,
+      localPath: localPath,
+      isScreenshot: isScreenshot,
+      editedFrom: editedFrom,
+      isOldVersion: isOldVersion,
+      displayDateUpdatedAt: displayDateUpdatedAt,
+      livePhotoPath: livePhotoPath,
+      revs: revs != null ? Map<String, int>.from(revs!) : null
+    );
+  }
+
+  void touch(String field) {
+    (revs ??=  {})[field] = DateTime.now().toUtc().millisecondsSinceEpoch;
+  }
+
+  int rev(String field) => revs?[field] ?? 0;
 }
