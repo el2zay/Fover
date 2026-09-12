@@ -77,8 +77,8 @@ Future<void> initApp() async {
 
 
     if (connectedToInternet) {
-      await PhotoStore.purgeExpired();
       await syncHive();
+      await PhotoStore.purgeExpired();
       await PhotoStore.existsOnServer();
       if (box.get("appToken") != null) {
         model = await FreeboxService.getFreeboxModel();
