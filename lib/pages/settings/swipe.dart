@@ -677,7 +677,7 @@ class _ReviewPageState extends State<ReviewPage> {
                       setState(() => isDone = true);
                       Navigator.pop(context);
                       for (final photo in widget.photos) {
-                        await PhotoStore.hardDelete(photo.path);
+                        await PhotoStore.permanentDelete(photo.path);
                       }
                     }
                   ),

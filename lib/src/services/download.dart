@@ -6,7 +6,6 @@ import 'package:fover/main.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 
 // Notice sur l'IA : Ce code a été généré par Claude Sonnet 4.6
@@ -18,8 +17,8 @@ class DownloadService {
     required String filename,
     void Function(int received, int total)? onProgress,
   }) async {
-    final dir = await getApplicationSupportDirectory();
-    final downloadsDir = Directory('${dir.path}/downloads');
+    final dir = PhotoStore.boxDir;
+    final downloadsDir = Directory('$dir/downloads');
     if (!downloadsDir.existsSync()) downloadsDir.createSync();
 
     final localPath = '${downloadsDir.path}/$filename';

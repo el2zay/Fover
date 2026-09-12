@@ -627,7 +627,7 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
                       principalButtonText: "Delete",
                       isDestructive: true,
                       onTap: () async {
-                        await PhotoStore.hardDelete(widget.encodedPaths[currentIndex]);
+                        await PhotoStore.permanentDelete(widget.encodedPaths[currentIndex]);
                         final totalRemaining = widget.encodedPaths.length - 1;
 
                         if (totalRemaining == 0) {

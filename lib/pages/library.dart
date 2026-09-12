@@ -1310,7 +1310,7 @@ class LibraryPageState extends State<LibraryPage> {
                                           principalButtonText: "Delete",
                                           isDestructive: true,
                                           onTap: () async {
-                                            await PhotoStore.hardDelete(data.encodedPaths[index]);
+                                            await PhotoStore.permanentDelete(data.encodedPaths[index]);
                                             if (!mounted) return;
                                             _removeLocally([index]);
                                           },
@@ -1545,7 +1545,7 @@ class LibraryPageState extends State<LibraryPage> {
                                     onTap: () {
                                       for (final path in selectedPaths) {
                                         if (widget.album == Album.trash) {
-                                          PhotoStore.hardDelete(path);
+                                          PhotoStore.permanentDelete(path);
                                         } else {
                                           PhotoStore.softDelete(path);
                                         }
