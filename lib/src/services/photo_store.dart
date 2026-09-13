@@ -472,7 +472,7 @@ class PhotoStore {
       await entry.save();
     }
     
-    if (toDelete.isNotEmpty) _scheduleUpload();
+    if (toDelete.isNotEmpty) await uploadHive();
   }
 
   static Future<void> addToAlbum({
@@ -541,7 +541,7 @@ class PhotoStore {
       await removeFromAlbum(path: photo.path, album: name);
     }
 
-    album.deletedAt = DateTime.now();
+    album.deletedAt = DateTime.now().subtract(_deletionDelay * 2);
     album.touch('deletedAt');
     await _albumBox.put(name, album);
     _scheduleUpload();
