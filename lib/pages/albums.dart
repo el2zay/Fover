@@ -526,7 +526,9 @@ class _NewAlbumSheetState extends State<NewAlbumSheet> {
                                   glassConfig: CNButtonConfig(
                                     style: CNButtonStyle.prominentGlass,
                                   ),
-                                  backgroundColor: box.get("primaryColor") ?? Colors.blue
+                                  backgroundColor: !Platform.isAndroid
+                                    ? (box.get("primaryColor") ?? Colors.blue).withAlpha(24) 
+                                    : null,
                                 );
                               }
                             ),
