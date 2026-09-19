@@ -9,23 +9,29 @@ import CoreLocation
 import Vision
 
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
 
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    // GeneratedPluginRegistrant et la création des canaux sont désormais
+    // gérés dans didInitializeImplicitFlutterEngine (voir plus bas).
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
 
-    GeneratedPluginRegistrant.register(with: self)
+  // Nouveau point d'entrée du cycle UIScene : c'est ici, et non plus dans
+  // didFinishLaunchingWithOptions, que les plugins et les canaux doivent
+  // être enregistrés/créés.
+  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
 
-    guard let controller = window?.rootViewController as? FlutterViewController else {
-      fatalError("rootViewController is not type FlutterViewController")
-    }
+    let messenger = engineBridge.applicationRegistrar.messenger()
 
     // ── Canal MapKit / MKLocalSearch ──────────────────────────────
     let mapChannel = FlutterMethodChannel(
       name: "com.fover/mapsearch",
-      binaryMessenger: controller.binaryMessenger
+      binaryMessenger: messenger
     )
 
     mapChannel.setMethodCallHandler { call, result in
@@ -63,7 +69,7 @@ import Vision
     // ── Canal vidéo / AVFoundation ────────────────────────────────
     let videoChannel = FlutterMethodChannel(
       name: "fover/video_thumbnail",
-      binaryMessenger: controller.binaryMessenger
+      binaryMessenger: messenger
     )
 
     videoChannel.setMethodCallHandler { call, result in
@@ -96,7 +102,7 @@ import Vision
     // OCR
     let ocrChannel = FlutterMethodChannel(
       name: "com.fover/ocr",
-      binaryMessenger: controller.binaryMessenger
+      binaryMessenger: messenger
     )
 
     ocrChannel.setMethodCallHandler { call, result in
@@ -107,14 +113,20 @@ import Vision
       DispatchQueue.global(qos: .userInitiated).async {
         guard let image = UIImage(data: bytes.data),
               let cgImage = image.cgImage
-        else { result(""); return }
+        else {
+          DispatchQueue.main.async { result("") }
+          return
+        }
 
         let request = VNRecognizeTextRequest { req, err in
-          guard err == nil else { result(""); return }
+          guard err == nil else {
+            DispatchQueue.main.async { result("") }
+            return
+          }
           let text = (req.results as? [VNRecognizedTextObservation] ?? [])
             .compactMap { $0.topCandidates(1).first?.string }
             .joined(separator: "\n")
-          result(text)
+          DispatchQueue.main.async { result(text) }
         }
         request.recognitionLevel = .accurate
         request.usesLanguageCorrection = true
@@ -123,7 +135,5 @@ import Vision
         try? VNImageRequestHandler(cgImage: cgImage, options: [:]).perform([request])
       }
     }
-
-    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 }
