@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fover/pages/onboarding/copyparty/login.dart';
-import 'package:fover/pages/onboarding/freebox/login.dart';
+import 'package:fover/pages/onboarding/gallery.dart';
+import 'package:fover/pages/onboarding/login.dart';
 import 'package:fover/src/utils/common_utils.dart';
 
 class FirstPage extends StatefulWidget {
@@ -126,22 +126,21 @@ class _FirstPageState extends State<FirstPage> {
                         width: double.infinity,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white24,
+                            backgroundColor: Colors.black,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20),
                             ),
                           ),
-                          // onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FreeboxLoginPage())),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("This feature is not available yet, but will be coming soon!")
-                              )
-                            );
-                          },
-                          child: const Text("Start with Freebox", style: TextStyle(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.w600)),
+                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GalleryPage())),
+                          child: const Text("Start with your gallery", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
                         ),
+                      ),
+                      SizedBox(height: 10),
+                      const Text(
+                        "If you choose this option, you can add a server later",
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.white70),
+                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),
