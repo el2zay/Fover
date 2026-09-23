@@ -18,6 +18,7 @@ import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/download.dart';
 import 'package:fover/src/services/fover_picker_delegate.dart';
 import 'package:fover/src/services/freebox_service.dart';
+import 'package:fover/src/services/local_gallery.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/utils/lru_cache.dart';
@@ -143,6 +144,7 @@ class LibraryPageState extends State<LibraryPage> {
       setState(() => _isAtTop = _scrollController.offset < 10);
     });
     showTabBar.value = true;
+    LocalGallery.assets.addListener(refresh);
     _load();
   }
 
@@ -155,6 +157,7 @@ class LibraryPageState extends State<LibraryPage> {
       showTabBar.value = true;
     });
 
+    LocalGallery.assets.removeListener(refresh);
     super.dispose();
   }
 
@@ -388,6 +391,24 @@ class LibraryPageState extends State<LibraryPage> {
   }
 
   Future<void> _buildSearchIndex() async {
+    if (galleryMode == GalleryMode.localOnly) {
+      _searchIndex = LocalGallery.assets.value.map((asset) {
+        final date = asset.createDateTime;
+        return _SearchEntry(
+          encodedPath: 'loc:${asset.id}',
+          mimetype: asset.type == AssetType.video ? 'video/mp4' : 'image/jpeg',
+          searchableText: '${asset.title ?? ''} ${date.year} ${date.month} ${date.day}'.toLowerCase(),
+          isFavorite: false,
+          isScreenshot: false,
+          hasDetectedText: false,
+          sortKey: date.toIso8601String(),
+          date: date,
+        );
+      }).toList()
+        ..sort((a, b) => a.sortKey.compareTo(b.sortKey));
+      return;
+    }
+    
     List<Map<String, dynamic>> entries;
 
     if (connectedToInternet) {
@@ -1633,6 +1654,11 @@ class _MediaTileState extends State<_MediaTile> {
   }
 
   Future<Uint8List?> loadThumb() async {
+    if (widget.encodedPath.startsWith('loc:')) {
+      final asset = LocalGallery.get(widget.encodedPath.substring(4));
+      return asset?.thumbnailDataWithSize(const ThumbnailSize(300, 300));
+    }
+
     final photo = PhotoStore.get(widget.encodedPath);
     bool isVideo = widget.mimetype.startsWith('video/');
 
