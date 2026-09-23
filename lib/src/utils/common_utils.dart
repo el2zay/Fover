@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:fover/main.dart';
 import 'package:fover/src/models/photo_entry.dart';
+import 'package:fover/src/services/copyparty_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 
@@ -108,6 +109,26 @@ ServerBackend detectBackend() {
   if (box.get("appToken") != null) return ServerBackend.freebox;
   if (box.get("copypartyUrl") != null) return ServerBackend.copyparty;
   return ServerBackend.none;
+}
+
+Future<bool> serverIsUp() async {
+  switch (detectBackend()) {
+    case ServerBackend.copyparty:
+      return CopypartyService.isUp();
+    case ServerBackend.freebox:
+      return client?.sessionToken != null;
+    case ServerBackend.none:
+      return false;
+  }
+}
+
+enum GalleryMode { localOnly, serverOnly, merged }
+
+GalleryMode get galleryMode {
+  if (detectBackend() == ServerBackend.none) return GalleryMode.localOnly;
+  return box.get('linkLocalGallery', defaultValue: false) == true
+    ? GalleryMode.merged
+    : GalleryMode.serverOnly;
 }
 
 Future<bool> urlExists(String url, {required Map<String, String> headers}) async {
