@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/main.dart';
+import 'package:fover/pages/onboarding/login.dart';
 import 'package:fover/pages/settings/cleaner.dart';
 import 'package:fover/pages/settings/style.dart';
 import 'package:fover/src/services/copyparty_service.dart';
@@ -74,7 +75,7 @@ class _SettingsPageState extends State<SettingsPage> {
             Expanded(
               child: ListView(
                 children: [
-                  SizedBox(height: 20),
+                  SizedBox(height: 10),
                   if (model != null)...[
                     Center(
                       child: Image.asset("assets/illustrations/freebox/${model!.toLowerCase()}.png", height: 45)
@@ -82,65 +83,94 @@ class _SettingsPageState extends State<SettingsPage> {
                     SizedBox(height: 15),
                     Center(child: Text("Freebox Server $model", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
                   ],
-                  enableSwitch ? 
-                    Container(
-                      padding: EdgeInsets.only(bottom: 10),
-                      margin: EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.all(Radius.circular(10)),
-                        color: isDark ? Colors.white10 : Colors.black.withAlpha(10),
-                      ),
-                      child: Padding(padding: EdgeInsetsGeometry.symmetric(horizontal: 20, vertical: 10),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              "${formatSize(totalStorage - freeStorage)} used out of ${formatSize(totalStorage)}",
-                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: primary.withAlpha(200)
-                            )
+                  galleryMode == GalleryMode.localOnly 
+                    ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: 10,
+                      children: [
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white.withAlpha(240),
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                              ),
+                              onPressed: () {
+                                box.put('linkLocalGallery', true);
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => CopypartyLoginPage()));
+                              },
+                              child: Text("Connect to a server", style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w600)),
                             ),
-                            SizedBox(height: 10),
-                            GradientProgressIndicator(
-                              isDark ? [
-                                Colors.green,
-                                Colors.yellow,
-                                Colors.orange,
-                                Colors.red[500]!,
-                                Colors.red[600]!,
-                                Colors.red[700]!,
-                              ] : [
-                                Colors.green[500]!,
-                                Colors.yellow[700]!,
-                                Colors.orange[700]!,
-                                Colors.red[400]!,
-                                Colors.red[500]!,
-                                Colors.red[800]!,
-                              ], storageUsed),
-                          ],
                         ),
-                      )
-                    ) : SizedBox.shrink(),
+                        Text(
+                          "You will be redirected to a login page where you can connect to your Copyparty server", 
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
+                          textAlign: TextAlign.center, 
+                        ),
+                      ],
+                    ) : enableSwitch
+                      ? Container(
+                        padding: EdgeInsets.only(bottom: 10),
+                        margin: EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.all(Radius.circular(10)),
+                          color: isDark ? Colors.white10 : Colors.black.withAlpha(10),
+                        ),
+                        child: Padding(padding: EdgeInsetsGeometry.symmetric(horizontal: 20, vertical: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                "${formatSize(totalStorage - freeStorage)} used out of ${formatSize(totalStorage)}",
+                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: primary.withAlpha(200)
+                              )
+                              ),
+                              SizedBox(height: 10),
+                              GradientProgressIndicator(
+                                isDark ? [
+                                  Colors.green,
+                                  Colors.yellow,
+                                  Colors.orange,
+                                  Colors.red[500]!,
+                                  Colors.red[600]!,
+                                  Colors.red[700]!,
+                                ] : [
+                                  Colors.green[500]!,
+                                  Colors.yellow[700]!,
+                                  Colors.orange[700]!,
+                                  Colors.red[400]!,
+                                  Colors.red[500]!,
+                                  Colors.red[800]!,
+                                ], storageUsed),
+                            ],
+                          ),
+                        )
+                      ) : SizedBox.shrink(),
                   SizedBox(height: 5),
-                  ListTile(
-                    leading: Icon(CupertinoIcons.wifi_slash),
-                    title: Text("Offline mode"),
-                    subtitle: Text("Access to your downloaded medias directly"),
-                    trailing: CNSwitch(
-                      enabled: enableSwitch == true,
-                      value: enableSwitch == true
-                        ? box.get('offlineMode', defaultValue: false)
-                        : true,
-                      color: CupertinoColors.activeGreen,
-                      onChanged: (value) async {
-                        box.put('offlineMode', value);
-                        setState(() {});
-                        connectedToInternet = await CopypartyService.isUp() && await hasInternet();
-                        print("connectedToInternet: $connectedToInternet");
-                        await libraryKey.currentState?.refresh();
-                      }
+                  if (galleryMode != GalleryMode.localOnly)
+                    ListTile(
+                      leading: Icon(CupertinoIcons.wifi_slash),
+                      title: Text("Offline mode"),
+                      subtitle: Text("Access to your downloaded medias directly"),
+                      trailing: CNSwitch(
+                        enabled: enableSwitch == true,
+                        value: enableSwitch == true
+                          ? box.get('offlineMode', defaultValue: false)
+                          : true,
+                        color: CupertinoColors.activeGreen,
+                        onChanged: (value) async {
+                          box.put('offlineMode', value);
+                          setState(() {});
+                          connectedToInternet = await CopypartyService.isUp() && await hasInternet();
+                          print("connectedToInternet: $connectedToInternet");
+                          await libraryKey.currentState?.refresh();
+                        }
+                      ),
                     ),
-                  ),
                   if (detectBackend() == ServerBackend.freebox)
                     ListTile(
                       leading: Icon(CupertinoIcons.folder),

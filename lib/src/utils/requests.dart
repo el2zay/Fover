@@ -8,6 +8,7 @@ import 'package:fover/main.dart';
 import 'package:fover/src/models/album_entry.dart';
 import 'package:fover/src/models/photo_entry.dart';
 import 'package:fover/src/services/copyparty_service.dart';
+import 'package:fover/src/services/local_gallery.dart';
 import 'package:fover/src/services/ocr_service.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
@@ -420,6 +421,10 @@ Future<void> mergeAlbumsBox(String dir) async {
 }
 
 Future<Uint8List?> fetchFullBytes(String encodedPath) async {
+  if (encodedPath.startsWith('loc:')) {
+    return await LocalGallery.get(encodedPath.substring(4))?.originBytes;
+  }
+
   final photo = PhotoStore.get(encodedPath);
 
   if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {

@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:fover/main.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/widgets/dialog.dart';
@@ -164,10 +165,9 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: () async {
-                  if (isLoading) return;
-                    final navigator = Navigator.of(context);
+                    if (isLoading) return;
                     if (!_formKey.currentState!.validate()) return;
-
+                    
                     try {
                       setState(() => isLoading = true);
                       await CopypartyService.connect(
@@ -176,13 +176,11 @@ class _CopypartyLoginPageState extends State<CopypartyLoginPage> {
                         password: passController.text.trim(),
                       );
 
-                      await initApp();
+                      await box.put('onboardingDone', true);
+                      await startServer();
 
                       if (!mounted) return;
-                      navigator.pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (_) => const MainApp()),
-                        (_) => false,
-                      );
+                      Phoenix.rebirth(context);
                     } on TimeoutException {
                       if (!mounted) return;
                       setState(() => isLoading = false);

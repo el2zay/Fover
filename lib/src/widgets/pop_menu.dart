@@ -18,7 +18,8 @@ enum PopMenuAction {
   adjustDate(7),
   adjustLocation(8),
   revert(9),
-  removeFromAlbum(10);
+  removeFromAlbum(10),
+  upload(11);
 
   final int id;
   const PopMenuAction(this.id);
@@ -34,6 +35,7 @@ class PopMenu extends StatelessWidget {
   final bool canRevert;
   final bool isTablet;
   final bool isAlbum;
+  final bool isOnServer;
   final Function(PopMenuAction) onSelected;
 
   const PopMenu({
@@ -48,6 +50,7 @@ class PopMenu extends StatelessWidget {
     this.isTablet = false,
     this.isAlbum = false,
     required this.onSelected,
+    required this.isOnServer,
   });
 
   List<({
@@ -57,14 +60,23 @@ class PopMenu extends StatelessWidget {
     IconData cupertinoIcon,
   })> _buildEntries() {
     return [
-      (
-        action: PopMenuAction.download,
-        label: isDownloaded ? 'Remove download' : 'Download',
-        sfSymbol: 'arrow.down.circle',
-        cupertinoIcon: isDownloaded
-            ? CupertinoIcons.arrow_down_circle_fill
-            : CupertinoIcons.arrow_down_circle,
-      ),
+      if (isOnServer)
+        (
+          action: PopMenuAction.download,
+          label: isDownloaded ? 'Remove download' : 'Download',
+          sfSymbol: 'arrow.down.circle',
+          cupertinoIcon: isDownloaded
+              ? CupertinoIcons.arrow_down_circle_fill
+              : CupertinoIcons.arrow_down_circle,
+        )
+      else 
+        (
+          action: PopMenuAction.upload,
+          label: 'Upload',
+          sfSymbol: 'icloud.and.arrow.up',
+          cupertinoIcon: CupertinoIcons.cloud_upload,
+        ),
+
       if (isAlbum)
         (
           action: PopMenuAction.removeFromAlbum,

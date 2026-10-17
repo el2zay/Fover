@@ -158,6 +158,8 @@ class CopypartyService {
         .replace(queryParameters: {'th': webp ? 'w' : 'j'});
 
     final response = await _client.get(uri, headers: _headers);
+    log('[thumb] $path → ${response.statusCode} '
+        '${response.headers['content-type']} ${response.bodyBytes.length} o');
     if (response.statusCode != 200) return null;
 
     if (response.headers['content-type'] == "image/svg+xml") {
@@ -204,7 +206,7 @@ class CopypartyService {
   }
 
   // AI Generated
-  static Future<List<String>> uploadLocalFiles({
+  static Future<List<String?>> uploadLocalFiles({
     required List<File> files,
     List<String>? filenames,
     int concurrency = 3,
@@ -274,7 +276,7 @@ class CopypartyService {
     _uploadCancelToken = null;
     _cancelRequested = false;
 
-    return results.whereType<String>().toList();
+    return results;
   }
 
   static String _parseUploadedName(dynamic data, String fallback) {

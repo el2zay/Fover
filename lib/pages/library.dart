@@ -190,11 +190,11 @@ class LibraryPageState extends State<LibraryPage> {
       );
 
       final delegate = FoverPickerDelegate(
-        provider: provider, 
+        provider: provider,
         initialPermission: await AssetPicker.permissionCheck(),
       );
-      
-    // Generated with AI
+
+      // Generated with AI
       if (!mounted) return;
       final List<AssetEntity>? assets = await AssetPicker.pickAssetsWithDelegate<
         AssetEntity,
@@ -207,50 +207,78 @@ class LibraryPageState extends State<LibraryPage> {
       );
       //
 
-
       if (assets == null || assets.isEmpty) return;
 
-      List<File> files = [];
-      final List<String> fileNames = [];
-      final Map<int, int> liveVideoIndexOf = {};
+      await uploadAssets(assets);
 
-      for (final asset in assets) {
-        final file = await asset.originFile;
-        if (file == null) continue;
-        final rawTitle = asset.title;
-        final title = (rawTitle == null || rawTitle.isEmpty)
-            ? file.path.split('/').last
-            : rawTitle;
-        final baseName = title.contains('.') ? title.substring(0, title.lastIndexOf('.')) : title;
-        final imageExt = file.path.split('.').last;
+    } catch (e) {
+      final content = e.toString().contains("PermissionState.denied")
+        ? "Fover does not have permission to access your gallery."
+        : e.toString().replaceAll("Exception", "");
+        showMyDialog(
+          // ignore: use_build_context_synchronously
+          context: context,
+          content: content,
+          principalButtonText: "Grant access",
+          onTap: () {
+            AppSettings.openAppSettings(type: AppSettingsType.appLocale);
+        }
+      );
+    }
+  }
 
-        final imageIndex = files.length;
-        files.add(file);
-        fileNames.add(_realFileName(file.path, "$baseName.$imageExt"));
+  Future<void> uploadAssets(List<AssetEntity> assets) async {
+    List<File> files = [];
+    List<String> fileNames = [];
+    Map<int, String> assetIdOf = {};
+    Map<int, int> liveVideoIndexOf = {};
 
-        if (asset.isLivePhoto) {
-          final videoFile = await asset.originFileWithSubtype;
-          if (videoFile != null) {
-            final videoExt = videoFile.path.split('.').last;
-            liveVideoIndexOf[imageIndex] = files.length;
-            files.add(videoFile);
-            fileNames.add(_realFileName(videoFile.path, "$baseName.$videoExt"));
-          }
+    for (final asset in assets) {
+      final file = await asset.originFile;
+      if (file == null) continue;
+      final rawTitle = asset.title;
+      final title = (rawTitle == null || rawTitle.isEmpty)
+          ? file.path.split('/').last
+          : rawTitle;
+      final baseName = title.contains('.') ? title.substring(0, title.lastIndexOf('.')) : title;
+      final imageExt = file.path.split('.').last;
+
+      final imageIndex = files.length;
+      files.add(file);
+      assetIdOf[imageIndex] = asset.id;
+      fileNames.add(_realFileName(file.path, "$baseName.$imageExt"));
+
+      if (asset.isLivePhoto) {
+        final videoFile = await asset.originFileWithSubtype;
+        if (videoFile != null) {
+          final videoExt = videoFile.path.split('.').last;
+          liveVideoIndexOf[imageIndex] = files.length;
+          files.add(videoFile);
+          fileNames.add(_realFileName(videoFile.path, "$baseName.$videoExt"));
         }
       }
+    }
 
-      List<String>? uploadedPaths;
-      switch (detectBackend()) {
-        case ServerBackend.freebox:
-          await FreeboxService.uploadLocalFiles(files: files, filenames: fileNames);
-          break;
-        case ServerBackend.copyparty:
-          uploadedPaths = await CopypartyService.uploadLocalFiles(files: files, filenames: fileNames);
-          break;
-        default:
-          break;
+    if (files.isEmpty) return;
+
+    List<String?>? uploadedPaths;
+    switch (detectBackend()) {
+      case ServerBackend.freebox:
+        await FreeboxService.uploadLocalFiles(files: files, filenames: fileNames);
+        break;
+      case ServerBackend.copyparty:
+        uploadedPaths = await CopypartyService.uploadLocalFiles(files: files, filenames: fileNames);
+        break;
+      default:
+        return;
+    }
+
+    if (uploadedPaths != null) {
+      for (final entry in assetIdOf.entries) {
+        final serverPath = uploadedPaths[entry.key];
+        if (serverPath != null) await LocalLinks.link(entry.value, serverPath);
       }
-
+    }
 
     await refresh();
 
@@ -258,25 +286,11 @@ class LibraryPageState extends State<LibraryPage> {
       for (final entry in liveVideoIndexOf.entries) {
         final imagePath = uploadedPaths[entry.key];
         final videoPath = uploadedPaths[entry.value];
-        log('🔗 Linking $imagePath -> $videoPath');
-        PhotoStore.linkLivePhoto(imagePath: imagePath, videoPath: videoPath);
+        if (imagePath != null && videoPath != null) {
+          PhotoStore.linkLivePhoto(imagePath: imagePath, videoPath: videoPath);
+        }
       }
       await refresh();
-    }
-
-    } catch (e) {
-      final content = e.toString().contains("PermissionState.denied") 
-        ? "Fover does not have permission to access your gallery." 
-        : e.toString().replaceAll("Exception", "");
-        showMyDialog(
-          // ignore: use_build_context_synchronously
-          context: context,
-          content: content, 
-          principalButtonText: "Grant access",
-          onTap: () {
-            AppSettings.openAppSettings(type: AppSettingsType.appLocale);
-        }
-      );
     }
   }
 
@@ -392,23 +406,11 @@ class LibraryPageState extends State<LibraryPage> {
 
   Future<void> _buildSearchIndex() async {
     if (galleryMode == GalleryMode.localOnly) {
-      _searchIndex = LocalGallery.assets.value.map((asset) {
-        final date = asset.createDateTime;
-        return _SearchEntry(
-          encodedPath: 'loc:${asset.id}',
-          mimetype: asset.type == AssetType.video ? 'video/mp4' : 'image/jpeg',
-          searchableText: '${asset.title ?? ''} ${date.year} ${date.month} ${date.day}'.toLowerCase(),
-          isFavorite: false,
-          isScreenshot: false,
-          hasDetectedText: false,
-          sortKey: date.toIso8601String(),
-          date: date,
-        );
-      }).toList()
+      _searchIndex = _localEntries()
         ..sort((a, b) => a.sortKey.compareTo(b.sortKey));
       return;
     }
-    
+
     List<Map<String, dynamic>> entries;
 
     if (connectedToInternet) {
@@ -455,7 +457,6 @@ class LibraryPageState extends State<LibraryPage> {
         return false;
       }
 
-
       if (widget.album == Album.videos) {
         return stored?.mimetype?.startsWith("video/") == true && stored?.deletedAt == null;
       }
@@ -485,10 +486,10 @@ class LibraryPageState extends State<LibraryPage> {
       final path = entry['path'] as String;
       final date = PhotoStore.getDate(path);
       return (
-        entry: entry, 
+        entry: entry,
         sortKey: date.toIso8601String()
       );
-    }).toList(); 
+    }).toList();
 
     if (widget.album != Album.trash) {
       enriched.sort((a, b) => a.sortKey.compareTo(b.sortKey));
@@ -504,7 +505,6 @@ class LibraryPageState extends State<LibraryPage> {
         return bDeletedAt.compareTo(aDeletedAt);
       });
     }
-    
 
     _searchIndex = enriched.map((e) {
       final path = e.entry['path'] as String;
@@ -518,6 +518,43 @@ class LibraryPageState extends State<LibraryPage> {
         hasDetectedText: photo?.detectedText?.isNotEmpty == true,
         sortKey: e.sortKey,
         date: PhotoStore.getDate(path)
+      );
+    }).toList();
+
+    if (galleryMode == GalleryMode.merged) {
+      final alreadyOnServer = LocalLinks.assetIds();
+      final localOnly = _localEntries()
+          .where((e) => !alreadyOnServer.contains(e.encodedPath.substring(4)));
+
+      if (localOnly.isNotEmpty) {
+        _searchIndex = [..._searchIndex, ...localOnly]
+          ..sort((a, b) => a.sortKey.compareTo(b.sortKey));
+      }
+    }
+  }
+
+  List<_SearchEntry> _localEntries() {
+    var assets = LocalGallery.assets.value;
+
+    if (widget.album == Album.favorites) {
+      assets = assets.where((a) => a.isFavorite).toList();
+    } else if (widget.album == Album.videos) {
+      assets = assets.where((a) => a.type == AssetType.video).toList();
+    } else if (widget.album != Album.none || widget.albumName != null) {
+      assets = [];
+    }
+
+    return assets.map((asset) {
+      final date = asset.createDateTime;
+      return _SearchEntry(
+        encodedPath: 'loc:${asset.id}',
+        mimetype: asset.type == AssetType.video ? 'video/mp4' : 'image/jpeg',
+        searchableText: '${asset.title ?? ''} ${date.year} ${date.month} ${date.day}'.toLowerCase(),
+        isFavorite: asset.isFavorite,
+        isScreenshot: false,
+        hasDetectedText: false,
+        sortKey: date.toIso8601String(),
+        date: date,
       );
     }).toList();
   }
@@ -1098,6 +1135,7 @@ class LibraryPageState extends State<LibraryPage> {
                               daysLeft: photo?.deletedAt != null
                                 ? (30 - DateTime.now().difference(photo!.deletedAt!).inDays).clamp(0, 30)
                                 : null,
+                              isOnServer: galleryMode == GalleryMode.merged && !data.encodedPaths[index].startsWith("loc:"),
                               onTap: () async {
                                 if (_isDragging.value) return;
 
@@ -1169,26 +1207,36 @@ class LibraryPageState extends State<LibraryPage> {
 
                                 return widget.album != Album.trash ? Menu(
                                   children: [
-                                    MenuAction(
-                                      title: DownloadService.isDownloaded(data.encodedPaths[index])
-                                        ? 'Remove download'
-                                        : 'Download',
-                                      image: MenuImage.icon(DownloadService.isDownloaded(data.encodedPaths[index])
-                                        ? CupertinoIcons.arrow_down_circle_fill
-                                        : CupertinoIcons.arrow_down_circle),
-                                      callback: () async {
-                                        final photo = PhotoStore.get(data.encodedPaths[index]);
-                                        if (!DownloadService.isDownloaded(data.encodedPaths[index])) {
-                                          final path = await DownloadService.download(
-                                            encodedPath: data.encodedPaths[index],
-                                            filename: photo?.name ?? data.encodedPaths[index],
-                                          );
-                                          log('Downloaded to: $path');
-                                        } else {
-                                          DownloadService.remove(data.encodedPaths[index]);
+                                    if (galleryMode == GalleryMode.merged && data.encodedPaths[index].startsWith('loc:'))
+                                      MenuAction(
+                                        title: "Upload to server",
+                                        image: MenuImage.icon(CupertinoIcons.cloud_upload),
+                                        callback: () async {
+                                          final asset = LocalGallery.get(data.encodedPaths[index].substring(4));
+                                          if (asset != null) await uploadAssets([asset]);
+                                        },
+                                      )
+                                    else
+                                      MenuAction(
+                                        title: DownloadService.isDownloaded(data.encodedPaths[index])
+                                          ? 'Remove download'
+                                          : 'Download',
+                                        image: MenuImage.icon(DownloadService.isDownloaded(data.encodedPaths[index])
+                                          ? CupertinoIcons.arrow_down_circle_fill
+                                          : CupertinoIcons.arrow_down_circle),
+                                        callback: () async {
+                                          final photo = PhotoStore.get(data.encodedPaths[index]);
+                                          if (!DownloadService.isDownloaded(data.encodedPaths[index])) {
+                                            final path = await DownloadService.download(
+                                              encodedPath: data.encodedPaths[index],
+                                              filename: photo?.name ?? data.encodedPaths[index],
+                                            );
+                                            log('Downloaded to: $path');
+                                          } else {
+                                            DownloadService.remove(data.encodedPaths[index]);
+                                          }
                                         }
-                                      }
-                                    ),
+                                      ),
                                     if (mimetypes[index].startsWith("image/"))
                                       MenuAction(
                                         title: "Copy",
@@ -1468,6 +1516,7 @@ class LibraryPageState extends State<LibraryPage> {
                                   isFavorite: false,
                                   isHidden: selectedImages.every((i) => PhotoStore.get(data.encodedPaths[i])?.hidden == true),
                                   isAlbum: widget.albumName != null,
+                                  isOnServer: galleryMode == GalleryMode.merged && selectedImages.every((i) => !data.encodedPaths[i].startsWith("loc:")),
                                   onSelected: (action) async {
                                     final selectedPaths = selectedImages.map((i) => data.encodedPaths[i]).toList();
                                     switch (action) {
@@ -1480,6 +1529,23 @@ class LibraryPageState extends State<LibraryPage> {
                                             DownloadService.download(encodedPath: path, filename: photo!.name);
                                           }
                                         }
+                                        break;
+                                      case PopMenuAction.upload:
+                                        final assets = selectedPaths
+                                            .where((p) => p.startsWith('loc:'))
+                                            .map((p) => LocalGallery.get(p.substring(4)))
+                                            .whereType<AssetEntity>()
+                                            .toList();
+
+                                        if (assets.isEmpty) break;
+
+                                        setState(() {
+                                          selectedImages.clear();
+                                          selectedMode = false;
+                                        });
+                                        showTabBar.value = true;
+
+                                        await uploadAssets(assets);
                                         break;
                                       case PopMenuAction.removeFromAlbum:
                                         for (final path in selectedPaths) {
@@ -1612,6 +1678,7 @@ class _MediaTile extends StatefulWidget {
   final MenuProvider menuProvider;
   final int index;
   final String heroPrefix;
+  final bool isOnServer;
 
   const _MediaTile({
     super.key,
@@ -1628,6 +1695,7 @@ class _MediaTile extends StatefulWidget {
     required this.menuProvider,
     required this.index,
     required this.heroPrefix,
+    this.isOnServer = false,
   });
 
   @override
@@ -1637,7 +1705,7 @@ class _MediaTile extends StatefulWidget {
 class _MediaTileState extends State<_MediaTile> {
   Uint8List? _thumb;
 
-@override
+  @override
   void initState() {
     super.initState();
     final cached = LibraryPageState.thumbCache.get(widget.encodedPath);
@@ -1797,6 +1865,25 @@ class _MediaTileState extends State<_MediaTile> {
                       color: CupertinoColors.systemBlue,
                       size: 22,
                     ),
+                  ),
+                ),
+
+              if (!widget.isOnServer)
+                const Positioned(
+                  top: 5,
+                  right: 5,
+                  child: Icon(
+                    Icons.cloud_off,
+                    size: 16,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    shadows: [
+                      Shadow(
+                        offset: Offset(0, 0),
+                        blurRadius: 10,
+                        color: Colors.black,
+                      ),
+                    ],
                   ),
                 ),
             ],

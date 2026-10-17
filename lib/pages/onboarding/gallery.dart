@@ -1,7 +1,10 @@
 import 'package:app_settings/app_settings.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
+import 'package:fover/main.dart';
 import 'package:fover/pages/library.dart';
 import 'package:fover/pages/onboarding/login.dart';
+import 'package:fover/src/services/local_gallery.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:photo_manager/photo_manager.dart';
 
@@ -24,7 +27,9 @@ class _GalleryPageState extends State<GalleryPage> {
     super.initState();
     isGalleryAvailable().then((ps) {
       if (ps == PermissionState.authorized) {
-        setState(() => page = 1);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && page != 1) setState(() => page = 1);
+        });
       }
     });
   }
@@ -96,7 +101,12 @@ class _GalleryPageState extends State<GalleryPage> {
                   borderRadius: BorderRadius.circular(15),
                 ),
               ),
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => LibraryPage())),
+              onPressed: () async {
+                await box.put('onboardingDone', true);
+                await LocalGallery.init();
+                if (!context.mounted) return;
+                Phoenix.rebirth(context);
+              },
               child: Text("Continue without a server", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
             ),
           )

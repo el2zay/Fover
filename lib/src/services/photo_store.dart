@@ -7,11 +7,13 @@ import 'package:fover/main.dart';
 import 'package:fover/src/models/album_entry.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/freebox_service.dart';
+import 'package:fover/src/services/local_gallery.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/utils/requests.dart';
 import 'package:freebox/freebox.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:fover/src/models/photo_entry.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 class PhotoStore {
   static late Box<PhotoEntry> _photoBox;
@@ -50,6 +52,7 @@ class PhotoStore {
 
     _photoBox = await Hive.openBox(_photoBoxName);
     _albumBox = await Hive.openBox(_albumBoxName);
+    await Hive.openBox<String>('local_links');
   }
 
 
@@ -221,13 +224,36 @@ class PhotoStore {
   }
 
   static DateTime getDate(String path) {
-    final entry = _photoBox.get(path);
+    final entry = get(path);
     return entry?.displayDate ?? entry?.date ?? DateTime(1970);
   }
 
   static DateTime getOriginalDate(String path) {
-    final entry = _photoBox.get(path);
+    final entry = get(path);
     return entry?.date ?? DateTime(1970);
+  }
+
+  static PhotoEntry? _entryFromAsset(String path) {
+    final asset = LocalGallery.get(path.substring(4));
+    if (asset == null) return null;
+
+    final isVideo = asset.type == AssetType.video;
+    final lat = asset.latitude;
+    final lng = asset.longitude;
+    final hasLocation = lat != null && lng != null && (lat != 0 || lng != 0);
+
+    return PhotoEntry(
+      path: path,
+      name: asset.title ?? '',
+      date: asset.createDateTime,
+      size: 0,
+      mimetype: asset.mimeType ?? (isVideo ? 'video/mp4' : 'image/jpeg'),
+      duration: isVideo ? asset.duration : null,
+      width: asset.width,
+      height: asset.height,
+      latitude: hasLocation ? lat : null,
+      longitude: hasLocation ? lng : null,
+    );
   }
 
   static Future<void> softDelete(String path) async {
@@ -689,7 +715,10 @@ class PhotoStore {
     if (changed) await local.save();
   }
 
-  static PhotoEntry? get(String path) => _photoBox.get(path);
+  static PhotoEntry? get(String path) {
+    if (path.startsWith('loc:')) return _entryFromAsset(path);
+    return _photoBox.get(path);
+  }
 
   static List<PhotoEntry> getAll() =>
     _photoBox.values.where((e) =>

@@ -13,7 +13,7 @@ import 'package:fover/pages/search.dart';
 import 'package:fover/pages/settings.dart';
 import 'package:fover/pages/viewer.dart';
 import 'package:fover/src/services/copyparty_service.dart';
-import 'package:fover/src/services/freebox_service.dart';
+import 'package:fover/src/services/local_gallery.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/services/share_intent_service.dart';
 import 'package:fover/src/utils/common_utils.dart';
@@ -28,64 +28,72 @@ FreeboxClient? client;
 bool is26OrNewer =  PlatformVersion.supportsLiquidGlass;
 final box = Hive.box('settings');
 final ValueNotifier<bool> showTabBar = ValueNotifier(true);
-bool isLoggedIn = box.get("appToken") != null || box.get("copypartyUrl") != null;
 final ValueNotifier<String> searchQuery = ValueNotifier('');
 String? model;
-late bool connectedToInternet;
+bool connectedToInternet = false;
 final ValueNotifier<double> tabBarHeight = ValueNotifier(kBottomNavigationBarHeight);
 
 Future<void> initApp() async {
   await PhotoStore.init();
   ShareIntentService.init();
 
-  if (box.get("appToken") != null || box.get("copypartyUrl") != null) {
-    connectedToInternet = await CopypartyService.isUp() && await hasInternet();
-
-    if (box.get("appToken") != null) {
-      client = FreeboxClient(
-        appToken: box.get("appToken"),
-        appId: 'fbx.fover',
-        apiDomain: box.get("apiDomain"),
-        httpsPort: box.get("httpsPort"),
-      );
-      await client?.authentificate();
-    }
-
-    if (box.get("copypartyUrl") != null) {
-      CopypartyService.init();
-    }
-
-    if (box.get("navBarStyle") == null) {
-      box.put("navBarStyle", Platform.isIOS || Platform.isMacOS ? 0 : 2);
-    }
-
-    if (box.get("primaryColor") == null) {
-      box.put("primaryColor", CupertinoColors.activeBlue);
-    }
-
-    if (box.get("liquidGlass") == null && is26OrNewer) {
-      box.put("liquidGlass", true);
-    }
-
-    // if (box.get("qualityMobile") == null) {
-    //   box.put("qualityMobile", 2);
-    // }
-
-    // if (box.get("qualityWiFi") == null) {
-    //   box.put("qualityWiFi", 1);
-    // }
-
-
-    if (connectedToInternet) {
-      await syncHive();
-      await PhotoStore.purgeExpired();
-      await PhotoStore.existsOnServer();
-      if (box.get("appToken") != null) {
-        model = await FreeboxService.getFreeboxModel();
-      }
-      await fetchPhotosDir();
-    }
+  if (box.get("navBarStyle") == null) {
+    box.put("navBarStyle", Platform.isIOS || Platform.isMacOS ? 0 : 2);
   }
+
+  if (box.get("primaryColor") == null) {
+    box.put("primaryColor", CupertinoColors.activeBlue);
+  }
+
+  if (box.get("liquidGlass") == null && is26OrNewer) {
+    box.put("liquidGlass", true);
+  }
+
+  // if (box.get("qualityMobile") == null) {
+  //   box.put("qualityMobile", 2);
+  // }
+
+  // if (box.get("qualityWiFi") == null) {
+  //   box.put("qualityWiFi", 1);
+  // }
+
+  // if (box.get("appToken") != null) {
+  //   client = FreeboxClient(
+  //     appToken: box.get("appToken"),
+  //     appId: 'fbx.fover',
+  //     apiDomain: box.get("apiDomain"),
+  //     httpsPort: box.get("httpsPort"),
+  //   );
+  //   await client?.authentificate();
+  // }
+
+  if (galleryMode != GalleryMode.serverOnly) {
+    await LocalGallery.init();  
+  }
+
+  if (galleryMode == GalleryMode.localOnly) return;
+
+  await startServer();
+}
+
+Future<void> startServer() async {
+  if (box.get("copypartyUrl") != null) {
+    CopypartyService.init();
+  }
+
+  connectedToInternet = await hasInternet() && await serverIsUp();
+
+  if (connectedToInternet) {
+    await syncHive();
+    await PhotoStore.existsOnServer();
+    await PhotoStore.purgeExpired();
+    // if (box.get("appToken") != null) {
+    //   model = await FreeboxService.getFreeboxModel();
+    // }
+    await fetchPhotosDir();
+    if (galleryMode == GalleryMode.merged) await LocalLinks.autoMatch();
+  }
+
 }
 
 void main() async {
@@ -119,7 +127,10 @@ final ValueNotifier<int> currentIndex = ValueNotifier(0);
 
 class _MainAppState extends State<MainApp> {
 
-  bool get isLoggedIn => box.get("appToken") != null || box.get("copypartyUrl") != null;
+  bool get isLoggedIn =>
+      box.get("appToken") != null ||
+      box.get("copypartyUrl") != null ||
+      box.get("onboardingDone") == true;
 
   @override
   Widget build(BuildContext context) {

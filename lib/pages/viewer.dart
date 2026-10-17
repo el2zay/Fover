@@ -14,6 +14,7 @@ import 'package:fover/pages/library.dart';
 import 'package:fover/src/models/photo_entry.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/download.dart';
+import 'package:fover/src/services/local_gallery.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/utils/editor.dart';
@@ -28,8 +29,10 @@ import 'package:fover/src/widgets/photo_map.dart';
 import 'package:fover/src/widgets/pop_menu.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:photo_manager/photo_manager.dart';
 import 'package:video_player/video_player.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 bool focused = false;
 
@@ -408,9 +411,11 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
   }
 
   Widget _buildImage(int index) {
+    // AI Generated
+  
+
     final photo = PhotoStore.get(widget.encodedPaths[index]);
 
-    // AI Generated
     ExtendedImage buildExtended(String url, Map<String, String>? headers) {
       return ExtendedImage.network(
         url,
@@ -467,10 +472,49 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
       );
     }
 
+    ExtendedImage buildExtendedLocal(AssetEntity asset) {
+      return ExtendedImage(
+        image: AssetEntityImageProvider(asset, isOriginal: true),
+        key: ValueKey(asset.id),
+        fit: BoxFit.contain,
+        mode: ExtendedImageMode.gesture,
+        enableSlideOutPage: true,
+        onDoubleTap: _handleDoubleTap,
+        initGestureConfigHandler: (state) => GestureConfig(
+          inPageView: true,
+          initialScale: 1.0,
+          minScale: 1.0,
+          animationMinScale: 0.7,
+          maxScale: 3.0,
+          animationMaxScale: 3.5,
+          speed: 1.0,
+          inertialSpeed: 100.0,
+          initialAlignment: InitialAlignment.center,
+        ),
+        loadStateChanged: (state) {
+          switch (state.extendedImageLoadState) {
+            case LoadState.loading:
+              return const Center(child: CircularProgressIndicator(color: Colors.white38));
+            case LoadState.failed:
+              return const Center(child: Text('Error loading image'));
+            case LoadState.completed:
+              return null;
+          }
+        },
+      );
+    }
+
     ExtendedImage raw;
+
+    final encodedPath = widget.encodedPaths[index];
+    final localAsset = encodedPath.startsWith('loc:')
+      ? LocalGallery.get(encodedPath.substring(4))
+      : null;
     //
 
-    if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
+    if (localAsset != null) {
+      raw = buildExtendedLocal(localAsset);
+    } else if (photo?.localPath != null && File(photo!.localPath!).existsSync()) {
       raw = buildExtendedFile(File(photo.localPath!));
     } else if (detectBackend() == ServerBackend.copyparty) {
       final url = '${CopypartyService.baseUrl}/photos/${widget.encodedPaths[index]}';
@@ -791,6 +835,7 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
         isDownloaded: DownloadService.isDownloaded(widget.encodedPaths[currentIndex]),
         isFavorite: PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true,
         canRevert: PhotoStore.get(widget.encodedPaths[currentIndex])?.editedFrom != null,
+        isOnServer: galleryMode == GalleryMode.merged && !widget.encodedPaths[currentIndex].startsWith('loc:'),
         onSelected: (action) async {
           switch (action) {
             case PopMenuAction.download:
@@ -808,6 +853,9 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
                   log("ici");
                   DownloadService.remove(widget.encodedPaths[currentIndex]);
                 }
+              break;
+            case PopMenuAction.upload:
+              // Uploader l'asset
               break;
             
             case PopMenuAction.removeFromAlbum: 
@@ -889,6 +937,7 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
             isDownloaded: DownloadService.isDownloaded(widget.encodedPaths[currentIndex]),
             isFavorite: PhotoStore.get(widget.encodedPaths[currentIndex])?.favorite == true,
             canRevert: PhotoStore.get(widget.encodedPaths[currentIndex])?.editedFrom != null,
+            isOnServer: galleryMode == GalleryMode.merged && !widget.encodedPaths[currentIndex].startsWith('loc:'),
             onSelected: (action) async {
               switch (action) {
                 case PopMenuAction.download:
@@ -906,6 +955,20 @@ class ViewerPageState extends State<ViewerPage> with SingleTickerProviderStateMi
                       log("ici");
                       DownloadService.remove(widget.encodedPaths[currentIndex]);
                     }
+                  break;
+                case PopMenuAction.upload:
+                  final path = widget.encodedPaths[currentIndex];
+                  final asset = LocalGallery.get(path.substring(4));
+                  if (asset == null) break;
+
+                  await libraryKey.currentState?.uploadAssets([asset]);
+                  if (!mounted) return;
+
+                  final serverPath = LocalLinks.serverPathOf(asset.id);
+                  if (serverPath != null) {
+                    setState(() => widget.encodedPaths[currentIndex] = serverPath);
+                  }
+                  widget.onRefresh?.call();
                   break;
                 case PopMenuAction.removeFromAlbum: 
                   break;

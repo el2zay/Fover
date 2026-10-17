@@ -34,8 +34,6 @@ class DateList extends StatelessWidget {
         final album = albums[index];
         return GestureDetector(
             onTap: () {
-              print("Tapped on album ${album.toString()}");
-              print("Filter date: $filterDate");
               Navigator.push(
                 context, 
                 MaterialPageRoute(

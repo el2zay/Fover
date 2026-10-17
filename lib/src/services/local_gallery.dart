@@ -3,6 +3,9 @@ import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:fover/src/models/photo_entry.dart';
+import 'package:fover/src/services/photo_store.dart';
+import 'package:hive_ce/hive.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 class LocalGallery {
@@ -31,7 +34,12 @@ class LocalGallery {
     final paths = await PhotoManager.getAssetPathList(
       type: RequestType.common,
       onlyAll: true,
+      filterOption: FilterOptionGroup(
+        imageOption: const FilterOption(needTitle: true),
+        videoOption: const FilterOption(needTitle: true),
+      ),
     );
+    
     if (paths.isEmpty) {
       _byId.clear();
       assets.value = [];
@@ -61,5 +69,37 @@ class LocalGallery {
   static void _onChange(MethodCall _) {
     _reloadDebounce?.cancel();
     _reloadDebounce = Timer(const Duration(seconds: 1), reload);
+  }
+  
+}
+
+class LocalLinks {
+  static Box<String> get _box => Hive.box<String>('local_links');
+  static String? serverPathOf(String assetId) => _box.get(assetId);
+  static Set<String> assetIds() => _box.keys.cast<String>().toSet();
+
+  static Future<void> link(String assetId, String serverPath) =>
+      _box.put(assetId, serverPath);
+
+    static Future<void> autoMatch() async {
+    final linked = assetIds();
+    final serverByName = <String, List<PhotoEntry>>{};
+    for (final e in PhotoStore.getAll()) {
+      serverByName.putIfAbsent(e.name.toLowerCase(), () => []).add(e);
+    }
+
+    for (final asset in LocalGallery.assets.value) {
+      if (linked.contains(asset.id)) continue;
+      final title = asset.title?.toLowerCase();
+      if (title == null || title.isEmpty) continue;
+
+      final candidates = serverByName[title] ?? const <PhotoEntry>[];
+      for (final e in candidates) {
+        if (e.date.difference(asset.createDateTime).abs() < const Duration(minutes: 1)) {
+          await link(asset.id, e.path);
+          break;
+        }
+      }
+    }
   }
 }
