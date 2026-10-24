@@ -83,12 +83,12 @@ class _SwipePageState extends State<SwipePage> {
 
     switch (widget.filter) {
       case SwipeFilter.library:
-        photos = PhotoStore.getAll();
+        photos = PhotoStore.getAll(includeLocal: false);
         photos.shuffle();
         break;
 
       case SwipeFilter.favorites:
-        photos = PhotoStore.getAll()
+        photos = PhotoStore.getAll(includeLocal: false)
             .where((p) => p.favorite == true)
             .toList()
           ..shuffle();
@@ -101,21 +101,21 @@ class _SwipePageState extends State<SwipePage> {
         break;
 
       case SwipeFilter.month:
-        photos = PhotoStore.getAll().where((p) {
+        photos = PhotoStore.getAll(includeLocal: false).where((p) {
           final date = PhotoStore.getDate(p.path);
           return date.month == widget.month && date.year == widget.year;
         }).toList();
         break;
 
       case SwipeFilter.year:
-        photos = PhotoStore.getAll().where((p) {
+        photos = PhotoStore.getAll(includeLocal: false).where((p) {
           final date = PhotoStore.getDate(p.path);
           return date.year == widget.year;
         }).toList();
         break;
 
       case SwipeFilter.size:
-        photos = PhotoStore.getAll()..sort((a, b) => b.size.compareTo(a.size));
+        photos = PhotoStore.getAll(includeLocal: false)..sort((a, b) => b.size.compareTo(a.size));
         break;
     }
 
