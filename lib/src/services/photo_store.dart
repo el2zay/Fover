@@ -720,10 +720,11 @@ class PhotoStore {
     return _photoBox.get(path);
   }
 
-  static List<PhotoEntry> getAll() =>
+  static List<PhotoEntry> getAll({bool includeLocal = true}) =>
     _photoBox.values.where((e) =>
       e.deletedAt == null &&
-      e.isOldVersion != true
+      e.isOldVersion != true && 
+      (includeLocal || !e.path.startsWith('loc:'))
     ).toList();
 
   static int get favoritesCount => 
