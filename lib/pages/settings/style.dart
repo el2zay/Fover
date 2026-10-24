@@ -200,30 +200,30 @@ class _StylePageState extends State<StylePage> {
                 ),
                 SizedBox(height: 30),
               ],
-              Text("APP ICON", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: Theme.of(context).primaryColor.withAlpha(80))),
-              Container(
-                height: 150,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: Theme.of(context).primaryColor.withAlpha(20),
-                ),
-                margin: EdgeInsets.only(top: 10, bottom: 0),
-              ),
-              Center(
-                child: TextButton(
-                  child: Text(
-                    "Want to suggest a new icon?",
-                    style: TextStyle(
-                      color: Colors.blueAccent[200],
-                      fontWeight: FontWeight.w500
-                    )
-                  ),
-                  onPressed : () {
-                    // TODO push vers un truc pour envoyer des icones avec ce qui faut respecter (prposer de le faire avec IconKitchen)
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => SuggestionPage()));
-                  }
-                )
-              ),
+              // Text("APP ICON", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: Theme.of(context).primaryColor.withAlpha(80))),
+              // Container(
+              //   height: 150,
+              //   decoration: BoxDecoration(
+              //     borderRadius: BorderRadius.circular(20),
+              //     color: Theme.of(context).primaryColor.withAlpha(20),
+              //   ),
+              //   margin: EdgeInsets.only(top: 10, bottom: 0),
+              // ),
+              // Center(
+              //   child: TextButton(
+              //     child: Text(
+              //       "Want to suggest a new icon?",
+              //       style: TextStyle(
+              //         color: Colors.blueAccent[200],
+              //         fontWeight: FontWeight.w500
+              //       )
+              //     ),
+              //     onPressed : () {
+              //       // TODO push vers un truc pour envoyer des icones avec ce qui faut respecter (prposer de le faire avec IconKitchen)
+              //       Navigator.push(context, MaterialPageRoute(builder: (_) => SuggestionPage()));
+              //     }
+              //   )
+              // ),
             ],
           ),
         ),
