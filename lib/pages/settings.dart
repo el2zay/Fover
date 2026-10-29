@@ -8,6 +8,7 @@ import 'package:fover/main.dart';
 import 'package:fover/pages/onboarding/login.dart';
 import 'package:fover/pages/settings/cleaner.dart';
 import 'package:fover/pages/settings/style.dart';
+import 'package:fover/pages/settings/synchronization.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/utils/common_utils.dart';
 import 'package:fover/src/widgets/button.dart';
@@ -185,6 +186,17 @@ class _SettingsPageState extends State<SettingsPage> {
                       },
                     ),
                   ListTile(
+                    leading: Icon(Icons.loop),
+                    title: Text("Synchronization"),
+                    trailing: Icon(CupertinoIcons.chevron_forward, color: Colors.grey.withAlpha(150)),
+                    onTap: () {
+                      Navigator.push(
+                        context, 
+                        MaterialPageRoute(builder: (context) => SyncPage())
+                      );
+                    },
+                  ),
+                  ListTile(
                     leading: Icon(Icons.swipe_outlined),
                     title: Text("Cleaner"),
                     trailing: Icon(CupertinoIcons.chevron_forward, color: Colors.grey.withAlpha(150)),
@@ -266,7 +278,6 @@ class _SettingsPageState extends State<SettingsPage> {
                     leading: Icon(Icons.logout, color: Colors.red[600]),
                     title: Text("Log out", style: TextStyle(color: Colors.red)),
                     onTap: () {
-                      // TODO freebox
                       showMyDialog(
                         context: context,
                         content: "Are you sure you want to log out?",
@@ -277,6 +288,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
                           await CopypartyService.disconnect();
                           await box.delete('appToken');
+                          await box.put("onboardingDone", false);
+
 
                           showTabBar.value = false;
 
