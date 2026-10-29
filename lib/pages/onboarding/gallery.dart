@@ -67,7 +67,7 @@ class _GalleryPageState extends State<GalleryPage> {
                 SizedBox(height: 20),
                 Text(
                   "Would you like to connect to a server?",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w500),
                 ),
                 Text(
                   "You can always do that later.",
@@ -136,7 +136,9 @@ class _GalleryPageState extends State<GalleryPage> {
                 ]
               );
             } else if (snapshot.data == PermissionState.authorized) {
-              setState(() => page = 1);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted && page != 1) setState(() => page = 1);
+              });
               // Passer a la page suivante
               return Center(
                 child: Text(
