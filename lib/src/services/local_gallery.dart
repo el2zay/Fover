@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:fover/src/models/photo_entry.dart';
+import 'package:fover/src/services/auto_backup.dart';
 import 'package:fover/src/services/photo_store.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:photo_manager/photo_manager.dart';
@@ -68,7 +69,10 @@ class LocalGallery {
 
   static void _onChange(MethodCall _) {
     _reloadDebounce?.cancel();
-    _reloadDebounce = Timer(const Duration(seconds: 1), reload);
+    _reloadDebounce = Timer(const Duration(seconds: 1), () async {
+      await reload();
+      AutoBackup.run();
+    });
   }
   
 }
