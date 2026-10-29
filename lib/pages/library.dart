@@ -14,6 +14,7 @@ import 'package:fover/pages/search.dart';
 import 'package:fover/pages/settings.dart';
 import 'package:fover/pages/viewer.dart';
 import 'package:fover/src/models/photo_entry.dart';
+import 'package:fover/src/services/auto_backup.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/download.dart';
 import 'package:fover/src/services/fover_picker_delegate.dart';
@@ -364,6 +365,8 @@ class LibraryPageState extends State<LibraryPage> {
         }
       });
     }
+    
+    if (widget.key == libraryKey) AutoBackup.run();
   }
   
   void _removeLocally(List<int> indexes) {
@@ -751,6 +754,7 @@ class LibraryPageState extends State<LibraryPage> {
                                   onPressed: () {
                                     _dismissCard();
                                     CopypartyService.cancelUpload();
+                                    AutoBackup.stop();
                                   }
                                 )
                               ],
@@ -852,6 +856,8 @@ class LibraryPageState extends State<LibraryPage> {
               ) : SizedBox(),
           
             SizedBox(width: 10),
+
+            if (galleryMode == GalleryMode.serverOnly)
             Button.iconOnly(
               icon: Icon(CupertinoIcons.add, color: Colors.white),
               glassIcon: CNSymbol('plus', size: 17),
