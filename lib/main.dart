@@ -12,6 +12,7 @@ import 'package:fover/pages/library.dart';
 import 'package:fover/pages/search.dart';
 import 'package:fover/pages/settings.dart';
 import 'package:fover/pages/viewer.dart';
+import 'package:fover/src/services/auto_backup.dart';
 import 'package:fover/src/services/copyparty_service.dart';
 import 'package:fover/src/services/local_gallery.dart';
 import 'package:fover/src/services/photo_store.dart';
@@ -48,6 +49,26 @@ Future<void> initApp() async {
   if (box.get("liquidGlass") == null && is26OrNewer) {
     box.put("liquidGlass", true);
   }
+
+  if (box.get("autoSync") == null) {
+    box.put("autoSync", true);
+  }
+
+  if (box.get("batterySync") == null) {
+    box.put("batterySync", 100);
+  }
+
+  // false : Wi-Fi only, true : Mobile Data and Wi-Fi
+
+  if (box.get("syncPhotos") == null) {
+    box.put("syncPhotos", false);
+  }
+
+  if (box.get("syncVideos") == null) {
+    box.put("syncVideos", false);
+  }
+  //
+
 
   // if (box.get("qualityMobile") == null) {
   //   box.put("qualityMobile", 2);
@@ -112,6 +133,7 @@ void main() async {
   await initApp();
 
   runApp(Phoenix(child:const MainApp()));
+  WidgetsBinding.instance.addPostFrameCallback((_) => AutoBackup.run());
 }
 
 class MainApp extends StatefulWidget {
@@ -327,6 +349,11 @@ class _MainAppState extends State<MainApp> {
           prefixIconColor: Colors.white70,
           suffixIconColor: Colors.white54,
           fillColor: Colors.white12,
+        ),
+        checkboxTheme: CheckboxThemeData(
+          checkColor: WidgetStateProperty.all(CupertinoColors.activeBlue),
+          fillColor: WidgetStatePropertyAll(Colors.transparent),
+          side: BorderSide.none,
         ),
         extensions: [
           PullDownButtonTheme(
