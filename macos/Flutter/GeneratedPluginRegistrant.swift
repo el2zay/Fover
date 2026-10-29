@@ -6,7 +6,9 @@ import FlutterMacOS
 import Foundation
 
 import app_settings
+import battery_plus
 import clipboard
+import connectivity_plus
 import cryptography_flutter
 import cupertino_native_better
 import device_info_plus
@@ -30,7 +32,9 @@ import video_player_avfoundation
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   AppSettingsPlugin.register(with: registry.registrar(forPlugin: "AppSettingsPlugin"))
+  BatteryPlusMacosPlugin.register(with: registry.registrar(forPlugin: "BatteryPlusMacosPlugin"))
   ClipboardPlugin.register(with: registry.registrar(forPlugin: "ClipboardPlugin"))
+  ConnectivityPlusPlugin.register(with: registry.registrar(forPlugin: "ConnectivityPlusPlugin"))
   CryptographyFlutterPlugin.register(with: registry.registrar(forPlugin: "CryptographyFlutterPlugin"))
   CupertinoNativePlugin.register(with: registry.registrar(forPlugin: "CupertinoNativePlugin"))
   DeviceInfoPlusMacosPlugin.register(with: registry.registrar(forPlugin: "DeviceInfoPlusMacosPlugin"))
